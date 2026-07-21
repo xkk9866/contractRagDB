@@ -200,3 +200,82 @@ of $N$ audited queries occupies $N/r$ wall-clock queries in
 expectation (and concentrates at rate $O(\sqrt{N}/r)$), giving the
 $1/r$ delay dilation quoted in Section~\ref{sec:monitor}.
 \end{rmk}
+
+\subsection{Finite-population validity of the repeated-draw protocol}
+\label{app:finitepop}
+
+Theorem~\ref{thm:validity} is stated for i.i.d.\ calibration draws,
+whereas the repeated-draw protocol of Section~\ref{sec:protocol}
+samples each calibration set \emph{without replacement} from the
+pooled execution matrix and scores the deployed policy on the exact
+population. This subsection supplies the formal bridge: under
+without-replacement sampling the shipped p-value remains valid --- in
+fact conservative --- so every repeated-draw number in the paper is
+covered by a finite-population version of the guarantee, and an exact
+hypergeometric refinement is uniformly more powerful.
+
+Fix a policy and view the population as $N$ binary losses with
+violation count $K$, so the population risk is $K/N$. A calibration
+set of size $n$ drawn uniformly without replacement observes $k$
+violations; under $H_0 \colon K/N > \alpha$ --- equivalently
+$K \ge K_0 = \lfloor N\alpha \rfloor + 1$ --- the count $k$ follows
+the hypergeometric law $\mathrm{Hyp}(N, K, n)$.
+
+\begin{proposition}[Finite-population validity]
+\label{prop:finitepop}
+Under uniform without-replacement sampling:
+(i) $p_{\mathrm{hyp}}(k) = \Prob\big(\mathrm{Hyp}(N, K_0, n) \le
+k\big)$ is an exact p-value for $H_0$;
+(ii) the Kullback--Leibler--Chernoff component of the
+Hoeffding--Bentkus p-value, $\exp\big({-n\, h_1(\min(\hat R, \alpha),
+\alpha)}\big)$, remains a valid p-value;
+(iii) if in addition $e \cdot \Prob(\mathrm{Bin}(n, \alpha) \le k)
+\ge p_{\mathrm{hyp}}(k)$ for every $k \le n$ --- a finite, exhaustively
+checkable condition --- then the full Hoeffding--Bentkus p-value has
+size at most $\delta$, and Theorem~\ref{thm:validity} holds verbatim
+with the population risk $K/N$ in place of $R_j$.
+\end{proposition}
+
+\emph{Proof.} (i) The hypergeometric family is stochastically
+increasing in $K$, so $\sup_{K \ge K_0} \Prob_K(k \le t) =
+\Prob_{K_0}(k \le t)$; $p_{\mathrm{hyp}}$ is exactly this worst-case
+CDF, hence super-uniform under $H_0$. (ii) Hoeffding
+\citep[Theorem~4]{hoeffding1963probability} shows the
+without-replacement sample sum is dominated in convex order by its
+i.i.d.\ (with-replacement) counterpart: $\mathbb{E} f(k_{\mathrm{wo}})
+\le \mathbb{E} f(k_{\mathrm{iid}})$ for every convex $f$, in
+particular every moment generating function $x \mapsto e^{\lambda x}$.
+Every Chernoff bound therefore carries over verbatim
+\citep{bardenet2015concentration}, including the lower-tail bound
+$\Prob(\hat R \le r) \le \exp(-n\,h_1(r, \alpha))$ for $r \le \alpha$
+that makes the KL component super-uniform. (iii) Each component
+p-value is nondecreasing in $k$, so each rejection region
+$\{p \le \delta\}$ is a lower-tail event $\{k \le t_\delta\}$, and the
+rejection region of their minimum is the union of two nested lower
+tails --- again a lower tail. Its probability under $H_0$ is the
+larger of the two component sizes: the KL component's is at most
+$\delta$ by (ii), and the Bentkus component's is
+$\Prob_{K_0}(k \le t_\delta) = p_{\mathrm{hyp}}(t_\delta) \le
+e \cdot \Prob(\mathrm{Bin}(n,\alpha) \le t_\delta) \le \delta$ by the
+assumed dominance. The fixed-sequence walk and cheapest-in-prefix
+selection of Theorem~\ref{thm:validity} use only the per-test size,
+so the conclusion transfers unchanged. \hfill$\square$
+
+The dominance condition in (iii) is checked exhaustively over all
+attainable counts $k = 0, \dots, n$ at every $(N, n, \alpha)$
+configuration used in the paper's repeated-draw experiments (sixteen
+configurations across the four benchmarks and the cross-family study);
+it holds with margin in every case (artifact
+\texttt{finitepop\_check.json}). As an end-to-end confirmation, we
+re-ran the full RQ1 protocol at the four headline settings certifying
+with the exact finite-population p-value
+$\min(p_{\mathrm{KL}}, p_{\mathrm{hyp}})$: validity is unchanged
+(population-violation rates $0$--$2.8\%$ over 1000 draws, within
+$\delta = 10\%$), while the exact test is uniformly more powerful ---
+it certifies deeper prefixes (e.g., 47 versus 39 candidates on CRAG)
+and deploys a strictly cheaper policy in 35--80\% of draws, reducing
+mean cost by 10--44\%, because without-replacement sampling is more
+concentrated by exactly the finite-population correction. The i.i.d.\
+numbers reported in the main text are therefore conservative for this
+protocol; adopting the hypergeometric refinement could only improve
+them.

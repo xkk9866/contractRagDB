@@ -71,7 +71,12 @@ matrices, so comparisons cannot be confounded by retrieval variance;
 the repeated-draw protocol (1000 draws) evaluates each selected policy
 on the \emph{exact} finite population, so the reported violation
 probabilities carry Monte Carlo error of about $\pm 0.014$ and no
-test-sampling error at all.
+test-sampling error at all. \emph{Statistical validity}: the protocol
+samples calibration sets without replacement while the certificate's
+p-value assumes i.i.d.\ draws; Appendix~\ref{app:finitepop} proves the
+p-value remains valid (conservative) in the finite-population regime
+and that the exact hypergeometric refinement only strengthens the
+results.
 \emph{Construct validity}: losses follow each benchmark's official
 protocol (token-F1, CRAG's LLM-judge grading, ALCE's TRUE-NLI citation
 entailment), whose agreement with human raters is documented by their

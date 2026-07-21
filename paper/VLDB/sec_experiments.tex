@@ -153,6 +153,13 @@ $\Pr(\text{population risk} > \alpha)$ --- the exact finite-population
 analogue of the $\delta$-guarantee ($\delta = 0.1$ throughout); at 1000
 draws the Monte Carlo 95\% interval on a reported rate of $0.05$ is
 $\pm 0.014$, and there is no test-sampling error in the verdict.
+Calibration sets are drawn \emph{without replacement}, while the HB
+p-value assumes i.i.d.\ draws; Appendix~\ref{app:finitepop} closes this
+gap formally --- the hypergeometric test is exact for the protocol, the
+shipped p-value is dominated by it at every configuration used here
+(valid, merely conservative), and re-certifying every draw with the
+exact finite-population p-value leaves all conclusions unchanged while
+certifying cheaper policies.
 Throughout the paper we keep three quantities distinct:
 \emph{certification} is an event on the calibration draw; it purchases a
 guarantee on the \emph{population} risk with failure probability

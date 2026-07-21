@@ -46,6 +46,38 @@ def hb_p_value(r_hat: float, n: int, alpha: float) -> float:
     return min(1.0, p_hoeff, p_bent)
 
 
+def finite_pop_p_value(r_hat: float, n: int, alpha: float,
+                       n_pop: int) -> float:
+    """Finite-population p-value for H0: population risk > alpha when the
+    n calibration queries are drawn WITHOUT replacement from a fixed
+    population of n_pop binary losses.
+
+    p = min( exp(-n*KL(r_hat || alpha)),  P(Hyp(n_pop, K0, n) <= k) ),
+    K0 = floor(n_pop*alpha) + 1 (smallest violation count breaking the
+    contract). The hypergeometric term is EXACT under without-replacement
+    sampling (MLR in K puts the worst case at K0); the KL-Chernoff term
+    stays valid without replacement by Hoeffding (1963, Thm 4) convex
+    ordering. Together: a valid, finite-population-tight p-value.
+    """
+    if n == 0:
+        return 1.0
+    from scipy.stats import hypergeom
+    k = int(round(r_hat * n))
+    k0 = int(np.floor(n_pop * alpha)) + 1
+    if k0 > n_pop:  # alpha so lax no count can break it: never reject H1
+        return 0.0
+    p_hyper = float(hypergeom.cdf(k, n_pop, k0, n))
+    r = min(r_hat, alpha)
+
+    def kl(a, b):
+        a = min(max(a, 1e-12), 1 - 1e-12)
+        b = min(max(b, 1e-12), 1 - 1e-12)
+        return a * np.log(a / b) + (1 - a) * np.log((1 - a) / (1 - b))
+
+    p_hoeff = float(np.exp(-n * kl(r, alpha)))
+    return min(1.0, p_hoeff, p_hyper)
+
+
 def binomial_upper_bound(k: int, n: int, delta: float) -> float:
     """Exact Clopper-Pearson upper bound on a proportion at confidence 1-delta.
 
@@ -204,19 +236,25 @@ class CertifiedPolicy:
 
 
 def certify_ladder(data: LadderData, alpha: float, delta: float,
-                   num_grid: int = 201) -> CertifiedPolicy:
+                   num_grid: int = 201, n_pop: int = None) -> CertifiedPolicy:
     """Fixed-sequence LTT over the monotone quantile path.
 
     Walks from the most conservative policy to the cheapest; keeps the last
     (cheapest) policy whose HB p-value for H0: risk > alpha is <= delta.
     Fixed-sequence testing controls FWER at delta with NO multiplicity
-    correction because testing stops at the first failure.
+    correction because testing stops at the first failure. If n_pop is
+    given, uses the finite-population p-value (calibration drawn without
+    replacement from a population of that size).
     """
+    if n_pop is not None:
+        pv = lambda r, n, a: finite_pop_p_value(r, n, a, n_pop)
+    else:
+        pv = hb_p_value
     fams = quantile_path(data, num_grid)
     best = None
     for q, thr in fams:
         risk, cost = policy_risk_cost(data, thr)
-        p = hb_p_value(risk, data.n, alpha)
+        p = pv(risk, data.n, alpha)
         if p <= delta:
             best = CertifiedPolicy(thr, q, alpha, delta, risk, cost, p, True)
         else:
@@ -227,7 +265,7 @@ def certify_ladder(data: LadderData, alpha: float, delta: float,
         thr = np.full(data.L - 1, np.inf)
         risk, cost = policy_risk_cost(data, thr)
         return CertifiedPolicy(thr, 1.0, alpha, delta, risk, cost,
-                               hb_p_value(risk, data.n, alpha), False, "final-rung")
+                               pv(risk, data.n, alpha), False, "final-rung")
     return best
 
 

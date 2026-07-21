@@ -294,6 +294,61 @@ queries occupies $N/r$ wall-clock queries in expectation (concentrating
 at rate $O(\sqrt{N}/r)$), giving the $1/r$ delay dilation of
 \S\ref{sec:monitor}. \hfill$\square$
 
+\subsection{Finite-population validity of the repeated-draw protocol}
+\label{app:finitepop}
+Theorem~\ref{thm:validity} is stated for i.i.d.\ calibration draws,
+whereas the repeated-draw protocol of \S\ref{sec:exp-safety} samples
+each calibration set \emph{without replacement} from the pooled
+execution matrix and scores the deployed policy on the exact
+population. The bridge: fix a policy and view the population as $N$
+binary losses with violation count $K$ (population risk $K/N$); a
+calibration set of size $n$ drawn uniformly without replacement
+observes $k$ violations, and under $H_0\colon K/N > \alpha$ ---
+equivalently $K \ge K_0 = \lfloor N\alpha\rfloor + 1$ --- $k$ follows
+$\mathrm{Hyp}(N, K, n)$.
+
+\begin{proposition}[Finite-population validity]
+\label{prop:finitepop}
+Under uniform without-replacement sampling: (i)
+$p_{\mathrm{hyp}}(k) = \Pr(\mathrm{Hyp}(N, K_0, n) \le k)$ is an exact
+p-value for $H_0$; (ii) the KL--Chernoff component of the HB p-value,
+$\exp(-n\,h_1(\min(\hat R, \alpha), \alpha))$, remains a valid
+p-value; (iii) if additionally $e \cdot \Pr(\mathrm{Bin}(n,\alpha) \le
+k) \ge p_{\mathrm{hyp}}(k)$ for every $k \le n$ --- a finite,
+exhaustively checkable condition --- the full HB p-value has size
+$\le \delta$ and Theorem~\ref{thm:validity} holds verbatim with the
+population risk $K/N$ in place of $R_j$.
+\end{proposition}
+
+\emph{Proof.} (i) The hypergeometric family is stochastically
+increasing in $K$, so the worst case over $H_0$ is $K = K_0$ and
+$p_{\mathrm{hyp}}$ is its exact CDF, hence super-uniform. (ii)
+Hoeffding \cite{hoeffding1963probability} (Theorem~4) dominates the
+without-replacement sum in convex order by its i.i.d.\ counterpart, so
+every mgf --- hence every Chernoff bound, including the lower-tail KL
+bound --- carries over verbatim \cite{bardenet2015concentration}.
+(iii) Each component p-value is nondecreasing in $k$, so each
+rejection region is a lower tail $\{k \le t_\delta\}$ and the min's
+region is the larger of two nested tails; its null probability is
+bounded by the KL component's size (at most $\delta$ by (ii)) or by
+$p_{\mathrm{hyp}}(t_\delta) \le e\Pr(\mathrm{Bin}(n,\alpha) \le
+t_\delta) \le \delta$ via the assumed dominance. The fixed-sequence
+walk uses only the per-test size, so the conclusion transfers.
+\hfill$\square$
+
+The dominance in (iii) is checked exhaustively over all $k \le n$ at
+every $(N, n, \alpha)$ configuration in the paper's repeated-draw
+experiments (sixteen configurations; it holds with margin in every
+case), and we re-ran the full RQ1 protocol at the four headline
+settings certifying with the exact
+$\min(p_{\mathrm{KL}}, p_{\mathrm{hyp}})$: validity is unchanged
+(population violation $0$--$2.8\%$ over 1000 draws, within
+$\delta = 10\%$) while the exact test certifies deeper prefixes (47
+vs.\ 39 candidates on CRAG) and deploys a strictly cheaper policy in
+35--80\% of draws, cutting mean cost by 10--44\% (artifact
+\texttt{finitepop\_check.json}). The i.i.d.\ HB numbers in the main
+text are therefore conservative for this protocol.
+
 \section{Reproducibility}
 All matrices, calibration artifacts, scripts, and the SQLite LLM-call
 cache (token-exact) are available at

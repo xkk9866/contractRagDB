@@ -178,7 +178,8 @@ def robust_order(cands: list[Candidate], ld_train, folds: int = 2,
 
 def optimize(cands: list[Candidate], ld_cal, alpha: float, delta: float,
              lat_cal=None, lat_budget: float = None, alpha_lat: float = None,
-             ld_train=None, lat_train=None, order=None) -> OptimizedPolicy:
+             ld_train=None, lat_train=None, order=None,
+             n_pop: int = None) -> OptimizedPolicy:
     """Fixed-sequence LTT over candidates in a train-data order.
 
     Single constraint: order by train risk ascending (or a caller-provided
@@ -187,8 +188,16 @@ def optimize(cands: list[Candidate], ld_cal, alpha: float, delta: float,
     max_j(train_risk_j / alpha_j) ascending, computed on the train split
     (ld_train/lat_train) -- the order stays independent of calibration data.
     Each candidate's composite null is tested by intersection-union (every
-    constraint's HB p-value <= delta).
+    constraint's HB p-value <= delta). If n_pop is given, tests use the
+    finite-population p-value (hypergeometric-exact + KL-Chernoff) for
+    calibration sets drawn without replacement from a population of that
+    size.
     """
+    if n_pop is not None:
+        from contractrag.calibrate import finite_pop_p_value
+        pv = lambda r, n, a: finite_pop_p_value(r, n, a, n_pop)
+    else:
+        pv = hb_p_value
     if order is not None:
         pass
     elif lat_budget is not None and ld_train is not None:
@@ -209,11 +218,11 @@ def optimize(cands: list[Candidate], ld_cal, alpha: float, delta: float,
         c = cands[oi]
         loss, cost, lat, _ = apply_candidate(c, ld_cal, lat_cal)
         r = float(loss.mean())
-        p = hb_p_value(r, n, alpha)
+        p = pv(r, n, alpha)
         ok = p <= delta
         if ok and lat_budget is not None:
             r_lat = float((lat > lat_budget).mean())
-            ok = hb_p_value(r_lat, n, alpha_lat) <= delta
+            ok = pv(r_lat, n, alpha_lat) <= delta
         diag.append({"cand": c.describe(), "train_risk": c.train_risk,
                      "cal_risk": r, "p": p, "cal_cost": float(cost.mean())})
         if ok:
