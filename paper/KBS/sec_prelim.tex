@@ -36,7 +36,7 @@ formulation below.
 \begin{definition}[Evidence contract]
 \label{def:contract}
 Let $\mathcal{D}$ be a query distribution. An \emph{evidence contract}
-is a tuple $C = \langle (\ell_j, \alpha_j)_{j=1}^{k}, \delta \rangle$
+is a tuple $C = \langle (\ell_j, \alpha_j)_{j=1}^{d}, \delta \rangle$
 where each $\ell_j : (\pi, q) \mapsto [0,1]$ is a bounded violation
 loss --- for example,
 $\ell_{\mathrm{qual}} = \mathbf{1}[\mathrm{quality}(\pi(q)) < \tau_q]$,
@@ -53,9 +53,9 @@ fails to satisfy the contract at all.
 As a running example, consider a financial-services assistant whose
 compliance office imposes requirements on the \emph{service}, not on
 any single answer: at most 10\% of answers may be incorrect, at most
-10\% may contain a claim without an entailed citation or cite evidence
-older than 72 hours, and at most 5\% may exceed a 10-second latency
-budget --- all at minimal LLM spend. These requirements instantiate
+10\% may contain a claim without an entailed citation, at most 10\%
+may cite evidence older than 72 hours, and at most 5\% may exceed a
+10-second latency budget --- all at minimal LLM spend. These requirements instantiate
 Definition~\ref{def:contract} directly, with four losses,
 $\alpha = (.10, .10, .10, .05)$, and $\delta = 0.1$: with 90\%
 confidence over the calibration draw, the deployed pipeline violates

@@ -200,8 +200,9 @@ Abacus               & .099 & .34 & .275 & .16 & $<$.003 & .25 & .433 & .51 \\
 \end{table}
 
 Three observations. (i) Empirically tuned methods select policies whose
-\emph{true} risk is out of contract in 41--57\% of draws on their worst
-track --- genuine failures of the deployed policy, not artifacts of a
+\emph{true} risk is out of contract in up to 49\% (empirical tuning) and
+57\% (BO) of draws at these headline levels
+--- genuine failures of the deployed policy, not artifacts of a
 noisy test split; sweeping $\alpha$ (Fig.~\ref{fig:sweep}, thirteen
 settings) shows no baseline staying below $\delta$ everywhere, with BO
 reaching 64\%. The violations are not rare tail events but the typical
@@ -629,7 +630,7 @@ behind. The joint loss is
 $\mathbf{1}[\text{not correct} \vee \ell_{\text{fresh}}]$. When the index
 falls behind \emph{silently}, the executor keeps serving dated web
 evidence that is actually 168h older than it believes: per-rung joint risk
-jumps from $(.79, .74, .71, .71)$ to $(.94, .91, .91, .90)$ --- even the
+jumps from $(.79, .74, .70, .70)$ to $(.94, .91, .91, .90)$ --- even the
 strongest plan now violates $\alpha=0.75$, so no amount of static
 escalation helps (Fig.~\ref{fig:stale}). The static-certified policy runs
 at phase-2 violation 0.926 and never knows; the monitor alarms after a

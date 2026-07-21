@@ -68,7 +68,8 @@ no test-sampling noise in the verdict; Figure~\ref{fig:sweep} sweeps
 the contract level across thirteen settings on the same
 population-risk criterion. Three observations emerge. First,
 empirically tuned methods select policies whose \emph{true} risk is
-out of contract in 41--57\% of draws on their worst benchmark ---
+out of contract in up to 49\% (empirical threshold tuning) and 57\%
+(Bayesian optimization) of draws at these headline levels ---
 these are genuine failures of the deployed policy, not artifacts of a
 noisy test split; across the full sweep no baseline stays below
 $\delta$ everywhere. Second, the certified methods hold the
@@ -489,7 +490,7 @@ We re-execute the CRAG ladder under a 72-hour freshness contract in two
 index states: in sync, and one week behind. When the index falls behind
 \emph{silently}, the executor keeps serving dated web evidence that is
 actually 168 hours older than it believes: per-rung joint
-(correct-and-fresh) risk jumps from $(.79,.74,.71,.71)$ to
+(correct-and-fresh) risk jumps from $(.79,.74,.70,.70)$ to
 $(.94,.91,.91,.90)$ --- even the strongest plan now violates
 $\alpha = 0.75$, so no amount of static escalation helps. The static
 certified policy runs at phase-2 violation 0.926 and never knows; the
@@ -649,7 +650,7 @@ grid from 69 to 97{,}365 candidates raises certification wall-clock to
 cost of a single max-tier LLM call, with selection-proofness
 (Theorem~\ref{thm:validity}) guaranteeing that the extra
 $10^3\times$ candidates cost nothing in validity. The default
-69-candidate space certifies in 5--8 ms; overall optimization overhead
+69-candidate space certifies in 3--14 ms; overall optimization overhead
 is below $10^{-3}$ of a single LLM call, and the online policy adds one
 score lookup per rung plus an $O(1)$ monitor update per query.
 Materializing retrieval once and sharing it across the four generator
