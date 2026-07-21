@@ -1,0 +1,255 @@
+{
+ "crag": {
+  "track": "crag",
+  "contract": "correct",
+  "alphas": {
+   "primary": 0.65,
+   "hallu": 0.3,
+   "fresh": 0.05,
+   "latency": 0.1
+  },
+  "lat_budget": 8.0,
+  "delta": 0.1,
+  "n_cal": 1000,
+  "n_test": 1006,
+  "iut": {
+   "certified": true,
+   "n_certified": 47,
+   "cal": {
+    "risks": {
+     "primary": 0.607,
+     "hallu": 0.273,
+     "fresh": 0.0,
+     "latency": 0.061
+    },
+    "p_values": {
+     "primary": 0.007014220610162714,
+     "hallu": 0.08936254080028791,
+     "fresh": 5.2918228836734454e-23,
+     "latency": 2.084037531890291e-05
+    },
+    "cost_mean": 0.00531960355,
+    "lat_p95": 8.43215461969375
+   },
+   "test": {
+    "risks": {
+     "primary": 0.6033797216699801,
+     "hallu": 0.2584493041749503,
+     "fresh": 0.0,
+     "latency": 0.05666003976143141
+    },
+    "p_values": {
+     "primary": 0.0031935523592622798,
+     "hallu": 0.005457873477730055,
+     "fresh": 3.8899760890116857e-23,
+     "latency": 1.498505413575792e-06
+    },
+    "cost_mean": 0.005017205168986084,
+    "lat_p95": 8.26484501361847
+   }
+  },
+  "bonferroni": {
+   "certified": true,
+   "n_certified": 44,
+   "cal": {
+    "risks": {
+     "primary": 0.603,
+     "hallu": 0.264,
+     "fresh": 0.0,
+     "latency": 0.062
+    },
+    "p_values": {
+     "primary": 0.0030332008424574244,
+     "hallu": 0.018128998127357233,
+     "fresh": 5.2918228836734454e-23,
+     "latency": 3.588037659721422e-05
+    },
+    "cost_mean": 0.0055058202999999995,
+    "lat_p95": 8.43215461969375
+   },
+   "test": {
+    "risks": {
+     "primary": 0.6013916500994035,
+     "hallu": 0.25347912524850896,
+     "fresh": 0.0,
+     "latency": 0.05964214711729622
+    },
+    "p_values": {
+     "primary": 0.0020582910993185485,
+     "hallu": 0.0021390379344495155,
+     "fresh": 3.8899760890116857e-23,
+     "latency": 9.08678633100931e-06
+    },
+    "cost_mean": 0.0051652384691848905,
+    "lat_p95": 8.316181063652039
+   }
+  }
+ },
+ "asqa": {
+  "track": "asqa",
+  "contract": "citation",
+  "alphas": {
+   "primary": 0.25,
+   "cit_prec": 0.35,
+   "quality": 0.4,
+   "latency": 0.15
+  },
+  "lat_budget": 15.0,
+  "delta": 0.1,
+  "n_cal": 350,
+  "n_test": 448,
+  "iut": {
+   "certified": true,
+   "n_certified": 45,
+   "cal": {
+    "risks": {
+     "primary": 0.2057142857142857,
+     "cit_prec": 0.21428571428571427,
+     "quality": 0.31142857142857144,
+     "latency": 0.037142857142857144
+    },
+    "p_values": {
+     "primary": 0.08180045615851365,
+     "cit_prec": 6.04760664379674e-08,
+     "quality": 0.0010052845194351509,
+     "latency": 1.6692929224298773e-11
+    },
+    "cost_mean": 0.006243952142857143,
+    "lat_p95": 14.632416546344757
+   },
+   "test": {
+    "risks": {
+     "primary": 0.1875,
+     "cit_prec": 0.22991071428571427,
+     "quality": 0.2611607142857143,
+     "latency": 0.033482142857142856
+    },
+    "p_values": {
+     "primary": 0.00277041870237499,
+     "cit_prec": 6.66522840520683e-08,
+     "quality": 1.3428759757179448e-09,
+     "latency": 1.4347967358052899e-15
+    },
+    "cost_mean": 0.005938626785714286,
+    "lat_p95": 14.080438351631164
+   }
+  },
+  "bonferroni": {
+   "certified": false
+  }
+ },
+ "drift_multi": {
+  "alphas": {
+   "quality": 0.75,
+   "hallu": 0.3,
+   "fresh": 0.05,
+   "latency": 0.1
+  },
+  "delta_mon": 0.05,
+  "P1": 1000,
+  "policy_q": 0.365,
+  "fresh_rates": {
+   "quality": 0.741307371349096,
+   "hallu": 0.20027816411682892,
+   "fresh": 0.0,
+   "latency": 0.0034770514603616135
+  },
+  "unaware_rates": {
+   "quality": 0.741307371349096,
+   "hallu": 0.20027816411682892,
+   "fresh": 0.6467315716272601,
+   "latency": 0.0034770514603616135
+  },
+  "alarm_delays": {
+   "quality": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "hallu": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "fresh": [
+    12,
+    20,
+    13,
+    6,
+    11,
+    14,
+    14,
+    13,
+    14,
+    5,
+    14,
+    15,
+    14,
+    11,
+    14,
+    19,
+    9,
+    25,
+    10,
+    7
+   ],
+   "latency": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  "false_alarms_of_40": 0
+ }
+}

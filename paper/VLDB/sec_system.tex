@@ -1,0 +1,68 @@
+\section{System}
+\label{sec:system}
+
+\system\ is implemented in Python ($\sim$4K lines) with a physical operator
+layer designed so that every logical operator has interchangeable
+implementations whose cost differences are real, metered, and large:
+
+\begin{itemize}
+\item \textbf{Structured}: DuckDB over relational sources; lexical row
+selection for table QA.
+\item \textbf{Sparse}: BM25 (bm25s) over corpus-level indexes; per-query
+pool BM25 for page-level evidence.
+\item \textbf{Dense}: BGE embeddings (bge-base-en-v1.5) with
+FAISS\slash argpartition top-$k$; fp16 memory-mapped embedding stores.
+\item \textbf{Fusion/rerank}: reciprocal-rank fusion; bge-reranker-v2-m3
+cross-encoder on local GPUs.
+\item \textbf{Verification}: nli-deberta-v3-base entailment for sufficiency
+features and internal citation coverage; sentence-level support scoring.
+\item \textbf{Generation}: a backend-agnostic LLM layer serving four
+model families from four developers on two serving backends ---
+DashScope-hosted Qwen (flash/plus/max), DeepSeek
+(v4-flash/v3.2/v4-pro), and GLM (4.7/5/5.2)
+via OpenAI-compatible API with per-call token metering priced at each
+developer's list prices in CNY,
+plus locally served Gemma~3 (1b/4b/12b/27b) through Ollama, metered in
+measured GPU-seconds (prompt+eval durations from the serving runtime)
+and priced at the same RTX-4090 rental rate, so hosted and local plans
+share one cost currency; 6--48-way parallel; plus a mock KG API served
+locally (CRAG's official tool endpoint) whose calls are planned by a
+flash-tier model.
+\item \textbf{Repair}: citation-repair operator that re-prompts with
+verifier feedback for sentences lacking entailed citations.
+\end{itemize}
+
+All LLM and API calls flow through a thread-safe SQLite cache keyed by
+(model, messages, decoding parameters), making every experiment
+reproducible and token-exact. Executions record prompt/completion tokens,
+per-call latency, evidence ages, and all sufficiency features; the ladder
+matrix for a track is a single JSONL artifact from which calibration,
+baselines, and ablations all derive without re-execution.
+
+\textbf{Optimizer overhead.} The optimizer consumes only these matrices:
+candidate materialization, fixed-sequence testing, and e-process
+monitoring are pure NumPy. Measured on the real workloads (RQ setup of
+\S\ref{sec:exp-setup}), materializing the 69-candidate default space from
+the train split takes 10--20\,ms and the full fixed-sequence
+certification walk over $n_{\mathrm{cal}}$ up to 3000 takes 5--8\,ms; a
+$20\times$ denser space (1504 candidates) certifies in under 0.2\,s.
+Certification cost is $O(|\Pi|\cdot n_{\mathrm{cal}})$ and is amortized
+over an entire deployment period --- \system's optimization overhead is
+below $10^{-3}$ of a single LLM call. Online, the deployed policy adds
+one score lookup per rung and the e-process update is $O(1)$ per query.
+
+\textbf{Total cost of ownership.} LLM token spend is the dominant but not
+the only cost, so we also meter the local compute wall-clock of every
+retrieval/rerank/verify stage and price it at an on-demand RTX-4090
+rental rate (2 CNY/GPU-hour). Per query on the test workloads, local
+compute adds 0.001--0.23 mCNY per rung (at most 0.28 mCNY cumulative for
+the deepest ladder) versus 0.17--9.0 mCNY of LLM spend per rung, and the
+CRAG KG-API rung adds a further 0.12 mCNY of flash-tier planning calls
+(charged to that rung in all experiments). Re-pricing every method in
+Tables~\ref{tab:safety}--\ref{tab:main} with GPU-inclusive costs shifts
+each policy by under 0.3 mCNY --- between $<$1\% (strongest plans) and
+$\sim$10\% (the cheapest certified policies) --- and changes no ranking
+and no safety conclusion: cheap rungs are cheap in both currencies
+because they skip the reranker and verifier, not just the large
+generator. We report LLM spend in the main tables and release the full
+per-stage meter in the artifact.

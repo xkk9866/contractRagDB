@@ -1,0 +1,157 @@
+﻿=== crag / train: 400 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\crag_train_matrix.jsonl
+rung 0: 400 queries
+  retrieve 200/400 (2s)
+  retrieve 400/400 (5s)
+  generate: 400 calls, 0.068 CNY, 12s
+python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-6deda77b-bf3a-40a7-9d69-18c29de05dc3.ps1:82 字符: 75
++ ... EVICES="1"; python scripts\run_ladder.py crag --split all --workers 2 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 202/202 [00:00<00:00, 6012.78it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/400 (36s)
+  features 400/400 (45s)
+rung 1: 400 queries
+  retrieve 200/400 (6s)
+  retrieve 400/400 (12s)
+  generate: 400 calls, 0.159 CNY, 12s
+  features 200/400 (26s)
+  features 400/400 (53s)
+rung 2: 400 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 5237.09it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 393/393 [00:00<00:00, 5174.41it/s]
+  retrieve 200/400 (114s)
+  retrieve 400/400 (200s)
+  generate: 400 calls, 0.641 CNY, 18s
+  features 200/400 (14s)
+  features 400/400 (24s)
+rung 3: 400 queries
+  retrieve 200/400 (44s)
+  retrieve 400/400 (89s)
+  generate: 400 calls, 2.378 CNY, 55s
+  features 200/400 (11s)
+  features 400/400 (21s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\crag_train_matrix.jsonl
+=== crag / cal: 971 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\crag_cal_matrix.jsonl
+rung 0: 971 queries
+  retrieve 200/971 (3s)
+  retrieve 400/971 (6s)
+  retrieve 600/971 (9s)
+  retrieve 800/971 (12s)
+  generate: 971 calls, 0.164 CNY, 22s
+  features 200/971 (9s)
+  features 400/971 (18s)
+  features 600/971 (26s)
+  features 800/971 (35s)
+rung 1: 971 queries
+  retrieve 200/971 (5s)
+  retrieve 400/971 (11s)
+  retrieve 600/971 (16s)
+  retrieve 800/971 (21s)
+  generate: 971 calls, 0.392 CNY, 27s
+  features 200/971 (11s)
+  features 400/971 (23s)
+  features 600/971 (34s)
+  features 800/971 (46s)
+rung 2: 971 queries
+  retrieve 200/971 (40s)
+  retrieve 400/971 (81s)
+  retrieve 600/971 (121s)
+  retrieve 800/971 (161s)
+  generate: 971 calls, 1.568 CNY, 34s
+  features 200/971 (10s)
+  features 400/971 (18s)
+  features 600/971 (27s)
+  features 800/971 (36s)
+rung 3: 971 queries
+  retrieve 200/971 (42s)
+  retrieve 400/971 (84s)
+  retrieve 600/971 (126s)
+  retrieve 800/971 (184s)
+  generate: 971 calls, 5.803 CNY, 155s
+  features 200/971 (11s)
+  features 400/971 (22s)
+  features 600/971 (32s)
+  features 800/971 (43s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\crag_cal_matrix.jsonl
+=== crag / test: 1335 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\crag_test_matrix.jsonl
+rung 0: 1335 queries
+  retrieve 200/1335 (3s)
+  retrieve 400/1335 (6s)
+  retrieve 600/1335 (8s)
+  retrieve 800/1335 (11s)
+  retrieve 1000/1335 (14s)
+  retrieve 1200/1335 (17s)
+  generate: 1335 calls, 0.225 CNY, 27s
+  features 200/1335 (10s)
+  features 400/1335 (19s)
+  features 600/1335 (31s)
+  features 800/1335 (45s)
+  features 1000/1335 (57s)
+  features 1200/1335 (70s)
+rung 1: 1335 queries
+  retrieve 200/1335 (5s)
+  retrieve 400/1335 (10s)
+  retrieve 600/1335 (16s)
+  retrieve 800/1335 (22s)
+  retrieve 1000/1335 (27s)
+  retrieve 1200/1335 (32s)
+  generate: 1335 calls, 0.528 CNY, 35s
+  features 200/1335 (37s)
+  features 400/1335 (75s)
+  features 600/1335 (112s)
+  features 800/1335 (153s)
+  features 1000/1335 (191s)
+  features 1200/1335 (231s)
+rung 2: 1335 queries
+  retrieve 200/1335 (114s)
+  retrieve 400/1335 (228s)
+  retrieve 600/1335 (346s)
+  retrieve 800/1335 (462s)
+  retrieve 1000/1335 (575s)
+  retrieve 1200/1335 (690s)
+  generate: 1335 calls, 2.119 CNY, 48s
+  features 200/1335 (28s)
+  features 400/1335 (56s)
+  features 600/1335 (85s)
+  features 800/1335 (113s)
+  features 1000/1335 (141s)
+  features 1200/1335 (169s)
+rung 3: 1335 queries
+  retrieve 200/1335 (117s)
+  retrieve 400/1335 (234s)
+  retrieve 600/1335 (349s)
+  retrieve 800/1335 (467s)
+  retrieve 1000/1335 (583s)
+  retrieve 1200/1335 (702s)
+  generate: 1335 calls, 7.980 CNY, 167s
+  features 200/1335 (43s)
+  features 400/1335 (87s)
+  features 600/1335 (130s)
+  features 800/1335 (175s)
+  features 1000/1335 (217s)
+  features 1200/1335 (260s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\crag_test_matrix.jsonl

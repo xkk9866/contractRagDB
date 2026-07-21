@@ -1,0 +1,184 @@
+﻿=== cragfresh/cal: 1000 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_cal_matrix.jsonl
+rung 0: 818 queries
+  retrieve 200/818 (3s)
+  retrieve 400/818 (5s)
+  retrieve 600/818 (8s)
+  retrieve 800/818 (11s)
+  generate: 818 calls, 0.130 CNY, 11s
+python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-8102b2de-084a-4605-b552-725c4aefbd3c.ps1:83 字符: 178
++ ... c494fb6a4e2bf0a578873"; python scripts\run_crag_stale.py 2>&1 | Out-F ...
++                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 202/202 [00:00<00:00, 8686.08it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/818 (24s)
+  features 400/818 (28s)
+  features 600/818 (32s)
+  features 800/818 (37s)
+rung 1: 818 queries
+  retrieve 200/818 (5s)
+  retrieve 400/818 (10s)
+  retrieve 600/818 (15s)
+  retrieve 800/818 (20s)
+  generate: 818 calls, 0.325 CNY, 10s
+  features 200/818 (9s)
+  features 400/818 (18s)
+  features 600/818 (29s)
+  features 800/818 (40s)
+rung 2: 818 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 199/199 [00:00<00:00, 8070.34it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 393/393 [00:00<00:00, 6988.61it/s]
+  retrieve 200/818 (57s)
+  retrieve 400/818 (95s)
+  retrieve 600/818 (133s)
+  retrieve 800/818 (173s)
+  generate: 818 calls, 1.316 CNY, 14s
+  features 200/818 (7s)
+  features 400/818 (15s)
+  features 600/818 (22s)
+  features 800/818 (30s)
+rung 3: 818 queries
+  retrieve 200/818 (42s)
+  retrieve 400/818 (89s)
+  retrieve 600/818 (135s)
+  retrieve 800/818 (181s)
+  generate: 818 calls, 4.956 CNY, 43s
+  features 200/818 (10s)
+  features 400/818 (20s)
+  features 600/818 (30s)
+  features 800/818 (40s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_cal_matrix.jsonl
+=== cragfresh/test: 1006 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_test_matrix.jsonl
+rung 0: 738 queries
+  retrieve 200/738 (4s)
+  retrieve 400/738 (8s)
+  retrieve 600/738 (12s)
+  generate: 738 calls, 0.117 CNY, 10s
+  features 200/738 (5s)
+  features 400/738 (10s)
+  features 600/738 (14s)
+rung 1: 738 queries
+  retrieve 200/738 (9s)
+  retrieve 400/738 (17s)
+  retrieve 600/738 (26s)
+  generate: 738 calls, 0.293 CNY, 12s
+  features 200/738 (10s)
+  features 400/738 (20s)
+  features 600/738 (30s)
+rung 2: 738 queries
+  retrieve 200/738 (44s)
+  retrieve 400/738 (88s)
+  retrieve 600/738 (131s)
+  generate: 738 calls, 1.171 CNY, 15s
+  features 200/738 (8s)
+  features 400/738 (15s)
+  features 600/738 (23s)
+rung 3: 738 queries
+  retrieve 200/738 (47s)
+  retrieve 400/738 (93s)
+  retrieve 600/738 (140s)
+  generate: 738 calls, 4.348 CNY, 52s
+  features 200/738 (11s)
+  features 400/738 (21s)
+  features 600/738 (31s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_test_matrix.jsonl
+=== cragstale/cal: 1000 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_cal_matrix.jsonl
+rung 0: 818 queries
+  retrieve 200/818 (3s)
+  retrieve 400/818 (7s)
+  retrieve 600/818 (11s)
+  retrieve 800/818 (14s)
+  generate: 818 calls, 0.099 CNY, 57s
+  features 200/818 (4s)
+  features 400/818 (9s)
+  features 600/818 (13s)
+  features 800/818 (17s)
+rung 1: 818 queries
+  retrieve 200/818 (8s)
+  retrieve 400/818 (15s)
+  retrieve 600/818 (23s)
+  retrieve 800/818 (30s)
+  generate: 818 calls, 0.303 CNY, 11s
+  features 200/818 (9s)
+  features 400/818 (18s)
+  features 600/818 (28s)
+  features 800/818 (39s)
+rung 2: 818 queries
+  retrieve 200/818 (38s)
+  retrieve 400/818 (76s)
+  retrieve 600/818 (114s)
+  retrieve 800/818 (153s)
+  generate: 818 calls, 1.236 CNY, 15s
+  features 200/818 (7s)
+  features 400/818 (15s)
+  features 600/818 (22s)
+  features 800/818 (30s)
+rung 3: 818 queries
+  retrieve 200/818 (40s)
+  retrieve 400/818 (82s)
+  retrieve 600/818 (123s)
+  retrieve 800/818 (165s)
+  generate: 818 calls, 4.715 CNY, 58s
+  features 200/818 (10s)
+  features 400/818 (20s)
+  features 600/818 (29s)
+  features 800/818 (39s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_cal_matrix.jsonl
+=== cragstale/test: 1006 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_test_matrix.jsonl
+rung 0: 738 queries
+  retrieve 200/738 (4s)
+  retrieve 400/738 (7s)
+  retrieve 600/738 (12s)
+  generate: 738 calls, 0.087 CNY, 8s
+  features 200/738 (4s)
+  features 400/738 (9s)
+  features 600/738 (13s)
+rung 1: 738 queries
+  retrieve 200/738 (6s)
+  retrieve 400/738 (14s)
+  retrieve 600/738 (21s)
+  generate: 738 calls, 0.269 CNY, 10s
+  features 200/738 (9s)
+  features 400/738 (18s)
+  features 600/738 (28s)
+rung 2: 738 queries
+  retrieve 200/738 (38s)
+  retrieve 400/738 (76s)
+  retrieve 600/738 (114s)
+  generate: 738 calls, 1.090 CNY, 14s
+  features 200/738 (7s)
+  features 400/738 (15s)
+  features 600/738 (22s)
+rung 3: 738 queries
+  retrieve 200/738 (41s)
+  retrieve 400/738 (84s)
+  retrieve 600/738 (126s)
+  generate: 738 calls, 4.107 CNY, 49s
+  features 200/738 (10s)
+  features 400/738 (20s)
+  features 600/738 (30s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_test_matrix.jsonl
+CRAG_STALE_DONE

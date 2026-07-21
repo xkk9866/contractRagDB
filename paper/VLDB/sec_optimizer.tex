@@ -1,0 +1,239 @@
+\section{Certified Plan Optimization}
+\label{sec:optimizer}
+
+\input{fig_arch}
+
+Section~\ref{sec:contracts} reduced contract-aware deployment to the
+constrained problem~\eqref{eq:problem}; this section gives the optimizer
+that solves it with a certificate.
+\system's optimizer (Fig.~\ref{fig:arch}) has three layers: (i) a
+\emph{rewrite layer} that generates a lattice of cost-decreasing plan
+variants, each annotated with an empirical \emph{risk voucher}; (ii) a
+\emph{policy layer} that lifts static plans into per-query adaptive
+policies (escalation ladders, routers, group-conditional variants); and
+(iii) a \emph{certification layer} that walks the candidate policies in a
+data-independent order and outputs the cheapest one that passes a
+distribution-free risk test. Only layer (iii) touches calibration data, and
+it does so exactly once; layers (i)--(ii) use a disjoint training split.
+Vouchers guide search order --- like a cost model, they may be wrong without
+compromising correctness, only optimality.
+
+\subsection{Cost-decreasing rewrites and risk vouchers}
+\label{sec:rewrites}
+
+\input{fig_rewrites}
+
+A rewrite rule $R : P \mapsto P'$ transforms a plan into a cheaper one
+(Fig.~\ref{fig:rewrites}):
+retrieval truncation ($k \to k' < k$), reranker elision, source pre-filter
+pushdown (restricting a passage pool to rows selected by a structured
+predicate), generator downgrade ($g \to g'$ with a cheaper model), and
+repair elision. Classical optimizers require $P \equiv P'$; here
+equivalence fails and we quantify the damage.
+
+\begin{definition}[Risk voucher]
+\label{def:voucher}
+For loss $\ell$ and rewrite $R$, let
+$\rho(R; P) = \Prob_{q}\big(\ell(R(P), q) > \ell(P, q)\big)$ be the
+\emph{harm probability}. An \emph{$(\hat\eps, \delta_r)$-voucher} for $R$ at
+$P$ is a Clopper--Pearson upper bound $\hat\eps$ on $\rho(R;P)$ at
+confidence $1-\delta_r$, computed from training executions of $P$ and
+$R(P)$ on the same queries.
+\end{definition}
+
+\textbf{Assumption-free composition along paths.} The naive way to compose
+vouchers measures each rewrite \emph{against the base plan} and sums the
+bounds; that requires a no-synergistic-harm (NSH) assumption --- that the
+chain harms no query unless some individual rewrite already does --- which
+real workloads violate (\S\ref{sec:exp-rewrites}). \system\ instead
+vouchers the \emph{path}: for the chain
+$P_0 \xrightarrow{R_1} P_1 \xrightarrow{R_2} \cdots \xrightarrow{R_m} P_m$,
+each step voucher $\hat\eps_i^{\mathrm{step}}$ bounds the harm of $R_i$
+against its \emph{actual predecessor} $P_{i-1}$, not against $P_0$.
+
+\begin{proposition}[Telescoping path composition]
+\label{prop:composition}
+If $\ell(P_m, q) > \ell(P_0, q)$ then some consecutive step strictly
+increases the loss, so deterministically
+$\{q : \ell(P_m,q) > \ell(P_0,q)\} \subseteq
+ \bigcup_{i} \{q : \ell(P_i,q) > \ell(P_{i-1},q)\}$.
+Hence if each step carries an $(\hat\eps_i^{\mathrm{step}},
+\delta_r)$-voucher, then with probability $\ge 1 - m\delta_r$,
+$\rho(R_m \cdots R_1; P_0) \le \sum_{i=1}^m \hat\eps_i^{\mathrm{step}}$
+--- with \emph{no} behavioral assumption on rewrite interactions.
+\end{proposition}
+
+The inclusion is a tautology of the telescoping decomposition
+$\ell(P_m) - \ell(P_0) = \sum_i [\ell(P_i) - \ell(P_{i-1})]$; the only
+stochastic step is the $m$ Clopper--Pearson bounds. The price is that step
+vouchers are chain-specific (they condition on the prefix), which matches
+how the optimizer explores anyway: it descends one path of the rewrite
+lattice at a time. \textbf{Selectivity-conditioned vouchers} refine this
+further: harm of a pre-filter pushdown concentrates on queries whose
+structured predicate is \emph{unselective} (the restricted pool drops
+relevant evidence), so \system\ stratifies calibration queries by estimated
+pool selectivity $\sigma$ (\S\ref{sec:planner}) and issues a per-stratum
+Clopper--Pearson bound (Bonferroni across strata). The result is a
+voucher that is tight where the rewrite is safe and honest where it is
+not, the risk analogue of a selectivity-indexed cost model. Even so,
+\system\ never uses vouchers as deployment guarantees: they order the
+search space, while soundness comes exclusively from direct certification
+of the deployed policy below. The division of labor mirrors classical
+optimizers --- cardinality estimates pick the plan, the executor's
+correctness does not depend on them.
+
+\subsection{Cardinality-driven physical planning}
+\label{sec:planner}
+
+Hybrid RAG queries \emph{join} a structured source with an unstructured
+one: on HybridQA-style workloads the evidence must connect table rows $S$
+(selected by a structured predicate) with linked passages $T$ (a
+row$\to$passage foreign key). Two join orders exist, and they are the
+retrieval analogue of index-scan versus full-scan:
+\emph{table-first} pushes the predicate down --- select rows, then
+retrieve only from the selected rows' passage pool (small pool, cheap,
+but drops evidence linked from unselected rows); \emph{text-first}
+retrieves over the whole table's pool and joins back to rows (large pool,
+higher recall on vague predicates). Which order wins is decided by the
+predicate's \emph{selectivity}. \system\ estimates cardinalities before
+retrieval: the number of rows matching the predicate, and the pushdown
+and full pool sizes from the link table, giving a pool selectivity
+$\sigma = |T_{\mathrm{push}}| / |T_{\mathrm{full}}|$ per query. A cost
+model fit by least squares on measured executions (embedding cost linear
+in pool size, rerank cost linear in candidates) and a recall model
+$r(\sigma)$ fit on the training split (table-first recall degrades as
+$\sigma \to 0$) drive a classical access-path rule: \emph{cheapest path
+whose estimated recall clears the target; otherwise the highest-recall
+path}. The chosen access path parameterizes the physical plans that the
+rewrite and policy layers operate on; as with vouchers, cardinality
+estimates affect only cost, never the certificate. The same estimates
+index the selectivity-conditioned vouchers of \S\ref{sec:rewrites}, so
+the planner and the risk layer share one selectivity abstraction.
+
+\textbf{Operator sharing and materialization.} Retrieval operators are
+generator-independent, so \system\ materializes each (query, rung)
+retrieval result once and shares it across every generator family and
+every policy evaluated downstream --- the ladder matrix is a shared
+subplan in the sense of multi-query optimization. Certification itself
+never re-executes plans: all $|\Pi|$ candidates are evaluated against the
+materialized matrix, which is what makes plan spaces of $10^5$ candidates
+tractable (\S\ref{sec:exp-system}).
+
+\subsection{Policy families}
+\label{sec:families}
+
+From the rewrite lattice \system\ materializes a \emph{cost-ascending
+ladder} $P_0 \prec P_1 \prec \dots \prec P_{L-1}$ (a maximal chain, e.g.,
+sparse-only retrieval with a flash-tier model up to hybrid retrieval with
+reranking, verification, and a max-tier model). Each execution of rung $j$
+on query $q$ emits a \emph{sufficiency score} $s_j(q) \in [0,1]$ ---
+a calibrated probability that stopping here satisfies the contract,
+predicted from runtime observables only (retrieval margins, cross-encoder
+scores, NLI support of the drafted answer over its evidence, citation
+coverage, evidence ages, abstention markers). Scores are fit on the
+training split by per-rung logistic models.
+
+Three candidate families lift the ladder into policies:
+\begin{itemize}
+\item \textbf{T-family (escalation)}: thresholds
+$\lambda = (\lambda_0, \dots, \lambda_{L-2})$; execute rungs upward, stop at
+the first $s_j(q) \ge \lambda_j$ (the final rung always answers). We
+parameterize $\lambda$ along a one-dimensional quantile path
+$q \mapsto \lambda(q)$, from most conservative to always-stop.
+\item \textbf{U-family (routing)}: jump directly to rung
+$\arg\max_j \hat{s}_j(q) - \lambda\, \bar{c}_j$ --- a utility router
+sweeping $\lambda$ over a grid; pays only the chosen rung's cost but
+forfeits the escalation fallback.
+\item \textbf{F-family (static)}: the $L$ fixed plans themselves.
+\end{itemize}
+Group-conditional variants (per query-type or per dynamism class) apply any
+family within each group (\S\ref{sec:runtime}). The candidate set
+$\mathcal{C} = \{\pi_1, \pi_2, \dots\}$ is finite but large; every candidate
+is fully specified by training data alone.
+
+\subsection{Certification by fixed-sequence testing}
+\label{sec:certification}
+
+For candidate $\pi$ and constraint $j$, the empirical risk on $n$
+calibration queries is $\hat R_j(\pi)$. We use the Hoeffding--Bentkus
+p-value~\cite{bentkus2004hoeffding,angelopoulos2021ltt} for the null
+$H_0^{(j)}(\pi) : R_j(\pi) > \alpha_j$:
+\[
+p^{(j)}_{\pi} = \min\Big( e^{-n\,h_1(\hat R_j \wedge \alpha_j,\, \alpha_j)},\,
+e\,\Prob\big(\mathrm{Bin}(n, \alpha_j) \le \lceil n \hat R_j \rceil\big) \Big),
+\]
+with $h_1$ the Bernoulli KL divergence. For multi-constraint contracts the
+null is a \emph{union} $\bigcup_j H_0^{(j)}$, so by the intersection--union
+principle~\cite{berger1982iut} the test ``reject iff $p^{(j)}_\pi \le \delta$
+for \emph{every} $j$'' has size $\le \delta$ --- no Bonferroni splitting
+across constraints is needed.
+
+Candidates are ordered $\pi_{(1)}, \pi_{(2)}, \dots$ by training-split risk
+(safest first), ties broken by training cost --- an ordering fixed before
+calibration data is seen. \system\ walks the sequence, certifies each
+candidate whose (composite) test rejects, and \emph{stops at the first
+failure}; among certified candidates it deploys the cheapest by calibration
+cost:
+
+\begin{theorem}[Contract validity]
+\label{thm:validity}
+Let $\hat\pi$ be the policy returned by the fixed-sequence procedure. Then
+$\Prob\big(R_j(\hat\pi) \le \alpha_j \ \forall j\big) \ge 1-\delta$,
+i.e., \system\ is $(C,\delta)$-certified, for any number of candidates,
+any score quality, and any distribution $\mathcal{D}$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Walking stops at the first non-rejection, so an infeasible candidate can be
+certified only if the walk reaches it and its composite test falsely
+rejects. Let $\pi_{(k^*)}$ be the first infeasible candidate in the order.
+Every certified candidate before $k^*$ is feasible; the procedure errs only
+if the size-$\delta$ IUT at $k^*$ falsely rejects, an event of probability
+at most $\delta$. Deploying the cheapest certified candidate cannot
+introduce additional error. \end{proof}
+
+Two properties matter in practice. \emph{Selection-proofness}: the
+guarantee is unaffected by how many candidates precede the stopping point,
+so enriching $\Pi$ (new routers, new ladders) never costs statistical
+validity. \emph{Power}: if the training-risk order is aligned with the true
+order --- which we verify empirically --- the walk penetrates deep into the
+cheap region before stopping. Because the walk stops at its first
+failure, the returned policy is by construction \emph{the cheapest of
+the certified prefix}, not necessarily the cheapest feasible policy of
+the whole space; the next proposition states when the two coincide and
+at what statistical price --- when its ordering premise fails, only
+optimality degrades, never validity.
+
+\begin{proposition}[Cost consistency]
+\label{prop:consistency}
+Let $M$ be the total number of candidates. Suppose along the walk order
+the true risks are non-decreasing up to the
+cheapest feasible candidate $\pi^\dagger$, which sits at position
+$K \le M$
+with margin $R(\pi^\dagger) \le \alpha - \gamma$, $\gamma > 0$, and that
+per-query costs lie in $[0, C_{\max}]$. Then with probability
+$\ge 1 - 2\delta'$ the procedure certifies every candidate up to and
+including $\pi^\dagger$ once
+\[
+n \;\gtrsim\; \gamma^{-2}\big(\log(1/\delta) \vee \log(K/\delta')\big),
+\]
+and the deployed policy $\hat\pi$ --- cheapest by \emph{estimated}
+calibration cost among \emph{all} certified candidates, which may
+extend beyond position $K$ --- satisfies
+$c(\hat\pi) \le c(\pi^\dagger)
++ 2 C_{\max}\sqrt{\log(2M/\delta')/(2n)}$
+in true mean cost: since the certified set is not known in advance,
+the cost-estimation error is controlled uniformly over the full
+candidate set and vanishes at rate
+$O(\sqrt{\log M / n})$. The $\log K$ and $\log M$ terms ---
+simultaneous certification and simultaneous cost estimation --- enter
+only logarithmically, so enriching the candidate set is statistically
+cheap; restricting the cheapest-selection to the first $K$ positions,
+or estimating costs on an independent split, replaces $\log M$ by
+$\log K$.
+\end{proposition}
+
+Certification cost is negligible: it re-uses the ladder executions already
+collected for calibration --- \system\ needs \emph{no} additional LLM calls
+beyond the $n \times L$ calibration matrix, in contrast to per-deployment
+MAB sampling~\cite{russo2025abacus}.

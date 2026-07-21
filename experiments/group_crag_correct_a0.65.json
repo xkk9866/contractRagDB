@@ -1,0 +1,64 @@
+{
+ "alpha": 0.65,
+ "group_alphas": null,
+ "delta": 0.1,
+ "contract": "correct",
+ "single_split": {
+  "fast-changing": {
+   "n": 118,
+   "marginal_risk": 0.8559322033898306,
+   "marginal_cost": 0.0038215436440677967,
+   "group_risk": 0.847457627118644,
+   "group_cost": 0.008396513135593222,
+   "alpha": 0.65
+  },
+  "real-time": {
+   "n": 94,
+   "marginal_risk": 0.9042553191489362,
+   "marginal_cost": 0.004557191489361703,
+   "group_risk": 0.776595744680851,
+   "group_cost": 0.008802671808510638,
+   "alpha": 0.65
+  },
+  "slow-changing": {
+   "n": 219,
+   "marginal_risk": 0.6118721461187214,
+   "marginal_cost": 0.001496265296803653,
+   "group_risk": 0.5662100456621004,
+   "group_cost": 0.006755562557077625,
+   "alpha": 0.65
+  },
+  "static": {
+   "n": 575,
+   "marginal_risk": 0.5252173913043479,
+   "marginal_cost": 0.0016862558260869567,
+   "group_risk": 0.5739130434782609,
+   "group_cost": 0.0002438038260869565,
+   "alpha": 0.65
+  }
+ },
+ "violation_rates": {
+  "fast-changing": {
+   "marginal": 1.0,
+   "group": 1.0
+  },
+  "real-time": {
+   "marginal": 0.99,
+   "group": 0.97
+  },
+  "slow-changing": {
+   "marginal": 0.16,
+   "group": 0.04
+  },
+  "static": {
+   "marginal": 0.0,
+   "group": 0.005
+  }
+ },
+ "group_certified": {
+  "fast-changing": false,
+  "real-time": false,
+  "slow-changing": true,
+  "static": true
+ }
+}

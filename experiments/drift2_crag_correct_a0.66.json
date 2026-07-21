@@ -1,0 +1,457 @@
+{
+ "alpha": 0.66,
+ "delta": 0.1,
+ "contract": "correct",
+ "recal_window": 250,
+ "delay_curve": [
+  {
+   "rho": 0.25,
+   "n_detected": 0,
+   "delay_mean": null,
+   "delay_p90": null,
+   "cp_err_mean": null,
+   "cp_err_median": null,
+   "post_mean_loss": 0.6410935792025094,
+   "excess_risk": -0.01890642079749061,
+   "g_star": null,
+   "delay_x_gstar": null
+  },
+  {
+   "rho": 0.5,
+   "n_detected": 25,
+   "delay_mean": 760.08,
+   "delay_p90": 1295.6000000000001,
+   "cp_err_mean": 576.52,
+   "cp_err_median": 571.0,
+   "post_mean_loss": 0.7229932037450691,
+   "excess_risk": 0.06299320374506912,
+   "g_star": 0.007131906442146493,
+   "delay_x_gstar": 5.420819448546707
+  },
+  {
+   "rho": 0.75,
+   "n_detected": 30,
+   "delay_mean": 202.73333333333332,
+   "delay_p90": 283.80000000000007,
+   "cp_err_mean": 28.1,
+   "cp_err_median": 10.0,
+   "post_mean_loss": 0.8048928282876289,
+   "excess_risk": 0.14489282828762884,
+   "g_star": 0.049232073723847775,
+   "delay_x_gstar": 9.980982412948071
+  },
+  {
+   "rho": 1.0,
+   "n_detected": 30,
+   "delay_mean": 82.3,
+   "delay_p90": 117.1,
+   "cp_err_mean": 7.033333333333333,
+   "cp_err_median": 4.0,
+   "post_mean_loss": 0.8867924528301887,
+   "excess_risk": 0.22679245283018867,
+   "g_star": 0.1367713988355777,
+   "delay_x_gstar": 11.256286124168044
+  }
+ ],
+ "bound_constant": 15.424948470398373,
+ "false_alarms": 0,
+ "n_null_streams": 200,
+ "closed_loop": {
+  "static": {
+   "viol_phase1": 0.558,
+   "viol_phase2": 0.8862,
+   "cost_mean": 0.002311678488333333,
+   "alarm_delay_mean": null,
+   "recal_certified_frac": null,
+   "runs": [
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8806666666666667,
+     "cost_mean": 0.002246041816666667
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5393333333333333,
+     "viol_phase2": 0.894,
+     "cost_mean": 0.0023276807833333335
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.54,
+     "viol_phase2": 0.8866666666666667,
+     "cost_mean": 0.0023918171666666667
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5466666666666666,
+     "viol_phase2": 0.8786666666666667,
+     "cost_mean": 0.0022139079666666666
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8846666666666667,
+     "cost_mean": 0.00230225415
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5673333333333334,
+     "viol_phase2": 0.892,
+     "cost_mean": 0.0023733120333333333
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.548,
+     "viol_phase2": 0.882,
+     "cost_mean": 0.0023648805
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.566,
+     "viol_phase2": 0.8866666666666667,
+     "cost_mean": 0.00240464545
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5586666666666666,
+     "viol_phase2": 0.876,
+     "cost_mean": 0.0022267777499999997
+    },
+    {
+     "mode": "static",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5926666666666667,
+     "viol_phase2": 0.9006666666666666,
+     "cost_mean": 0.002265467266666667
+    }
+   ]
+  },
+  "monitor_recal": {
+   "viol_phase1": 0.558,
+   "viol_phase2": 0.8191333333333333,
+   "cost_mean": 0.004770334786666666,
+   "alarm_delay_mean": 93.0,
+   "recal_certified_frac": 0.0,
+   "runs": [
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1587,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8173333333333334,
+     "cost_mean": 0.004777053866666666
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1587,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5393333333333333,
+     "viol_phase2": 0.834,
+     "cost_mean": 0.004870518483333333
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1597,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.54,
+     "viol_phase2": 0.8166666666666667,
+     "cost_mean": 0.004761857083333334
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1617,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5466666666666666,
+     "viol_phase2": 0.8026666666666666,
+     "cost_mean": 0.004633889349999999
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1649,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8226666666666667,
+     "cost_mean": 0.004656571283333333
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1544,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5673333333333334,
+     "viol_phase2": 0.8346666666666667,
+     "cost_mean": 0.0048789068333333335
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1547,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.548,
+     "viol_phase2": 0.816,
+     "cost_mean": 0.00488454075
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1623,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.566,
+     "viol_phase2": 0.814,
+     "cost_mean": 0.004790227233333333
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1551,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5586666666666666,
+     "viol_phase2": 0.8066666666666666,
+     "cost_mean": 0.0047336227
+    },
+    {
+     "mode": "monitor_recal",
+     "alarm_t": 1628,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5926666666666667,
+     "viol_phase2": 0.8266666666666667,
+     "cost_mean": 0.004716160283333333
+    }
+   ]
+  },
+  "oracle": {
+   "viol_phase1": 0.558,
+   "viol_phase2": 0.8150666666666666,
+   "cost_mean": 0.004937208614999999,
+   "alarm_delay_mean": null,
+   "recal_certified_frac": null,
+   "runs": [
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8133333333333334,
+     "cost_mean": 0.004935186566666666
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5393333333333333,
+     "viol_phase2": 0.8306666666666667,
+     "cost_mean": 0.004994165383333333
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.54,
+     "viol_phase2": 0.814,
+     "cost_mean": 0.004936504299999999
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5466666666666666,
+     "viol_phase2": 0.7953333333333333,
+     "cost_mean": 0.004858146349999999
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5606666666666666,
+     "viol_phase2": 0.8133333333333334,
+     "cost_mean": 0.0049249174833333334
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5673333333333334,
+     "viol_phase2": 0.832,
+     "cost_mean": 0.0049602031
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.548,
+     "viol_phase2": 0.8106666666666666,
+     "cost_mean": 0.004976383649999999
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.566,
+     "viol_phase2": 0.8133333333333334,
+     "cost_mean": 0.004992026416666666
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5586666666666666,
+     "viol_phase2": 0.8026666666666666,
+     "cost_mean": 0.004843861016666667
+    },
+    {
+     "mode": "oracle",
+     "alarm_t": null,
+     "recal_certified": null,
+     "recal_q": null,
+     "viol_phase1": 0.5926666666666667,
+     "viol_phase2": 0.8253333333333334,
+     "cost_mean": 0.004950691883333333
+    }
+   ]
+  },
+  "periodic": {
+   "viol_phase1": 0.5830666666666666,
+   "viol_phase2": 0.8370666666666666,
+   "cost_mean": 0.004028895496666667,
+   "alarm_delay_mean": null,
+   "recal_certified_frac": 0.0,
+   "runs": [
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.572,
+     "viol_phase2": 0.8366666666666667,
+     "cost_mean": 0.004035350716666667
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5746666666666667,
+     "viol_phase2": 0.8493333333333334,
+     "cost_mean": 0.0038192490833333335
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.576,
+     "viol_phase2": 0.8333333333333334,
+     "cost_mean": 0.00380186305
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5666666666666667,
+     "viol_phase2": 0.8253333333333334,
+     "cost_mean": 0.004376551199999999
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5793333333333334,
+     "viol_phase2": 0.8433333333333334,
+     "cost_mean": 0.003903259633333333
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5953333333333334,
+     "viol_phase2": 0.8546666666666667,
+     "cost_mean": 0.003919331833333334
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5886666666666667,
+     "viol_phase2": 0.84,
+     "cost_mean": 0.003829249916666667
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5966666666666667,
+     "viol_phase2": 0.8253333333333334,
+     "cost_mean": 0.004062746783333334
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5866666666666667,
+     "viol_phase2": 0.826,
+     "cost_mean": 0.0037475159333333337
+    },
+    {
+     "mode": "periodic",
+     "alarm_t": null,
+     "recal_certified": false,
+     "recal_q": 1.0,
+     "viol_phase1": 0.5946666666666667,
+     "viol_phase2": 0.8366666666666667,
+     "cost_mean": 0.004793836816666666
+    }
+   ]
+  }
+ }
+}

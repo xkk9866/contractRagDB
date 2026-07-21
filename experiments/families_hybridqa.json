@@ -1,0 +1,182 @@
+{
+ "track": "hybridqa",
+ "delta": 0.1,
+ "tau": 0.5,
+ "N": {
+  "train": 300,
+  "cal": 500,
+  "test": 600
+ },
+ "grid_per_rung": 20,
+ "families": {
+  "qwen": {
+   "alpha": 0.35,
+   "per_rung_risk": [
+    0.565,
+    0.4683333333333333,
+    0.3383333333333333,
+    0.3
+   ],
+   "per_rung_cost_mCNY": [
+    0.178227,
+    0.23105950000000006,
+    1.7654440000000002,
+    7.287308
+   ],
+   "strongest_risk": 0.3,
+   "strongest_cost_mCNY": 7.287308,
+   "oracle_risk": 0.21833333333333332,
+   "oracle_cost_mCNY": 3.1796512499999996,
+   "contractrag": {
+    "certified": true,
+    "selected": "thr(q=0.85)",
+    "test_risk": 0.32,
+    "test_cost_mCNY": 6.936980833333333,
+    "n_certified": 5,
+    "n_tested": 6,
+    "n_candidates": 69,
+    "lat_p95": 5.281501471996306
+   },
+   "contractrag_grid": {
+    "certified": false,
+    "selected": "fixed(3)",
+    "test_risk": 0.3,
+    "test_cost_mCNY": 7.287308,
+    "n_candidates": 8029
+   },
+   "utility_router": {
+    "lambda": 398.1071705534977,
+    "test_risk": 0.395,
+    "test_cost_mCNY": 0.36917891666666663
+   },
+   "cost_saving_vs_strongest": 1.0505013888727048
+  },
+  "deepseek": {
+   "alpha": 0.35,
+   "per_rung_risk": [
+    0.525,
+    0.36833333333333335,
+    0.42333333333333334,
+    0.295
+   ],
+   "per_rung_cost_mCNY": [
+    1.05016,
+    1.3714933333333335,
+    4.05592,
+    33.50942
+   ],
+   "strongest_risk": 0.295,
+   "strongest_cost_mCNY": 33.50942,
+   "oracle_risk": 0.20666666666666667,
+   "oracle_cost_mCNY": 12.838825,
+   "contractrag": {
+    "certified": true,
+    "selected": "util(lam=31.6)",
+    "test_risk": 0.33666666666666667,
+    "test_cost_mCNY": 2.015498333333334,
+    "n_certified": 46,
+    "n_tested": 47,
+    "n_candidates": 69,
+    "lat_p95": 1.3807720422744751
+   },
+   "contractrag_grid": {
+    "certified": true,
+    "selected": "thr(q=0.00)",
+    "test_risk": 0.33666666666666667,
+    "test_cost_mCNY": 5.089389999999999,
+    "n_candidates": 8029
+   },
+   "utility_router": {
+    "lambda": 251.18864315095823,
+    "test_risk": 0.365,
+    "test_cost_mCNY": 1.3229283333333335
+   },
+   "cost_saving_vs_strongest": 16.625873336536287
+  },
+  "glm": {
+   "alpha": 0.35,
+   "per_rung_risk": [
+    0.53,
+    0.39166666666666666,
+    0.305,
+    0.27666666666666667
+   ],
+   "per_rung_cost_mCNY": [
+    3.2348749999999997,
+    4.214318333333333,
+    8.27644,
+    22.709999999999997
+   ],
+   "strongest_risk": 0.27666666666666667,
+   "strongest_cost_mCNY": 22.709999999999997,
+   "oracle_risk": 0.17,
+   "oracle_cost_mCNY": 13.681168333333336,
+   "contractrag": {
+    "certified": true,
+    "selected": "util(lam=100)",
+    "test_risk": 0.31666666666666665,
+    "test_cost_mCNY": 4.056756666666666,
+    "n_certified": 51,
+    "n_tested": 52,
+    "n_candidates": 69,
+    "lat_p95": 1.1908171653747557
+   },
+   "contractrag_grid": {
+    "certified": true,
+    "selected": "util(lam=10)",
+    "test_risk": 0.3,
+    "test_cost_mCNY": 4.996465000000001,
+    "n_candidates": 8029
+   },
+   "utility_router": {
+    "lambda": 158.48931924611142,
+    "test_risk": 0.355,
+    "test_cost_mCNY": 3.7596366666666667
+   },
+   "cost_saving_vs_strongest": 5.598068079015502
+  },
+  "gemma": {
+   "alpha": 0.45,
+   "per_rung_risk": [
+    0.8616666666666667,
+    0.5866666666666667,
+    0.44,
+    0.395
+   ],
+   "per_rung_cost_mCNY": [
+    0.11752753516944446,
+    0.18121809442037037,
+    0.9371619962712963,
+    0.6574549462842592
+   ],
+   "strongest_risk": 0.395,
+   "strongest_cost_mCNY": 0.6574549462842592,
+   "oracle_risk": 0.28833333333333333,
+   "oracle_cost_mCNY": 1.0631547017962963,
+   "contractrag": {
+    "certified": true,
+    "selected": "util(lam=178)",
+    "test_risk": 0.43166666666666664,
+    "test_cost_mCNY": 0.5710103694333333,
+    "n_certified": 29,
+    "n_tested": 30,
+    "n_candidates": 69,
+    "lat_p95": 7.522856652736662
+   },
+   "contractrag_grid": {
+    "certified": true,
+    "selected": "fixed(2)",
+    "test_risk": 0.44,
+    "test_cost_mCNY": 0.9371619962712963,
+    "n_candidates": 8029
+   },
+   "utility_router": {
+    "lambda": 316.22776601683796,
+    "test_risk": 0.465,
+    "test_cost_mCNY": 0.49021266850555556
+   },
+   "cost_saving_vs_strongest": 1.151388803913864,
+   "certified_at_0.35": false
+  }
+ }
+}

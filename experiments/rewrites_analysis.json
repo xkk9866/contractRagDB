@@ -1,0 +1,70 @@
+{
+ "tau": 0.5,
+ "delta_r": 0.05,
+ "n_cal": 500,
+ "n_test": 500,
+ "variants": [
+  {
+   "name": "base",
+   "mean_loss_cal": 0.34,
+   "mean_loss_test": 0.348,
+   "mean_cost": 0.0017433944,
+   "harm_rate_cal": 0.0,
+   "harm_rate_test": 0.0,
+   "voucher_eps": 0.005973551516349557
+  },
+  {
+   "name": "R1 prefilter",
+   "mean_loss_cal": 0.338,
+   "mean_loss_test": 0.362,
+   "mean_cost": 0.001748304,
+   "harm_rate_cal": 0.014,
+   "harm_rate_test": 0.03,
+   "voucher_eps": 0.026134711867926545
+  },
+  {
+   "name": "R2 k-trunc",
+   "mean_loss_cal": 0.366,
+   "mean_loss_test": 0.392,
+   "mean_cost": 0.0011066332000000002,
+   "harm_rate_cal": 0.06,
+   "harm_rate_test": 0.084,
+   "voucher_eps": 0.08050473428435707
+  },
+  {
+   "name": "R3 no-rerank",
+   "mean_loss_cal": 0.352,
+   "mean_loss_test": 0.368,
+   "mean_cost": 0.001689126,
+   "harm_rate_cal": 0.058,
+   "harm_rate_test": 0.07,
+   "voucher_eps": 0.07824266578566919
+  },
+  {
+   "name": "R4 gen-down",
+   "mean_loss_cal": 0.444,
+   "mean_loss_test": 0.468,
+   "mean_cost": 0.00033328845,
+   "harm_rate_cal": 0.13,
+   "harm_rate_test": 0.152,
+   "voucher_eps": 0.15737708602971517
+  },
+  {
+   "name": "R-all composed",
+   "mean_loss_cal": 0.532,
+   "mean_loss_test": 0.576,
+   "mean_cost": 0.00020991285,
+   "harm_rate_cal": 0.218,
+   "harm_rate_test": 0.262,
+   "voucher_eps": 0.2505784485906961
+  }
+ ],
+ "composition": {
+  "union_voucher": 0.34225919796766796,
+  "direct_certificate": 0.2505784485906961,
+  "realized_harm_cal": 0.218,
+  "realized_harm_test": 0.262,
+  "nsh_violation_rate": 0.08,
+  "tightness_ratio": 1.3658764346758587
+ }
+}

@@ -1,0 +1,209 @@
+﻿=== hybridqa / train: 5000 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_train_matrix.jsonl
+rung 0: 4200 queries
+  retrieve 200/4200 (0s)
+  retrieve 400/4200 (1s)
+  retrieve 600/4200 (1s)
+  retrieve 800/4200 (1s)
+  retrieve 1000/4200 (2s)
+  retrieve 1200/4200 (2s)
+  retrieve 1400/4200 (3s)
+  retrieve 1600/4200 (3s)
+  retrieve 1800/4200 (3s)
+  retrieve 2000/4200 (4s)
+  retrieve 2200/4200 (4s)
+  retrieve 2400/4200 (4s)
+  retrieve 2600/4200 (5s)
+  retrieve 2800/4200 (5s)
+  retrieve 3000/4200 (5s)
+  retrieve 3200/4200 (6s)
+  retrieve 3400/4200 (6s)
+  retrieve 3600/4200 (7s)
+  retrieve 3800/4200 (7s)
+  retrieve 4000/4200 (7s)
+  retrieve 4200/4200 (8s)
+  generate: 4200 calls, 0.738 CNY, 59s
+python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-23f2b4e5-c932-4e8a-80d5-80212ef0f59e.ps1:83 字符: 178
++ ... f0a578873"; python scripts\run_ladder.py hybridqa --split train --wor ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 202/202 [00:00<00:00, 10271.06it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/4200 (23s)
+  features 400/4200 (28s)
+  features 600/4200 (33s)
+  features 800/4200 (37s)
+  features 1000/4200 (42s)
+  features 1200/4200 (47s)
+  features 1400/4200 (51s)
+  features 1600/4200 (56s)
+  features 1800/4200 (61s)
+  features 2000/4200 (65s)
+  features 2200/4200 (70s)
+  features 2400/4200 (74s)
+  features 2600/4200 (79s)
+  features 2800/4200 (83s)
+  features 3000/4200 (88s)
+  features 3200/4200 (92s)
+  features 3400/4200 (97s)
+  features 3600/4200 (102s)
+  features 3800/4200 (106s)
+  features 4000/4200 (111s)
+  features 4200/4200 (115s)
+rung 1: 4200 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 199/199 [00:00<00:00, 9311.42it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 393/393 [00:00<00:00, 9859.80it/s]
+  retrieve 200/4200 (43s)
+  retrieve 400/4200 (66s)
+  retrieve 600/4200 (88s)
+  retrieve 800/4200 (108s)
+  retrieve 1000/4200 (130s)
+  retrieve 1200/4200 (150s)
+  retrieve 1400/4200 (171s)
+  retrieve 1600/4200 (190s)
+  retrieve 1800/4200 (211s)
+  retrieve 2000/4200 (231s)
+  retrieve 2200/4200 (251s)
+  retrieve 2400/4200 (271s)
+  retrieve 2600/4200 (291s)
+  retrieve 2800/4200 (318s)
+  retrieve 3000/4200 (354s)
+  retrieve 3200/4200 (376s)
+  retrieve 3400/4200 (399s)
+  retrieve 3600/4200 (422s)
+  retrieve 3800/4200 (444s)
+  retrieve 4000/4200 (464s)
+  retrieve 4200/4200 (484s)
+  generate: 4200 calls, 0.957 CNY, 55s
+  features 200/4200 (6s)
+  features 400/4200 (11s)
+  features 600/4200 (17s)
+  features 800/4200 (23s)
+  features 1000/4200 (29s)
+  features 1200/4200 (35s)
+  features 1400/4200 (41s)
+  features 1600/4200 (47s)
+  features 1800/4200 (53s)
+  features 2000/4200 (59s)
+  features 2200/4200 (65s)
+  features 2400/4200 (70s)
+  features 2600/4200 (76s)
+  features 2800/4200 (82s)
+  features 3000/4200 (87s)
+  features 3200/4200 (93s)
+  features 3400/4200 (99s)
+  features 3600/4200 (105s)
+  features 3800/4200 (111s)
+  features 4000/4200 (116s)
+  features 4200/4200 (122s)
+rung 2: 4200 queries
+  retrieve 200/4200 (30s)
+  retrieve 400/4200 (60s)
+  retrieve 600/4200 (89s)
+  retrieve 800/4200 (118s)
+  retrieve 1000/4200 (149s)
+  retrieve 1200/4200 (179s)
+  retrieve 1400/4200 (208s)
+  retrieve 1600/4200 (238s)
+  retrieve 1800/4200 (268s)
+  retrieve 2000/4200 (298s)
+  retrieve 2200/4200 (328s)
+  retrieve 2400/4200 (359s)
+  retrieve 2600/4200 (390s)
+  retrieve 2800/4200 (419s)
+  retrieve 3000/4200 (449s)
+  retrieve 3200/4200 (478s)
+  retrieve 3400/4200 (508s)
+  retrieve 3600/4200 (538s)
+  retrieve 3800/4200 (569s)
+  retrieve 4000/4200 (599s)
+  retrieve 4200/4200 (628s)
+  generate: 4200 calls, 7.370 CNY, 99s
+  features 200/4200 (6s)
+  features 400/4200 (13s)
+  features 600/4200 (19s)
+  features 800/4200 (25s)
+  features 1000/4200 (31s)
+  features 1200/4200 (38s)
+  features 1400/4200 (44s)
+  features 1600/4200 (50s)
+  features 1800/4200 (56s)
+  features 2000/4200 (63s)
+  features 2200/4200 (69s)
+  features 2400/4200 (75s)
+  features 2600/4200 (82s)
+  features 2800/4200 (88s)
+  features 3000/4200 (94s)
+  features 3200/4200 (100s)
+  features 3400/4200 (107s)
+  features 3600/4200 (113s)
+  features 3800/4200 (119s)
+  features 4000/4200 (125s)
+  features 4200/4200 (131s)
+rung 3: 4200 queries
+  retrieve 200/4200 (41s)
+  retrieve 400/4200 (82s)
+  retrieve 600/4200 (123s)
+  retrieve 800/4200 (163s)
+  retrieve 1000/4200 (205s)
+  retrieve 1200/4200 (247s)
+  retrieve 1400/4200 (288s)
+  retrieve 1600/4200 (329s)
+  retrieve 1800/4200 (371s)
+  retrieve 2000/4200 (413s)
+  retrieve 2200/4200 (454s)
+  retrieve 2400/4200 (496s)
+  retrieve 2600/4200 (537s)
+  retrieve 2800/4200 (578s)
+  retrieve 3000/4200 (619s)
+  retrieve 3200/4200 (661s)
+  retrieve 3400/4200 (703s)
+  retrieve 3600/4200 (746s)
+  retrieve 3800/4200 (787s)
+  retrieve 4000/4200 (828s)
+  retrieve 4200/4200 (869s)
+  generate: 4200 calls, 30.435 CNY, 677s
+  features 200/4200 (7s)
+  features 400/4200 (14s)
+  features 600/4200 (21s)
+  features 800/4200 (27s)
+  features 1000/4200 (34s)
+  features 1200/4200 (41s)
+  features 1400/4200 (48s)
+  features 1600/4200 (55s)
+  features 1800/4200 (62s)
+  features 2000/4200 (69s)
+  features 2200/4200 (76s)
+  features 2400/4200 (82s)
+  features 2600/4200 (89s)
+  features 2800/4200 (96s)
+  features 3000/4200 (103s)
+  features 3200/4200 (110s)
+  features 3400/4200 (117s)
+  features 3600/4200 (123s)
+  features 3800/4200 (130s)
+  features 4000/4200 (137s)
+  features 4200/4200 (144s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_train_matrix.jsonl

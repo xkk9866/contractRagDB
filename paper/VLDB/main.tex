@@ -1,0 +1,307 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xspace}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+
+\newcommand{\system}{\textsc{ContractRAG}\xspace}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+
+\title{\system: Certified Contract-Aware Query Optimization\\for Hybrid Retrieval-Augmented Generation}
+
+\author{Anonymous}
+\affiliation{\institution{Anonymous}\country{}}
+
+\begin{abstract}
+Retrieval-augmented generation (RAG) pipelines over heterogeneous data ---
+tables, text corpora, vector indexes, and knowledge-graph APIs --- expose
+dozens of execution knobs whose settings induce order-of-magnitude cost
+differences at similar answer quality. Existing systems either fix one
+pipeline for an entire workload, or route queries with uncalibrated
+heuristics; neither can promise anything about the fraction of answers that
+will violate an application's quality, citation, freshness, or latency
+requirements. We introduce \emph{evidence contracts}, a declarative interface
+in which the application states admissible violation rates, and \system, a
+query optimizer that treats contract feasibility as a statistical testing
+problem rather than a point-estimate comparison. \system searches a
+heterogeneous policy space --- escalation ladders derived from cost-reducing
+plan rewrites, model-selection routers, group-conditional variants, and,
+under strict contracts, policies with certified deferral to human review
+--- and deploys the cheapest policy in the prefix certified by a
+distribution-free fixed-sequence test on calibration data, yielding
+finite-sample contract guarantees. Approximate rewrites carry empirical
+\emph{risk vouchers} that
+guide plan enumeration; an anytime-valid e-process monitor --- valid also
+under subsampled auditing --- detects workload
+and data drift after deployment and drives a recalibration loop whose
+geometric error-budget schedule stays valid over arbitrarily many
+alarms. On four hybrid
+RAG benchmarks (HybridQA, CRAG, ASQA, QAMPARI) with real token-metered
+execution, we verify the guarantee directly on exact finite-population
+risk: across 1000 calibration draws \system's deployed policies exceed
+their contract in at most 0.8\% of draws against a $\delta=10\%$ budget,
+while empirical tuning, Bayesian
+optimization, and router baselines violate in up to 64\% of draws; at
+matched contract levels \system cuts LLM cost against the strongest fixed
+pipeline by up to 20$\times$ (10--18$\times$ once monitoring audits are
+metered), and the guarantee carries unchanged across four generator
+families from four model developers on two serving backends ---
+including a locally served open-weight family metered in GPU-seconds.
+\end{abstract}
+
+\maketitle
+
+\input{sec_intro}
+\input{sec_contracts}
+\input{sec_optimizer}
+\input{sec_runtime}
+\input{sec_system}
+\input{sec_experiments}
+\input{sec_related}
+
+\section{Conclusion}
+\label{sec:conclusion}
+RAG turned query optimization into a statistical discipline: plans are
+inequivalent, quality is stochastic, and constraints can only be
+established by inference. \system\ draws the consequence --- feasibility
+by hypothesis test; search guided but never validated by learned
+estimates (selectivity-driven access paths, telescoping risk vouchers);
+and monitoring by an anytime-valid restart-mixture e-detector that
+localizes drift, tolerates subsampled audits, and closes the loop with
+certified recalibration under a lifetime error budget ---
+and shows on four hybrid benchmarks and four generator families from
+four model developers that this discipline costs little and buys the
+only thing an application can build on: a promise that holds. We see
+evidence contracts as a natural interface for the emerging semantic data
+stack, and certified optimization as the execution-engine counterpart that
+makes the interface meaningful.
+
+\begin{acks}
+Datasets: HybridQA/WikiTables, CRAG (+ official mock KG API), ALCE-ASQA,
+ALCE-QAMPARI. Evaluation follows each benchmark's official protocol; LLM
+executions are token-metered DashScope calls (Qwen, DeepSeek, GLM) and
+GPU-second-metered local Ollama serving (Gemma~3).
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\appendix
+
+\section{Proofs}
+\label{app:proofs}
+
+\subsection{Theorem~\ref{thm:validity}}
+Fix the candidate order $\pi_{(1)}, \pi_{(2)}, \dots$ (a function of the
+train split only, hence independent of the calibration sample). For
+candidate $\pi$ let $H_0(\pi) = \bigcup_j \{R_j(\pi) > \alpha_j\}$ be its
+composite null. The per-candidate test rejects iff every constraint's
+Hoeffding--Bentkus p-value is $\le \delta$. Each $p^{(j)}_\pi$ is a valid
+p-value for $H_0^{(j)}$ \cite{bentkus2004hoeffding,angelopoulos2021ltt};
+by the intersection--union principle \cite{berger1982iut}, when
+$H_0(\pi)$ holds at least one $H_0^{(j)}$ holds, so
+$\Prob(\text{reject } \pi) \le \Prob(p^{(j^\ast)}_\pi \le \delta) \le
+\delta$ for a true null $j^\ast$: the composite test has size $\le\delta$.
+Let $k^\ast$ be the index of the first infeasible candidate in the order
+(if none, no error is possible). The procedure deploys an infeasible
+candidate only if the walk certifies $\pi_{(k^\ast)}$ (it cannot reach
+later candidates without doing so, and all earlier candidates are
+feasible). That event has probability $\le \delta$. Choosing the cheapest
+\emph{certified} candidate only ever selects among candidates that were
+certified, so the error event is unchanged. \hfill$\square$
+
+\subsection{Proposition~\ref{prop:composition}}
+Write $\rho_i^{\mathrm{step}} = \Prob_q(\ell(P_i, q) > \ell(P_{i-1}, q))$
+for the stepwise harm of $R_i$ against its predecessor. \emph{Deterministic
+inclusion}: for any query $q$ with $\ell(P_m, q) > \ell(P_0, q)$, the
+telescoping sum $\sum_{i=1}^m [\ell(P_i, q) - \ell(P_{i-1}, q)] =
+\ell(P_m, q) - \ell(P_0, q) > 0$ forces at least one strictly positive
+summand, i.e., $q \in \{\ell(P_i) > \ell(P_{i-1})\}$ for some $i$. Hence
+$\{\ell(P_m) > \ell(P_0)\} \subseteq \bigcup_i \{\ell(P_i) >
+\ell(P_{i-1})\}$ pointwise, with no assumption on the rewrites. Taking
+probabilities, $\rho(R_m \cdots R_1; P_0) \le \sum_i \rho_i^{\mathrm{step}}$.
+Each step voucher satisfies $\Prob(\rho_i^{\mathrm{step}} >
+\hat\eps_i^{\mathrm{step}}) \le \delta_r$ (Clopper--Pearson); on the event
+that all $m$ bounds hold (probability $\ge 1 - m\delta_r$ by a union
+bound over the $m$ vouchers, the only stochastic step),
+$\rho(R_m \cdots R_1; P_0) \le \sum_i \hat\eps_i^{\mathrm{step}}$.
+\hfill$\square$
+
+\emph{Remark.} The base-relative union bound (each rewrite vouchered
+against $P_0$) requires the additional no-synergistic-harm assumption
+$\{\ell(P_m) > \ell(P_0)\} \subseteq \bigcup_i \{\ell(R_i(P_0)) >
+\ell(P_0)\}$, which composed rewrites violate on real workloads
+(\S\ref{sec:exp-rewrites}); the telescoping decomposition replaces that
+behavioral assumption with an algebraic identity by conditioning each
+voucher on the actual chain prefix.
+
+\subsection{Proposition~\ref{prop:eprocess}}
+Under the null $\E[\ell_t \mid \mathcal{F}_{t-1}] \le \alpha$, each per-step
+factor satisfies
+$\E[1 + w(\ell_t - \alpha) \mid \mathcal{F}_{t-1}]
+= 1 + w(\E[\ell_t \mid \mathcal{F}_{t-1}] - \alpha) \le 1$
+for any $w \in (0, 1/\alpha)$ and $\ell_t \in [0,1]$ (the factor is also
+nonnegative since $w < 1/\alpha$ and $\ell_t \ge 0$). Hence each restarted
+product $E_t^{(r,w)} = \prod_{i=r}^{t}(1 + w(\ell_i - \alpha))$ is a
+nonnegative supermartingale, equal to $1$ for $t < r$, so
+$\E[E_t^{(r,w)} \mid \mathcal{F}_{t-1}] \le E_{t-1}^{(r,w)}$ for all $t$.
+The statistic in~\eqref{eq:mixdetector},
+\[
+M_t = \sum_{r=1}^{t}\sum_{w \in W}\frac{1}{T|W|}\,E_t^{(r,w)}
+      + \Big(1 - \frac{t}{T}\Big),
+\]
+is a fixed convex combination of these supermartingales and the constants
+$1$ (the not-yet-started restarts $r > t$, each contributing
+$\tfrac{1}{T|W|}\cdot 1$, which total $1 - t/T$). A convex combination of
+nonnegative supermartingales, with weights fixed in advance and summing to
+one, is again a nonnegative supermartingale, and $M_0 = 1$. This is exactly
+where the mixture is needed: a \emph{maximum} $\max_{r} E_t^{(r,w)}$ is not
+a supermartingale (the maximizing index is chosen with hindsight), so Ville
+would not apply to it. Applying Ville's inequality \cite{ville1939etude} to
+$M_t$ gives $\Prob(\exists t \le T : M_t \ge 1/\delta)
+= \Prob(\sup_{t \le T} M_t \ge 1/\delta) \le \E[M_0]\,\delta = \delta$.
+\hfill$\square$
+
+\subsection{Proposition~\ref{prop:delay}}
+Consider the single mixture component with restart $r = \tau + 1$ and the
+growth-optimal grid bet $w^\ast \in \arg\max_{w \in W}\,
+\E[\log(1 + w(\ell_t - \alpha))]$, whose post-change per-step log-growth is
+$g^\ast > 0$. Its increments
+$X_i = \log\big(1 + w^\ast(\ell_i - \alpha)\big)$ are bounded
+($|X_i| \le \log\frac{1}{1-w^\ast\alpha} \vee \log(1 + w^\ast(1-\alpha))
+=: b$) with conditional mean $\ge g^\ast$ for $i > \tau$. By the
+Azuma--Hoeffding bound applied to $\sum_{i=\tau+1}^{\tau+n}(X_i - g^\ast)$,
+with probability $\ge 1 - \delta'$,
+\[
+\log E_{\tau+n}^{(\tau+1, w^\ast)}
+= \sum_{i=\tau+1}^{\tau+n} X_i
+\ \ge\ n g^\ast - b\sqrt{2 n \log(1/\delta')}.
+\]
+Since $M_{\tau+n} \ge \frac{1}{T|W|}E_{\tau+n}^{(\tau+1,w^\ast)}$, the alarm
+threshold $M_{\tau+n} \ge 1/\delta$ is reached once
+$n g^\ast - b\sqrt{2 n \log(1/\delta')} \ge \log(1/\delta) + \log(T|W|)$.
+Solving this scalar inequality gives
+$n = O\big((\log(1/\delta) + \log(T|W|) + \log(1/\delta'))/g^\ast\big)$,
+independent of $\tau$. For a Bernoulli loss the Kelly bet
+$w^\ast = \frac{\alpha'-\alpha}{\alpha'(1-\alpha)}$ attains
+$g^\ast = \mathrm{KL}(\alpha' \Vert \alpha)$; any grid $W$ bracketing it
+loses only a constant factor, giving the stated
+$\mathrm{KL}(\alpha'\Vert\alpha)$ rate. \hfill$\square$
+
+\subsection{Proposition~\ref{prop:consistency}}
+Let $\pi^\dagger$ be the cheapest candidate with $R(\pi^\dagger) \le
+\alpha - \gamma$, at position $K$ in the walk, with all true risks
+non-decreasing along the order up to $K$.
+\emph{Certification of the prefix.} For every $\pi_{(k)}$, $k \le
+K$: $R(\pi_{(k)}) \le \alpha - \gamma$, and by Hoeffding the empirical
+risk is $\le \alpha - \gamma/2$ with probability
+$1 - e^{-n\gamma^2/2}$; the HB p-value at empirical risk
+$\alpha - \gamma/2$ is $\le e^{-n\,h_1(\alpha-\gamma/2,\alpha)} \le
+e^{-n\gamma^2/2}$, which is $\le \delta$ once
+$n \ge 2\gamma^{-2}\log(1/\delta)$. A union bound over the $K$ candidates
+(at level $\delta'/K$ each) shows all are certified simultaneously with
+probability $\ge 1 - \delta'$ when
+$n \ge 2\gamma^{-2}(\log(1/\delta) \vee \log(K/\delta'))$; on this event
+the walk reaches at least position $K$ and $\pi^\dagger$ is certified.
+\emph{Uniform cost estimation.} The walk does not stop at $K$ --- it
+continues until the first failed test --- so the deployed policy may
+sit at any position in the certified set, whose extent is
+data-dependent and not known in advance. We therefore control cost
+estimates uniformly over \emph{all} $M$ candidates: per-query costs
+lie in $[0, C_{\max}]$,
+so by Hoeffding plus a union bound over the $M$ candidates (at level
+$\delta'/M$ each), with
+probability $\ge 1 - \delta'$ every candidate's estimated mean
+calibration cost satisfies $|\hat c(\pi) - c(\pi)| \le \eps_n :=
+C_{\max}\sqrt{\log(2M/\delta')/(2n)}$ simultaneously --- in particular
+for $\hat\pi$ and $\pi^\dagger$, wherever the walk terminates. The
+deployed
+$\hat\pi$ minimizes $\hat c$ over the certified set, which contains
+$\pi^\dagger$, hence $c(\hat\pi) \le \hat c(\hat\pi) + \eps_n \le
+\hat c(\pi^\dagger) + \eps_n \le c(\pi^\dagger) + 2\eps_n$. Both events
+hold together with probability $\ge 1 - 2\delta'$. (Restricting the
+cheapest-selection to the first $K$ walk positions, or estimating
+costs on an independent split, shrinks the union bound from $M$ to $K$
+at no cost to validity.) Without the
+monotone-order premise the walk may stop before $K$; the
+certified-prefix optimality and the $2\eps_n$ bound continue to hold
+with $\pi^\dagger$ replaced by the cheapest feasible candidate of the
+certified prefix, and validity is unaffected.
+\hfill$\square$
+
+\subsection{Proposition~\ref{prop:lifetime}}
+Index epochs $k = 0, 1, 2, \dots$ by their terminating events ---
+an alarm or the exhaustion of the monitor's horizon $T$ (scheduled
+restart). Each epoch lasts at most $T$ queries, so an unbounded
+lifetime is covered by countably many epochs, and each epoch's monitor
+is a fresh finite-horizon detector run strictly within its own block
+--- the regime in which Proposition~\ref{prop:eprocess} holds. Epoch
+$k$'s certification is a fixed-sequence test at level $\delta_k/2$ on
+data from that epoch alone --- the initial certification is epoch 0's,
+run at $\delta_0/2 = \delta/4$ on the initial calibration split, so it
+sits inside the schedule rather than adding a $\delta$-sized event on
+top of it --- and by Theorem~\ref{thm:validity} the
+probability that epoch $k$ deploys a policy violating its contract (on
+the epoch's distribution) is at most $\delta_k/2$; epoch $k$'s monitor
+is an e-detector at level $\delta_k/2$, so by
+Proposition~\ref{prop:eprocess} its false-alarm probability while the
+epoch is compliant is at most $\delta_k/2$. Horizon-triggered epoch
+boundaries consume no additional error probability: exhausting $T$
+without alarm is a deterministic event, and the subsequent
+recertification is already accounted at level $\delta_{k+1}/2$. The
+lifetime error event is
+the union over $k$; by countable subadditivity its probability is at
+most $\sum_{k \ge 0} \delta_k = \sum_{k \ge 0} \delta/2^{k+1} =
+\delta$, with no bound on the number of epochs. For the delay claim,
+the $k$-th monitor's threshold is $\log(2^{k+2}/\delta) =
+\log(1/\delta) + (k+2)\log 2$, which enters
+Proposition~\ref{prop:delay} additively, giving the stated
+$(k+2)\log 2 / g^\ast$ increment; a change straddling a block boundary
+is caught by the next block's monitor, adding at most the residual of
+the current block to the delay. Under the infinite-horizon alternative
+--- prior weights $\frac{1}{r(r+1)}$ over restart times $r$, which sum
+to one --- validity holds with no horizon at all, but the mixture mass
+at restart $\tau$ is $\Theta(\tau^{-2})$, so the threshold term
+becomes $\log(\tau^2|W|)$ and the delay inherits a $\log\tau$
+dependence on the change time; the block construction avoids this.
+\hfill$\square$
+
+\subsection{Subsampled audits}
+Let each query be audited independently with probability $r$ (the coin
+independent of the query) and run the monitor on the audited
+subsequence. Conditional on being audited, a query is an unbiased draw
+from the deployment distribution, so the audited losses satisfy the
+same conditional-mean hypotheses as the full stream and
+Propositions~\ref{prop:eprocess}--\ref{prop:lifetime} apply verbatim
+with $t$ counting audited queries. A post-change window of $N$ audited
+queries occupies $N/r$ wall-clock queries in expectation (concentrating
+at rate $O(\sqrt{N}/r)$), giving the $1/r$ delay dilation of
+\S\ref{sec:monitor}. \hfill$\square$
+
+\section{Reproducibility}
+All matrices, calibration artifacts, scripts, and the SQLite LLM-call
+cache (token-exact) are available at
+%% TODO: create the anonymized repository and update this URL before
+%% submission; replace with a public repository + DOI for camera-ready.
+\url{https://anonymous.4open.science/r/contractrag}; every number in
+the paper regenerates
+from the artifact without further LLM calls.
+
+\end{document}
+

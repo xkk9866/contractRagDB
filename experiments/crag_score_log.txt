@@ -1,0 +1,9 @@
+﻿judging 1600 answers ...
+judge cost: 0.46 CNY over 917 calls
+crag train: 1600 scored
+judging 3884 answers ...
+judge cost: 1.12 CNY over 2221 calls
+crag cal: 3884 scored
+judging 5340 answers ...
+judge cost: 1.47 CNY over 2941 calls
+crag test: 5340 scored

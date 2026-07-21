@@ -1,0 +1,71 @@
+{
+ "track": "hybridqa",
+ "contract": "quality",
+ "tau": 0.5,
+ "alpha": 0.35,
+ "delta": 0.1,
+ "repeats": 1000,
+ "strongest_cost": 0.009386101562016701,
+ "methods": {
+  "contractrag_opt": {
+   "violation_rate": 0.047,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.32414046391752577,
+   "mean_pop_risk": 0.32424203526136713,
+   "mean_excess_when_violate": 0.004452730862031187,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.0010544265402963916,
+   "cost_ratio_vs_strongest": 0.11233913604380785
+  },
+  "contractrag": {
+   "violation_rate": 0.07,
+   "violation_rate_pop": 0.006,
+   "mean_risk": 0.33222757731958763,
+   "mean_pop_risk": 0.3323080729972162,
+   "mean_excess_when_violate": 0.005246686303387354,
+   "mean_pop_excess_when_violate": 0.0018403959171048867,
+   "mean_cost": 0.002945754960734536,
+   "cost_ratio_vs_strongest": 0.3138422209978314
+  },
+  "empirical_no_cert": {
+   "violation_rate": 0.48,
+   "violation_rate_pop": 0.47,
+   "mean_risk": 0.34909304123711343,
+   "mean_pop_risk": 0.34917862666254257,
+   "mean_excess_when_violate": 0.009110287800687311,
+   "mean_pop_excess_when_violate": 0.005247415285190643,
+   "mean_cost": 0.0017658023685953607,
+   "cost_ratio_vs_strongest": 0.18812947600536722
+  },
+  "bo_thresholds": {
+   "violation_rate": 0.583,
+   "violation_rate_pop": 0.572,
+   "mean_risk": 0.3522317010309279,
+   "mean_pop_risk": 0.35107129600989795,
+   "mean_excess_when_violate": 0.00967931601563193,
+   "mean_pop_excess_when_violate": 0.005690551329276994,
+   "mean_cost": 0.0011263993281443298,
+   "cost_ratio_vs_strongest": 0.12000715320432898
+  },
+  "utility_router": {
+   "violation_rate": 0.367,
+   "violation_rate_pop": 0.16,
+   "mean_risk": 0.34577757731958764,
+   "mean_pop_risk": 0.34592390968141046,
+   "mean_excess_when_violate": 0.007955279642686611,
+   "mean_pop_excess_when_violate": 0.008699350448499862,
+   "mean_cost": 0.0006869250457087627,
+   "cost_ratio_vs_strongest": 0.07318534123779179
+  },
+  "abacus": {
+   "violation_rate": 0.099,
+   "violation_rate_pop": 0.099,
+   "mean_risk": 0.31059716494845363,
+   "mean_pop_risk": 0.31069223631302195,
+   "mean_excess_when_violate": 0.11796834322607519,
+   "mean_pop_excess_when_violate": 0.11673196549472455,
+   "mean_cost": 0.003189434124896907,
+   "cost_ratio_vs_strongest": 0.33980392219532135
+  }
+ }
+}

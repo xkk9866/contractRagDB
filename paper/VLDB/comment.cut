@@ -1,0 +1,4 @@
+Datasets: HybridQA/WikiTables, CRAG (+ official mock KG API), ALCE-ASQA,
+ALCE-QAMPARI. Evaluation follows each benchmark's official protocol; LLM
+executions are token-metered DashScope calls (Qwen, DeepSeek, GLM) and
+GPU-second-metered local Ollama serving (Gemma~3).

@@ -1,0 +1,51 @@
+{
+ "delta": 0.1,
+ "draws": 200,
+ "tau": 0.5,
+ "families": {
+  "qwen": {
+   "alpha": 0.35,
+   "n_candidates": 69,
+   "viol_prob_certified": 0.045,
+   "viol_prob_empirical": 0.42,
+   "viol_prob_certified_pop": 0.0,
+   "viol_prob_empirical_pop": 0.3,
+   "mean_cost_certified_mCNY": 6.862450357372192,
+   "mean_cost_empirical_mCNY": 0.9618539501389023,
+   "mean_test_risk_certified": 0.3083426942316334
+  },
+  "deepseek": {
+   "alpha": 0.35,
+   "n_candidates": 69,
+   "viol_prob_certified": 0.095,
+   "viol_prob_empirical": 0.23,
+   "viol_prob_certified_pop": 0.0,
+   "viol_prob_empirical_pop": 0.095,
+   "mean_cost_certified_mCNY": 5.878403522379959,
+   "mean_cost_empirical_mCNY": 1.4289433730300516,
+   "mean_test_risk_certified": 0.31149831805566347
+  },
+  "glm": {
+   "alpha": 0.35,
+   "n_candidates": 69,
+   "viol_prob_certified": 0.0,
+   "viol_prob_empirical": 0.055,
+   "viol_prob_certified_pop": 0.0,
+   "viol_prob_empirical_pop": 0.055,
+   "mean_cost_certified_mCNY": 4.948728406642699,
+   "mean_cost_empirical_mCNY": 4.061234137043357,
+   "mean_test_risk_certified": 0.2964656639039217
+  },
+  "gemma": {
+   "alpha": 0.45,
+   "n_candidates": 69,
+   "viol_prob_certified": 0.0,
+   "viol_prob_empirical": 0.17,
+   "viol_prob_certified_pop": 0.0,
+   "viol_prob_empirical_pop": 0.0,
+   "mean_cost_certified_mCNY": 0.7300847965513704,
+   "mean_cost_empirical_mCNY": 0.5750955198891461,
+   "mean_test_risk_certified": 0.3904461293208479
+  }
+ }
+}

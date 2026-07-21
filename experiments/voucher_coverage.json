@@ -1,0 +1,53 @@
+{
+ "delta_r": 0.05,
+ "n_cal": 500,
+ "draws": 1000,
+ "population_size": 1000,
+ "single": [
+  {
+   "name": "R1 prefilter",
+   "pop_harm": 0.022,
+   "coverage": 0.995,
+   "nominal": 0.95,
+   "voucher_mean": 0.03631043846485764,
+   "voucher_p05": 0.026134711867926545
+  },
+  {
+   "name": "R2 k-trunc",
+   "pop_harm": 0.072,
+   "coverage": 0.991,
+   "nominal": 0.95,
+   "voucher_mean": 0.0939648983163109,
+   "voucher_p05": 0.07824266578566919
+  },
+  {
+   "name": "R3 no-rerank",
+   "pop_harm": 0.064,
+   "coverage": 0.994,
+   "nominal": 0.95,
+   "voucher_mean": 0.08503379757266506,
+   "voucher_p05": 0.07142206975048561
+  },
+  {
+   "name": "R4 gen-down",
+   "pop_harm": 0.141,
+   "coverage": 0.989,
+   "nominal": 0.95,
+   "voucher_mean": 0.16864565402110254,
+   "voucher_p05": 0.14875527283047282
+  }
+ ],
+ "composition": {
+  "pop_chain_harm": 0.24,
+  "telescoping": {
+   "coverage": 1.0,
+   "nominal": 0.8,
+   "voucher_mean": 0.403467667031164
+  },
+  "direct": {
+   "coverage": 0.989,
+   "nominal": 0.95,
+   "voucher_mean": 0.27289004309469345
+  }
+ }
+}

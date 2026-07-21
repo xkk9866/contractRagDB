@@ -1,0 +1,10 @@
+﻿300 queries patched (8843 chunks aged)
+600 queries patched (17263 chunks aged)
+900 queries patched (26168 chunks aged)
+1200 queries patched (34611 chunks aged)
+1500 queries patched (43232 chunks aged)
+1800 queries patched (51479 chunks aged)
+2100 queries patched (60213 chunks aged)
+2400 queries patched (69055 chunks aged)
+2700 queries patched (77817 chunks aged)
+DONE 2706 queries, 78107 chunks got ages

@@ -1,0 +1,82 @@
+\section{Related Work}
+\label{sec:related}
+
+\system\ sits at the intersection of semantic-operator query
+optimization, adaptive RAG, and distribution-free risk control; we
+position it against each line in turn.
+
+\noindent\textbf{Semantic operator systems.} Palimpzest
+\cite{liu2025palimpzest}, LOTUS~\cite{patel2024lotus},
+DocETL~\cite{shankar2024docetl}, and DSPy~\cite{khattab2023dspy} compile
+declarative AI pipelines and search plan spaces of models, prompts, and
+operator implementations. Abacus~\cite{russo2025abacus} is the strongest
+optimizer in this line: an MAB-style sampler that estimates each physical
+plan's quality/cost/latency on validation data and returns the
+estimate-feasible cost-optimal plan. All of these optimize \emph{workload
+level, single-plan} deployments and compare \emph{point estimates} to
+constraints; none provides a finite-sample statement about the deployed
+plan's true violation rate, per-query adaptivity, or freshness/citation
+semantics. \system\ is complementary in spirit --- our rewrite lattice is a
+plan space in their sense --- but replaces estimate-feasibility with
+certification and static plans with certified adaptive policies.
+
+\noindent\textbf{Adaptive RAG and LLM routing.}
+Adaptive-RAG~\cite{jeong2024adaptiverag} routes by predicted question
+complexity; Self-RAG~\cite{asai2024selfrag} learns reflection tokens to
+decide retrieval, and active/corrective retrieval refines evidence
+during generation~\cite{jiang2023flare,yan2024corrective,xu2024recomp};
+FrugalGPT~\cite{chen2023frugalgpt},
+RouteLLM~\cite{ong2024routellm}, Hybrid-LLM~\cite{ding2024hybridllm},
+and AutoMix~\cite{aggarwal2024automix} cascade or route across model
+tiers, with RouterBench~\cite{hu2024routerbench} standardizing their
+evaluation. These systems reduce cost effectively but their
+selection rules are tuned empirically; the realized violation rate is
+whatever it happens to be --- our experiments show 15--50\% contract
+violations across calibration draws. \system\ subsumes routing as one
+candidate family (U-family) and gives it the missing guarantee. Confident
+adaptive computation for encoder--decoders~\cite{schuster2022calm} and
+conformal cascades~\cite{fisch2021admission} calibrate early exits for a
+\emph{single model's} layers or a cascade with shared scores; \system\
+calibrates heterogeneous multi-source pipelines with multi-dimensional
+contracts.
+
+\noindent\textbf{Distribution-free risk control for RAG.}
+TRAQ~\cite{li2024traq} builds conformal prediction sets over retrieved
+passages and answers; C-RAG~\cite{kang2024crag} certifies generation risk
+bounds; conformal language modeling and conformal factuality calibrate
+stopping and abstention rules on fixed
+models~\cite{quach2024conformallm,mohri2024factuality}, with recent
+extensions to conditional validity and alignment
+filtering~\cite{cherian2024validity,gui2024conformalalign};
+semantic-entropy methods detect hallucinations without gold
+labels~\cite{farquhar2024semantic}. These works establish that RAG
+risk can be controlled distribution-free, but they treat the pipeline as
+given: no plan search, no cost objective, no adaptive escalation, no
+drift handling. \system\ uses the same statistical machinery ---
+Learn-then-Test~\cite{angelopoulos2021ltt} with Hoeffding--Bentkus
+p-values, conformal risk control~\cite{angelopoulos2024crc} --- but embeds
+it \emph{inside a query optimizer}, where the tested objects are policies
+over a plan lattice and the objective is cost.
+
+\noindent\textbf{Query optimization and adaptive execution.} Our framing
+descends from cost-based optimization~\cite{selinger1979access,
+graefe1995cascades} and mid-query re-optimization
+\cite{kabra1998efficient,markl2004robust}. The analogy is precise:
+sufficiency scores are runtime cardinality feedback, vouchers are the cost
+model, certification is the execution engine's correctness contract, and
+the e-process monitor is progressive re-optimization triggered by
+statistics rather than row counts. What changes is the semantics of
+correctness --- approximate, statistical, and contract-relative rather than
+exact --- which is why the classical machinery must be rebuilt on
+hypothesis tests instead of algebraic equivalences.
+
+\noindent\textbf{Anytime-valid inference.} E-processes and test
+supermartingales~\cite{ville1939etude,shafer2021testing,ramdas2023savi,
+grunwald2024safe}
+underpin our monitor; we adopt the mixture-restart construction of
+e-detectors~\cite{shin2024edetectors} to obtain bounded false-alarm rates
+with fast detection under late drift. Our audited violation indicators
+build on RAG evaluation frameworks~\cite{es2024ragas,saadfalcon2024ares,
+ru2024ragchecker} and LLM-judge protocols~\cite{zheng2023judging}, whose
+subsampling cost we account for explicitly
+(Sec.~\ref{sec:exp-drift}).

@@ -1,0 +1,37 @@
+# Third-party datasets and corpora (multi-GB; download via scripts/README)
+external/
+data/
+
+# Keep the token-exact LLM-call cache (paper artifact)
+!data/
+data/*
+!data/llm_cache.sqlite
+!data/models/
+data/models/*
+
+# Backups and logs
+experiments/bak_pre_expand/
+*.log
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.out
+*.toc
+*.spl
+*.synctex.gz
+paper/**/main.abs
+paper/**/_*.png
+paper/**/_*.txt
+
+# Copyrighted reference PDFs (not redistributable)
+paper/KBS_refs/

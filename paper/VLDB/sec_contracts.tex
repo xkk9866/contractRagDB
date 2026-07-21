@@ -1,0 +1,120 @@
+\section{Evidence Contracts and Problem Statement}
+\label{sec:contracts}
+
+\subsection{Hybrid RAG plans}
+\label{sec:algebra}
+
+We model a hybrid RAG pipeline as a physical plan over a small operator
+algebra. Let $\mathcal{S}$ be a set of evidence sources (relational tables,
+text corpora with sparse and dense indexes, and remote structured APIs). A
+\emph{plan} $P$ is a DAG built from typed operators
+\[
+\textsf{Retrieve}_{s,k} \;\mid\; \textsf{Fuse} \;\mid\; \textsf{Rerank}_m
+\;\mid\; \textsf{Filter}_\phi \;\mid\; \textsf{Generate}_g \;\mid\;
+\textsf{Repair},
+\]
+where $\textsf{Retrieve}_{s,k}$ fetches $k$ evidence units from source $s$
+(SQL row selection, BM25, dense ANN, or API calls),
+$\textsf{Fuse}$ merges rankings (e.g., reciprocal-rank fusion),
+$\textsf{Rerank}_m$ re-scores with a cross-encoder $m$, $\textsf{Filter}_\phi$
+drops evidence failing predicate $\phi$ (e.g., an entailment or freshness
+test), $\textsf{Generate}_g$ produces the answer with LLM $g$, and
+$\textsf{Repair}$ post-edits an answer using verification feedback.
+Executing $P$ on query $q$ yields an answer $a$, an evidence set $E$ with
+citation map, and a realized \emph{execution vector}
+$x(P,q) = (\text{cost},\ \text{latency},\ \text{ages}(E),\ \dots)$ metered at
+run time. Unlike a relational plan, two syntactically different RAG plans are
+almost never output-equivalent; the notion of equivalence must be statistical,
+which is the crux of this paper.
+
+\subsection{Evidence contracts}
+
+\begin{definition}[Evidence contract]
+\label{def:contract}
+Let $\mathcal{D}$ be a query distribution. An \emph{evidence contract} is a
+tuple $C = \langle (\ell_j, \alpha_j)_{j=1}^{k}, \delta \rangle$ where each
+$\ell_j : (\pi, q) \mapsto [0,1]$ is a bounded violation loss --- e.g.,
+$\ell_{\text{qual}} = \mathbf{1}[\mathrm{quality}(\pi(q)) < \tau_q]$,
+$\ell_{\text{cite}} = \mathbf{1}[\mathrm{citation\text{-}recall}(\pi(q)) < \tau_c]$,
+$\ell_{\text{fresh}} = \mathbf{1}[\max_{e \in E(q)} \mathrm{age}(e) > \Delta_f]$,
+$\ell_{\text{lat}} = \mathbf{1}[\mathrm{latency}(\pi(q)) > B_\ell]$ ---
+$\alpha_j \in (0,1)$ are admissible violation rates, and $\delta \in (0,1)$
+bounds the probability that the deployed policy fails to satisfy the
+contract at all.
+\end{definition}
+
+Example~\ref{ex:finance}'s requirements instantiate
+Definition~\ref{def:contract} directly: four losses (correctness,
+citation, freshness, latency) with rate limits $\alpha_j = .10$ for
+the first three, $.05$ for latency, and $\delta = 0.1$, i.e., ``with
+90\% confidence over the calibration draw, the deployed pipeline
+violates none of the four rate limits.''
+
+A \emph{policy} $\pi$ maps a query to an execution schedule over plans
+(possibly running several plans adaptively; \S\ref{sec:runtime}). Its risks
+are $R_j(\pi) = \E_{q\sim\mathcal{D}}[\ell_j(\pi, q)]$ and its cost is
+$\mathrm{cost}(\pi) = \E_{q\sim\mathcal{D}}[c(\pi, q)]$ with $c$ the metered
+monetary cost. The optimization problem is
+\begin{equation}
+\label{eq:problem}
+\min_{\pi \in \Pi} \ \mathrm{cost}(\pi)
+\quad \text{s.t.} \quad R_j(\pi) \le \alpha_j \ \ \forall j ,
+\end{equation}
+where $\Pi$ is a policy space induced by the plan algebra. The
+distribution $\mathcal{D}$ is unknown; the optimizer sees $n$ i.i.d.\
+calibration queries with realized losses. \emph{Contract satisfaction can
+therefore only ever be established statistically:}
+
+\begin{definition}[$(C,\delta)$-certified deployment]
+\label{def:certified}
+A (data-dependent) selection procedure $\mathcal{A}$ mapping a calibration
+sample $Z_{1:n}$ to a policy $\hat\pi$ is \emph{$(C,\delta)$-certified} if
+\[
+\Prob_{Z_{1:n}}\big( R_j(\hat\pi) \le \alpha_j \ \forall j \big) \ \ge\ 1-\delta .
+\]
+\end{definition}
+
+This is a qualitatively different guarantee from what existing RAG
+optimizers provide. Workload-level optimizers such as
+Abacus~\cite{russo2025abacus} compare \emph{point estimates} of plan quality
+against the constraint; adaptive routers~\cite{jeong2024adaptiverag}
+provide no feasibility statement at all. Both can (and, as we show in
+\S\ref{sec:experiments}, do) deploy policies whose true violation rate
+exceeds $\alpha$ in a large fraction of calibration draws --- the
+statistical analogue of a query optimizer that silently drops rows.
+Conformal RAG methods~\cite{li2024traq,kang2024crag} do control risk, but
+for a \emph{single fixed pipeline}; they leave the cost-minimization
+dimension of~\eqref{eq:problem} untouched.
+
+\textbf{What the guarantee is about.} A contract is always stated
+\emph{with respect to a loss functional the operator can audit}: the
+guarantee of Definition~\ref{def:certified} is exact for whatever
+$\ell_j$ is plugged in --- token-F1 against gold answers, TRUE-NLI
+citation entailment, an LLM judge following a benchmark's official
+protocol, evidence age, or wall-clock latency. This is the same position
+a database occupies with respect to integrity constraints: the system
+enforces the declared predicate exactly and does not adjudicate whether
+the predicate captures the application's intent. In practice the audited
+loss is a proxy for human judgment, and the value of the certificate is
+operational: it converts ``the pipeline seemed fine on a dev set'' into
+``the audited failure rate of the deployed policy is below $\alpha$ with
+probability $1-\delta$, and a monitor will flag when that stops being
+true.'' If the operator upgrades the auditor --- e.g., replacing the LLM
+judge with periodic human audits on the calibration sample --- every
+statement in this paper carries over unchanged, because the machinery
+only requires bounded i.i.d.\ losses, never that the loss be
+machine-computed. What the certificate does \emph{not} promise is
+per-query correctness or robustness to a systematically biased auditor;
+we quantify auditor-induced slack empirically in
+\S\ref{sec:experiments} by using the official judges of each benchmark
+(CRAG's grading protocol, ALCE's TRUE-NLI), whose agreement with human
+raters is documented by their authors~\cite{yang2024cragbench,gao2023alce}.
+
+Two features of~\eqref{eq:problem} shape our design. First, the policy
+space $\Pi$ must be searched, not enumerated: it contains per-query adaptive
+policies, not just static plans. Second, the certificate must survive
+\emph{selection}: testing many candidates on the same calibration data and
+picking a ``passing'' one invalidates naive confidence intervals. \system's
+optimizer is built around a fixed-sequence multiple-testing discipline that
+pays no union-bound penalty for searching an arbitrarily long candidate
+sequence (\S\ref{sec:optimizer}).

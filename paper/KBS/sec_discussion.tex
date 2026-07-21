@@ -1,0 +1,86 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why does certification win, and when is it free?}
+The experiments locate the failure of point-estimate tuning precisely:
+selecting the cheapest configuration whose measured risk clears a
+threshold is an uncorrected multiple-testing procedure, so its winner
+is systematically the configuration whose noise broke in its favor ---
+the winner's curse. The effect is strongest exactly where adaptive
+systems are most attractive: many candidates, small quality gaps
+between adjacent tiers, and moderate audit budgets. Certification
+neutralizes the curse not by testing less but by testing in a
+data-independent order and stopping at the first failure, which caps
+the family-wise error at $\delta$ regardless of how many candidates
+follow. The cost of the guarantee is a finite-sample margin of
+0.02--0.07 at practical calibration sizes --- and on benchmarks where
+the certified family is richer than the baselines' (CRAG), the
+certified policy is simultaneously the safest and among the cheapest,
+i.e., the guarantee is free. The margin shrinks at the standard
+$O(n^{-1/2})$ rate, so operators can trade audit budget for cost
+directly.
+
+\subsection{Implications for knowledge-based systems}
+Three design lessons generalize beyond RAG. First, \emph{separate the
+promise from the search}: learned components (sufficiency scores,
+vouchers, selectivity models) should influence only which candidate is
+examined next, never whether a candidate is deployable; this division
+lets a system exploit arbitrarily aggressive heuristics without
+inheriting their failure modes. Second, \emph{knowledge acquisition is
+a plan-selection problem}: the selectivity abstraction that drives
+relational access-path selection transfers to choosing between
+structured and unstructured knowledge sources, and the same estimates
+that pick the plan can index risk bounds. Third, \emph{a certificate
+without a monitor is a snapshot}: freshness drift breaks every plan at
+once, so no amount of conservative static planning substitutes for
+anytime-valid detection plus recertification. We expect these
+principles to apply to knowledge-graph question answering, tool-using
+agents, and other knowledge services whose components are stochastic
+and priced.
+
+\subsection{Limitations and future directions}
+We acknowledge several limitations. (i) The guarantee is relative to
+the audited loss: a systematically biased auditor (an LLM judge that
+overrates fluent answers) shifts what is being certified; the
+machinery accepts human audits without modification, and the audit
+accounting of Section~\ref{sec:exp-drift} shows their cost is a
+first-order term that must be (and in our tables is) charged against
+the savings. (ii) Certification assumes the calibration sample is
+exchangeable with deployment within an epoch; adversarial or rapidly
+cycling drift would trigger frequent recalibration, and although the
+geometric spending schedule keeps lifetime validity, each cycle halves
+the remaining budget and lengthens detection delays logarithmically
+--- safe mode between an alarm and the next successful recertification
+is best-effort, not certified. (iii) The fixed-sequence procedure
+returns the cheapest policy of its certified prefix; this coincides
+with the family-wide cheapest feasible policy only under the ordering
+conditions of Proposition~\ref{prop:consistency}, and the dense-grid
+experiment shows the power cost of violating them. (iv) The policy
+families we certify are built over a linear ladder plus routers;
+richer spaces (per-operator adaptive plans, multi-agent pipelines)
+enlarge the search but also stress the power of a fixed-sequence walk
+at small audit budgets. (v) Group-conditional certification requires
+groups known at query time and pays a Bonferroni factor; overlapping
+or learned groups are future work. (vi) Our cost model is monetary;
+extending contracts to energy or carbon budgets is mechanical but
+unexplored.
+
+\subsection{Threats to validity}
+\emph{Internal validity}: all methods consume identical execution
+matrices, so comparisons cannot be confounded by retrieval variance;
+the repeated-draw protocol (1000 draws) evaluates each selected policy
+on the \emph{exact} finite population, so the reported violation
+probabilities carry Monte Carlo error of about $\pm 0.014$ and no
+test-sampling error at all.
+\emph{Construct validity}: losses follow each benchmark's official
+protocol (token-F1, CRAG's LLM-judge grading, ALCE's TRUE-NLI citation
+entailment), whose agreement with human raters is documented by their
+authors; the certificate is exact for these losses, and
+Section~\ref{sec:discussion} discusses auditor bias. \emph{External
+validity}: results cover four benchmarks, four LLM families from four
+model developers, two serving backends (one hosted API platform, one
+local deployment), and two cost currencies, but all workloads are
+English-language QA; agentic and multilingual workloads may distribute
+difficulty differently. \emph{Reproducibility}: every LLM call is
+cached token-exactly, and all numbers regenerate from the released
+artifact without further API calls.

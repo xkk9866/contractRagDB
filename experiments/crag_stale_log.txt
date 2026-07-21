@@ -1,0 +1,89 @@
+﻿=== cragfresh/cal: 500 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_cal_matrix.jsonl
+rung 0: all cached
+rung 1: all cached
+rung 2: all cached
+rung 3: all cached
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_cal_matrix.jsonl
+=== cragfresh/test: 700 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_test_matrix.jsonl
+rung 0: all cached
+rung 1: all cached
+rung 2: all cached
+rung 3: all cached
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragfresh_test_matrix.jsonl
+=== cragstale/cal: 500 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_cal_matrix.jsonl
+python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-536bd448-74d3-4d49-a278-3c4209e3f986.ps1:83 字符: 106
++ ... THONIOENCODING="utf-8"; python scripts\run_crag_stale.py 2>&1 | Out-F ...
++                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+rung 0: all cached
+rung 1: all cached
+rung 2: all cached
+rung 3: 500 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 199/199 [00:00<00:00, 7238.33it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 393/393 [00:00<00:00, 6186.45it/s]
+  retrieve 200/500 (79s)
+  retrieve 400/500 (123s)
+  generate: 500 calls, 2.981 CNY, 1s
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 202/202 [00:00<00:00, 6853.88it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/500 (19s)
+  features 400/500 (30s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_cal_matrix.jsonl
+=== cragstale/test: 700 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_test_matrix.jsonl
+rung 0: 700 queries
+  retrieve 200/700 (3s)
+  retrieve 400/700 (5s)
+  retrieve 600/700 (8s)
+  generate: 700 calls, 0.117 CNY, 1s
+  features 200/700 (8s)
+  features 400/700 (16s)
+  features 600/700 (24s)
+rung 1: 700 queries
+  retrieve 200/700 (5s)
+  retrieve 400/700 (10s)
+  retrieve 600/700 (14s)
+  generate: 700 calls, 0.274 CNY, 0s
+  features 200/700 (10s)
+  features 400/700 (21s)
+  features 600/700 (31s)
+rung 2: 700 queries
+  retrieve 200/700 (40s)
+  retrieve 400/700 (80s)
+  retrieve 600/700 (120s)
+  generate: 700 calls, 1.108 CNY, 0s
+  features 200/700 (9s)
+  features 400/700 (17s)
+  features 600/700 (26s)
+rung 3: 700 queries
+  retrieve 200/700 (42s)
+  retrieve 400/700 (84s)
+  retrieve 600/700 (125s)
+  generate: 700 calls, 4.185 CNY, 0s
+  features 200/700 (10s)
+  features 400/700 (21s)
+  features 600/700 (31s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\cragstale_test_matrix.jsonl
+CRAG_STALE_DONE

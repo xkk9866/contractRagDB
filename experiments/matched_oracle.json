@@ -1,0 +1,64 @@
+{
+ "settings": [
+  {
+   "track": "hybridqa",
+   "contract": "quality",
+   "tau": 0.5,
+   "alpha": 0.34,
+   "n_test": 3466,
+   "skyline_zero_loss": {
+    "risk": 0.19301788805539527,
+    "cost_mean": 0.0029694443306405075
+   },
+   "matched_oracle": {
+    "risk": 0.3398730525100981,
+    "cost_mean": 0.0003349543710328909
+   }
+  },
+  {
+   "track": "crag",
+   "contract": "correct",
+   "tau": 0.5,
+   "alpha": 0.65,
+   "n_test": 1006,
+   "skyline_zero_loss": {
+    "risk": 0.49105367793240556,
+    "cost_mean": 0.0047381265904572565
+   },
+   "matched_oracle": {
+    "risk": 0.6491053677932406,
+    "cost_mean": 0.00017934557654075546
+   }
+  },
+  {
+   "track": "asqa",
+   "contract": "citation",
+   "tau": 50.0,
+   "alpha": 0.216,
+   "n_test": 448,
+   "skyline_zero_loss": {
+    "risk": 0.05580357142857143,
+    "cost_mean": 0.0028313483258928566
+   },
+   "matched_oracle": {
+    "risk": 0.21428571428571427,
+    "cost_mean": 0.000979711049107143
+   }
+  },
+  {
+   "track": "qampari",
+   "contract": "citation",
+   "tau": 50.0,
+   "alpha": 0.71,
+   "n_test": 500,
+   "skyline_zero_loss": {
+    "risk": 0.514,
+    "cost_mean": 0.005474152199999999
+   },
+   "matched_oracle": {
+    "risk": 0.71,
+    "cost_mean": 0.00030379500000000004
+   }
+  }
+ ]
+}

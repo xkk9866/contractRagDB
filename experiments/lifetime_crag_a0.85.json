@@ -1,0 +1,1324 @@
+{
+ "alpha": 0.85,
+ "delta": 0.1,
+ "window": 400,
+ "quiet": 400,
+ "phase_lengths": [
+  1200,
+  1200,
+  1200,
+  1200
+ ],
+ "phase_pools": [
+  "static",
+  "rt",
+  "static",
+  "fast"
+ ],
+ "seeds": 20,
+ "pool_risks": {
+  "static": [
+   0.6045340050377834,
+   0.5793450881612091,
+   0.535264483627204,
+   0.5428211586901763
+  ],
+  "fast": [
+   0.9067796610169492,
+   0.8559322033898306,
+   0.8135593220338984,
+   0.847457627118644
+  ],
+  "rt": [
+   1.0,
+   0.9468085106382979,
+   0.9361702127659575,
+   0.776595744680851
+  ]
+ },
+ "initial": {
+  "q": 0.0,
+  "certified": true,
+  "budget": 0.025
+ },
+ "alarms_per_run_mean": 1.75,
+ "delay_drift1": {
+  "n": 20,
+  "median": 97.5,
+  "mean": 96.5
+ },
+ "delay_drift2": {
+  "n": 15,
+  "median": 801.0,
+  "mean": 794.5333333333333
+ },
+ "recal_certified_frac": 0.8390804597701149,
+ "false_alarms": 0,
+ "n_null": 100,
+ "viol_by_phase": [
+  0.6029166666666665,
+  0.8054166666666667,
+  0.574,
+  0.8919166666666667
+ ],
+ "cost_by_phase": [
+  0.000175173375,
+  0.007911996741666667,
+  0.0017479540916666664,
+  0.002239943454166667
+ ],
+ "static_viol_by_phase": [
+  0.6029166666666665,
+  1.0,
+  0.6028333333333334,
+  0.9068750000000001
+ ],
+ "runs": [
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.98
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.755
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4023,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4423,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.6066666666666667,
+    0.8025,
+    0.5833333333333334,
+    0.8633333333333333
+   ],
+   "cost_by_phase": [
+    0.00017507687499999998,
+    0.008010874999999999,
+    0.0017758320833333333,
+    0.0054993439166666665
+   ],
+   "cost_mean": 0.00386528196875
+  },
+  {
+   "events": [
+    {
+     "t": 1297,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1697,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2097,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2497,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.715
+    },
+    {
+     "t": 2897,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4457,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.5941666666666666,
+    0.7983333333333333,
+    0.555,
+    0.9008333333333334
+   ],
+   "cost_by_phase": [
+    0.00017429375,
+    0.008229642958333333,
+    0.0017506130416666665,
+    0.0024966442916666666
+   ],
+   "cost_mean": 0.003162798510416667
+  },
+  {
+   "events": [
+    {
+     "t": 1295,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1695,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.985
+    },
+    {
+     "t": 2095,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.985
+    },
+    {
+     "t": 2495,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.92
+    },
+    {
+     "t": 2895,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4696,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.5983333333333334,
+    0.8025,
+    0.5833333333333334,
+    0.8941666666666667
+   ],
+   "cost_by_phase": [
+    0.00017615224999999998,
+    0.007839038916666666,
+    0.0026752014583333334,
+    0.0008683517916666666
+   ],
+   "cost_mean": 0.0028896861041666664
+  },
+  {
+   "events": [
+    {
+     "t": 1298,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1698,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.9550000000000001
+    },
+    {
+     "t": 2098,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2498,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.535
+    },
+    {
+     "t": 2898,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4193,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4593,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.585,
+    0.7991666666666667,
+    0.5675,
+    0.8933333333333333
+   ],
+   "cost_by_phase": [
+    0.00017619625,
+    0.007766970083333332,
+    0.001254054125,
+    0.004301016208333334
+   ],
+   "cost_mean": 0.003374559166666666
+  },
+  {
+   "events": [
+    {
+     "t": 1294,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1694,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.9550000000000001
+    },
+    {
+     "t": 2094,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.985
+    },
+    {
+     "t": 2494,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.71
+    },
+    {
+     "t": 2894,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    }
+   ],
+   "viol": [
+    0.6158333333333333,
+    0.8091666666666667,
+    0.5708333333333333,
+    0.8991666666666667
+   ],
+   "cost_by_phase": [
+    0.00017331162499999996,
+    0.007524763875000001,
+    0.001388694125,
+    0.000146628375
+   ],
+   "cost_mean": 0.0023083495
+  },
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.98
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.49
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    }
+   ],
+   "viol": [
+    0.6008333333333333,
+    0.815,
+    0.5883333333333334,
+    0.8916666666666667
+   ],
+   "cost_by_phase": [
+    0.00017470712499999998,
+    0.007906394708333334,
+    0.001169100375,
+    0.00016266799999999998
+   ],
+   "cost_mean": 0.0023532175520833334
+  },
+  {
+   "events": [
+    {
+     "t": 1297,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1697,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2097,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2497,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.755
+    },
+    {
+     "t": 2897,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4501,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.6175,
+    0.8183333333333334,
+    0.5716666666666667,
+    0.8975
+   ],
+   "cost_by_phase": [
+    0.00017488075,
+    0.008107303500000001,
+    0.0019105347083333336,
+    0.002213582
+   ],
+   "cost_mean": 0.0031015752395833333
+  },
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.985
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.99
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.745
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4245,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4645,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.6108333333333333,
+    0.8133333333333334,
+    0.56,
+    0.8875
+   ],
+   "cost_by_phase": [
+    0.000175136875,
+    0.007825161875,
+    0.0016374324583333332,
+    0.004037860375
+   ],
+   "cost_mean": 0.0034188978958333335
+  },
+  {
+   "events": [
+    {
+     "t": 1298,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1698,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.975
+    },
+    {
+     "t": 2098,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.9400000000000001
+    },
+    {
+     "t": 2498,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.595
+    },
+    {
+     "t": 2898,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    }
+   ],
+   "viol": [
+    0.6125,
+    0.79,
+    0.5775,
+    0.8808333333333334
+   ],
+   "cost_by_phase": [
+    0.00017474612499999997,
+    0.007549915083333333,
+    0.0012058198333333334,
+    0.00015534599999999997
+   ],
+   "cost_mean": 0.002271456760416667
+  },
+  {
+   "events": [
+    {
+     "t": 1294,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1694,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2094,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2494,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.745
+    },
+    {
+     "t": 2894,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    }
+   ],
+   "viol": [
+    0.6225,
+    0.8041666666666667,
+    0.5741666666666667,
+    0.895
+   ],
+   "cost_by_phase": [
+    0.00017468450000000002,
+    0.008125730958333332,
+    0.0018551133750000005,
+    0.000150509375
+   ],
+   "cost_mean": 0.0025765095520833333
+  },
+  {
+   "events": [
+    {
+     "t": 1296,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1696,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2096,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2496,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.72
+    },
+    {
+     "t": 2896,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    }
+   ],
+   "viol": [
+    0.6208333333333333,
+    0.7958333333333333,
+    0.5783333333333334,
+    0.9008333333333334
+   ],
+   "cost_by_phase": [
+    0.00017762075,
+    0.008143272833333333,
+    0.0017187009583333336,
+    0.00015736099999999999
+   ],
+   "cost_mean": 0.0025492388854166663
+  },
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.98
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.915
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4537,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.6033333333333334,
+    0.8041666666666667,
+    0.5808333333333333,
+    0.9
+   ],
+   "cost_by_phase": [
+    0.000173708625,
+    0.007993181375,
+    0.0025684949166666663,
+    0.0019881294166666673
+   ],
+   "cost_mean": 0.003180878583333333
+  },
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.97
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.895
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4494,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.5916666666666667,
+    0.8091666666666667,
+    0.6108333333333333,
+    0.8875
+   ],
+   "cost_by_phase": [
+    0.00017357025,
+    0.007969188041666667,
+    0.0024450837916666665,
+    0.0022293912083333335
+   ],
+   "cost_mean": 0.003204308322916667
+  },
+  {
+   "events": [
+    {
+     "t": 1298,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1698,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2098,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 0.9550000000000001
+    },
+    {
+     "t": 2498,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.725
+    },
+    {
+     "t": 2898,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4401,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.6083333333333333,
+    0.8116666666666666,
+    0.5658333333333333,
+    0.8941666666666667
+   ],
+   "cost_by_phase": [
+    0.00017413925,
+    0.007802034125,
+    0.0015925585416666668,
+    0.0028435548750000003
+   ],
+   "cost_mean": 0.003103071697916667
+  },
+  {
+   "events": [
+    {
+     "t": 1293,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1693,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2093,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2493,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.905
+    },
+    {
+     "t": 2893,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4398,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4798,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.5925,
+    0.8125,
+    0.58,
+    0.8925
+   ],
+   "cost_by_phase": [
+    0.00017579175,
+    0.008162301708333333,
+    0.0025472852499999997,
+    0.002894706958333333
+   ],
+   "cost_mean": 0.0034450214166666664
+  },
+  {
+   "events": [
+    {
+     "t": 1289,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1689,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.9550000000000001
+    },
+    {
+     "t": 2089,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2489,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.735
+    },
+    {
+     "t": 2889,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4211,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4611,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.5908333333333333,
+    0.8041666666666667,
+    0.5725,
+    0.8791666666666667
+   ],
+   "cost_by_phase": [
+    0.00017711487499999997,
+    0.007768017,
+    0.001566185458333333,
+    0.004192711666666667
+   ],
+   "cost_mean": 0.0034260072500000003
+  },
+  {
+   "events": [
+    {
+     "t": 1293,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1693,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.99
+    },
+    {
+     "t": 2093,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": false,
+     "q": 1.0
+    },
+    {
+     "t": 2493,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.535
+    },
+    {
+     "t": 2893,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4366,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4766,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.5691666666666667,
+    0.8025,
+    0.5525,
+    0.8933333333333333
+   ],
+   "cost_by_phase": [
+    0.00017756825,
+    0.007840448833333333,
+    0.0011176460000000001,
+    0.003148062125
+   ],
+   "cost_mean": 0.0030709313020833334
+  },
+  {
+   "events": [
+    {
+     "t": 1299,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1699,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.99
+    },
+    {
+     "t": 2099,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2499,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.585
+    },
+    {
+     "t": 2899,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4578,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.6058333333333333,
+    0.8016666666666666,
+    0.5583333333333333,
+    0.895
+   ],
+   "cost_by_phase": [
+    0.00017380875,
+    0.007935965041666666,
+    0.0013962492083333335,
+    0.0016773397083333333
+   ],
+   "cost_mean": 0.0027958406770833334
+  },
+  {
+   "events": [
+    {
+     "t": 1296,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1696,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.97
+    },
+    {
+     "t": 2096,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2496,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.78
+    },
+    {
+     "t": 2896,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4240,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    },
+    {
+     "t": 4640,
+     "event": "recal",
+     "epoch": 5,
+     "budget": 0.00078125,
+     "certified": false,
+     "q": 1.0
+    }
+   ],
+   "viol": [
+    0.61,
+    0.8066666666666666,
+    0.5808333333333333,
+    0.89
+   ],
+   "cost_by_phase": [
+    0.00017307974999999999,
+    0.00774382875,
+    0.0018459520833333336,
+    0.00396822
+   ],
+   "cost_mean": 0.003432770145833333
+  },
+  {
+   "events": [
+    {
+     "t": 1298,
+     "event": "alarm",
+     "epoch": 1,
+     "budget": 0.025
+    },
+    {
+     "t": 1698,
+     "event": "recal",
+     "epoch": 1,
+     "budget": 0.0125,
+     "certified": true,
+     "q": 0.99
+    },
+    {
+     "t": 2098,
+     "event": "recheck",
+     "epoch": 2,
+     "budget": 0.00625,
+     "certified": true,
+     "q": 1.0
+    },
+    {
+     "t": 2498,
+     "event": "recheck",
+     "epoch": 3,
+     "budget": 0.003125,
+     "certified": true,
+     "q": 0.6900000000000001
+    },
+    {
+     "t": 2898,
+     "event": "recheck",
+     "epoch": 4,
+     "budget": 0.0015625,
+     "certified": true,
+     "q": 0.0
+    },
+    {
+     "t": 4578,
+     "event": "alarm",
+     "epoch": 5,
+     "budget": 0.0015625
+    }
+   ],
+   "viol": [
+    0.6016666666666667,
+    0.8075,
+    0.5683333333333334,
+    0.9025
+   ],
+   "cost_by_phase": [
+    0.000177879125,
+    0.007995900166666667,
+    0.0015385300416666666,
+    0.0016674417916666669
+   ],
+   "cost_mean": 0.0028449377812499997
+  }
+ ]
+}

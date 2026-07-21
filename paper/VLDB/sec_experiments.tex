@@ -1,0 +1,852 @@
+\section{Experiments}
+\label{sec:experiments}
+
+We answer nine questions. \textbf{RQ1 (safety)}: which optimizers actually
+keep their contract --- verified directly on the \emph{exact risk over a
+fixed finite population} across repeated calibration draws?
+\textbf{RQ2 (efficiency)}: at what cost, relative to fixed plans and to
+hindsight oracles --- including strict low-$\alpha$ contracts with
+certified deferral? \textbf{RQ3 (calibration)}: how tightly does realized
+violation track the contract level $\alpha$? \textbf{RQ4 (rewrites)}: do
+risk vouchers achieve their nominal coverage over repeated draws, and how
+loose is voucher composition versus direct certification?
+\textbf{RQ5 (groups)}: what does marginal
+certification hide on query slices, and does group-conditional
+certification fix it? \textbf{RQ6 (drift)}: are workload and index-staleness
+drifts detected, at full and subsampled audit rates, with what lifetime
+guarantee across repeated alarms --- and what does auditing cost?
+\textbf{RQ7 (multi-constraint)}: do joint four-constraint contracts
+certify, and what does the intersection--union certification buy in
+power over Bonferroni?
+\textbf{RQ8 (generalization)}: do the guarantees and the savings survive a
+change of model family, model developer, serving backend, and cost metric
+--- including a local open-weight family metered in GPU-seconds?
+\textbf{RQ9 (planning \& scale)}: does cardinality-driven access-path
+selection beat fixed join orders, and how does certification scale to
+$10^5$-candidate plan spaces?
+
+\subsection{Setup}
+\label{sec:exp-setup}
+
+\textbf{Tracks.} (A) \textbf{HybridQA}~\cite{chen2020hybridqa}: multi-hop
+QA over Wikipedia tables joined with entity passages; sources are a
+structured row-selection operator and sparse/dense passage indexes over
+440K passages; quality loss $\mathbf{1}[\text{token-F1} < 0.5]$; splits
+train/cal/test = 5000/3000/3466 (train and cal drawn from the official
+62K-query train set; test is the \emph{entire} official HybridQA-dev
+release).
+(B) \textbf{CRAG}~\cite{yang2024cragbench}: web QA with the official mock
+knowledge-graph API (movie\slash music\slash sports\slash
+finance\slash open domains, dynamism
+labels static\slash slow\slash fast\slash real-time); evidence chunks
+carry crawl ages;
+answers are graded correct\slash missing\slash incorrect by a qwen-max
+judge with the
+gold answer (CRAG's protocol); loss is either \emph{correctness},
+$\mathbf{1}[\text{not correct}]$, or \emph{hallucination},
+$\mathbf{1}[\text{answered and wrong}]$; splits 700/1000/1006 covering
+the \emph{full} 2706-query public Task~1\&2 development pool.
+(C) \textbf{ASQA}~\cite{stelmakh2022asqa} under the official ALCE
+evaluation~\cite{gao2023alce}: long-form answers with citations over a
+pooled GTR corpus (89K passages), citation recall/precision scored by the
+official TRUE-NLI T5-XXL entailment model~\cite{honovich2022true}; loss
+$\mathbf{1}[\text{citation-recall} < 50]$; splits 150/350/448 covering
+the \emph{full} 948-query ALCE-ASQA release: test is the complete
+original held-out set, and the RQ1 protocol below additionally resamples
+over the pooled 798 cal+test queries, so no safety conclusion rests on a
+single small draw.
+(D) \textbf{QAMPARI}~\cite{amouyal2022qampari} under the same ALCE
+protocol: list answers (each entity must cite exactly one document) over
+a pooled 86K-passage GTR corpus, citations scored by TRUE-NLI with the
+official comma-split protocol; loss
+$\mathbf{1}[\text{citation-recall} < 50]$; splits 150/350/500 covering
+the full 1000-query ALCE-QAMPARI release. QAMPARI is the adversarial
+regime for citation contracts --- even the strongest plan violates on
+61\% of queries --- so it probes certification exactly where
+point estimates are noisiest.
+
+\textbf{Why these scales.} A $(C,\delta)$-certificate is a finite-sample
+statement: its radius shrinks as $O(\sqrt{\log(1/\delta)/n_{\mathrm{cal}}})$.
+At $n_{\mathrm{cal}}\!\in\!\{350,1000,3000\}$ and $\delta{=}0.1$ the
+Hoeffding--Bentkus half-width at mid-range $\alpha$ is roughly
+$0.075$/$0.04$/$0.025$ --- tight enough that certificates discriminate
+among ladder rungs rather than collapsing to the strongest plan, which is
+exactly the operating regime of a deployed RAG service that recalibrates
+weekly on a few hundred to a few thousand audited queries. HybridQA's
+test set is the full public\_dev benchmark; CRAG, ASQA, and QAMPARI
+consume every publicly released query for the track (no further held-out
+pool exists).
+For ASQA in particular --- the smallest track --- no single-split number
+is load-bearing: the RQ1 protocol resamples 1000 calibration/test
+partitions from the pooled 798 queries, the reported violation
+probabilities are means over those draws, and at $n_{\mathrm{cal}}=350$
+the certificate's finite-sample radius ($\approx$0.075) is exactly what
+the theory prescribes paying at this audit budget --- the guarantee holds
+at every $n$, only its tightness scales.
+Train sizes are chosen to saturate the logistic sufficiency scorers
+(diminishing returns beyond a few thousand labeled executions in our
+ablations). Every number below is measured on these real executions, not
+on subsampled proxies.
+
+\textbf{Ladders.} Each track has a four-rung cost-ascending ladder
+generated by the rewrites of \S\ref{sec:rewrites}: from sparse-only
+retrieval with qwen-flash up to hybrid RRF retrieval, cross-encoder
+reranking, NLI verification, KG-API evidence (CRAG), citation repair
+(ASQA, QAMPARI), and qwen-max. All executions are real API calls (28--48-way
+parallel) with exact token metering; local models (BGE embeddings,
+bge-reranker-v2-m3, DeBERTa-NLI, TRUE-NLI) run on two RTX 4090 GPUs.
+Reported cost is LLM spend in milli-CNY per query; a query stopping at rung
+$j$ is charged rungs $0..j$ cumulatively for escalation policies and only
+rung $j$ for jump policies. Local GPU compute and KG-API planning calls
+are metered separately and shift no conclusion
+(\S\ref{sec:system}, total cost of ownership). RQ8 additionally swaps the
+generator column of the HybridQA ladder across four model families from
+four \emph{model developers} --- Alibaba's Qwen (flash/plus/max),
+DeepSeek (v4-flash/v3.2/v4-pro), and Zhipu's GLM (4.7/5/5.2), plus
+Google's open-weight Gemma~3 (1b/4b/12b/27b) --- served through two
+\emph{serving backends}: the commercial families are hosted on one API
+platform (DashScope) at each developer's list prices, while Gemma~3 is
+served \emph{locally} by Ollama and metered in measured GPU-seconds
+priced at the same RTX-4090 rental rate --- over shared materialized
+retrieval (\S\ref{sec:planner}). We keep model developer and serving
+backend distinct throughout: the experiment varies the family and its
+price structure, not the number of API platforms.
+
+\textbf{Baselines.} \emph{Fixed plans}: each rung as a static pipeline
+(these are also the plans a workload-level optimizer chooses among).
+\emph{Complexity router}: Adaptive-RAG~\cite{jeong2024adaptiverag} adapted
+to our ladders --- a text classifier trained to predict the cheapest
+correct rung. \emph{Utility router}: per-query
+$\arg\max_j \hat{s}_j - \lambda \bar c_j$ with $\lambda$ tuned to the
+constraint on tuning data (cost-aware router
+style~\cite{ding2024hybridllm,hu2024routerbench}).
+\emph{BO-tuned}: Optuna~\cite{akiba2019optuna} TPE over escalation
+thresholds, minimizing cost s.t.\ empirical risk $\le \alpha$ on tuning
+data. \emph{Abacus}~\cite{russo2025abacus}: workload-level constrained
+selection with UCB sampling on a budget of 150 plan executions, choosing
+the cheapest rung whose estimated risk clears $\alpha$ (point estimate).
+\emph{Empirical-no-cert}: our own
+ladder with the cheapest thresholds whose \emph{empirical} calibration risk
+is $\le\alpha$ --- i.e., \system\ minus the statistical test (ablation).
+Two hindsight skylines with different targets: the \emph{zero-loss
+oracle} picks the per-query cheapest rung with no loss (a stricter
+objective than any contract, hence not cost-comparable to
+contract-feasible methods), and the \emph{matched oracle} is the
+cheapest per-query rung assignment whose test-set mean loss is
+$\le \alpha$ --- the hindsight optimum of the same constrained problem
+\system\ solves, and its fair cost lower bound.
+All methods consume identical execution matrices, so comparisons are
+exact and reproducible.
+
+\subsection{RQ1: contract safety across calibration draws}
+\label{sec:exp-safety}
+
+The theory bounds the probability that the deployed policy's \emph{true}
+risk exceeds $\alpha$; we verify that claim directly rather than through
+the binomial noise of a held-out split. For each track we treat the full
+pooled cal+test execution matrix as a fixed finite population and repeat
+1000 times: draw a random calibration subset, let every method
+select/tune on it (scorers and routers use the fixed train split), and
+evaluate the selected policy's \emph{exact} risk on the entire
+population. Table~\ref{tab:safety} reports
+$\Pr(\text{population risk} > \alpha)$ --- the exact finite-population
+analogue of the $\delta$-guarantee ($\delta = 0.1$ throughout); at 1000
+draws the Monte Carlo 95\% interval on a reported rate of $0.05$ is
+$\pm 0.014$, and there is no test-sampling error in the verdict.
+Throughout the paper we keep three quantities distinct:
+\emph{certification} is an event on the calibration draw; it purchases a
+guarantee on the \emph{population} risk with failure probability
+$\le \delta$ over draws; and any single test-split \emph{empirical} risk
+is a noisy estimate that may sit on either side of $\alpha$ without any
+guarantee being violated.
+
+\begin{table}[t]
+\caption{RQ1: probability (over 1000 calibration draws) that the deployed
+policy's exact finite-population risk exceeds $\alpha$ --- the quantity
+the certificate bounds --- and mean cost relative to always running the
+strongest plan. Cells with no violating draw report the one-sided
+95\% binomial upper bound $<.003$ rather than an absolute rate;
+since each policy's population risk is one exact number,
+draws vary only through selection, and $<.003$ means no draw
+selected an out-of-contract policy. \system\ is the only optimizer
+meeting the $\delta=0.1$
+budget on all tracks.}
+\label{tab:safety}
+\centering\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{2}{c}{HybridQA ($\alpha{=}.35$)} &
+\multicolumn{2}{c}{CRAG ($\alpha{=}.65$)} &
+\multicolumn{2}{c}{ASQA ($\alpha{=}.25$)} &
+\multicolumn{2}{c}{QAMPARI ($\alpha{=}.66$)} \\
+Method & viol. & cost & viol. & cost & viol. & cost & viol. & cost \\
+\midrule
+Empirical (no cert.) & .470 & .19 & .493 & .15 & .408 & .45 & .451 & .45 \\
+BO-tuned             & .572 & .12 & .005 & .08 & .410 & .12 & .532 & .21 \\
+Utility router       & .160 & .07 & $<$.003 & .03 & .106 & .08 & .497 & .40 \\
+Abacus               & .099 & .34 & .275 & .16 & $<$.003 & .25 & .433 & .51 \\
+\system\ (ladder)    & .006 & .31 & .005 & .38 & .002 & .51 & .004 & .75 \\
+\system\ (full)      & \textbf{$<$.003} & .11 & \textbf{$<$.003} & .07 & \textbf{$<$.003} & .43 & \textbf{.001} & .84 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations. (i) Empirically tuned methods select policies whose
+\emph{true} risk is out of contract in 41--57\% of draws on their worst
+track --- genuine failures of the deployed policy, not artifacts of a
+noisy test split; sweeping $\alpha$ (Fig.~\ref{fig:sweep}, thirteen
+settings) shows no baseline staying below $\delta$ everywhere, with BO
+reaching 64\%. The violations are not rare tail events but the typical
+behavior of tuning against a noisy constraint. (ii) The certified methods
+hold the population promise with margin: the full optimizer's true risk
+exceeds $\alpha$ in at most 0.1\% of draws at the headline levels of
+Table~\ref{tab:safety} (below $.003$ on three tracks, a single
+violating draw on QAMPARI) and
+never above 0.8\% anywhere on the
+thirteen-setting sweep --- an order of magnitude inside the
+$\delta=10\%$ budget. Rates this small are the predicted outcome, not
+an artifact: certification requires clearing $\alpha$ by the
+finite-sample radius (0.02--0.07 at these $n$), so an out-of-contract
+deployment needs a false certification whose realized probability sits
+far below its $\delta$ bound; where the 1000 draws contain no such
+event we report the binomial upper bound $<.003$ --- the protocol's
+resolution --- rather than an absolute rate; the escalation-only
+ladder stays at or below 0.8\%. The same quantization produces the occasional near-floor
+baseline entries
+(utility router at CRAG's loose $\alpha = .65$: below resolution here
+but 22.1\%
+on the held-out criterion and far above $\delta$ at other levels in
+Fig.~\ref{fig:sweep}) --- a coincidence of one setting, not a
+guarantee. (On the conventional held-out criterion the certified
+policies show
+0--7\% rates; the difference is pure test-split binomial noise.)
+(iii) Safety
+is not purchased with money: on CRAG the full optimizer is \emph{both} the
+safest and among the cheapest (cost ratio 0.07 vs.\ 0.15 for uncertified
+empirical tuning), because the richer certified family (jump routers)
+dominates threshold tuning. Abacus is safe exactly when inter-plan gaps
+are large relative to its sampling noise (ASQA) and unsafe when they are
+not (CRAG, 28\%; QAMPARI, 43\%) --- point estimates cannot tell these
+regimes apart, which is the core argument for certification.
+
+\smallskip\noindent\textit{Takeaway: verified on exact population risk,
+point-estimate feasibility is a coin flip; certification makes the
+$\delta$-promise hold with an order of magnitude to spare at every
+contract level we tested, and on some tracks for free.}
+
+\subsection{RQ2: cost at matched contracts}
+\label{sec:exp-cost}
+
+Table~\ref{tab:main} and Fig.~\ref{fig:tradeoff} (full grids in the
+artifact) fix representative contract levels and show one draw each; the
+guarantee behind the bold rows is the population-level one verified in
+Table~\ref{tab:safety}. At $\alpha=0.34$ on HybridQA \system\ certifies a
+jump-router policy costing 1.05 mCNY/query with test risk 0.338 ---
+6.9$\times$ cheaper than the strongest plan (7.21) whose risk is 0.290,
+and 2.0$\times$ cheaper than the certified escalation-only ladder; the
+uncertified methods that undercut it (utility router at 0.40) do so by
+\emph{breaking the contract} (risk 0.387~$>\alpha$). At
+$\alpha=0.65$ on CRAG the certified policy costs 0.30 vs.\ 6.00 mCNY
+(20$\times$); at $\alpha=0.71$ on QAMPARI, 0.43 vs.\ 6.49 mCNY
+(15$\times$) --- here certification adopts the utility router's own
+policy, showing that the certified family subsumes the baselines'
+policies and differs only in the feasibility test; at $\alpha=0.216$ on
+ASQA, 6.56 vs.\ 9.01 mCNY with test risk 0.145 while the utility router
+(0.223) and BO (0.221) sit above $\alpha$. Several single-draw entries
+of certified ladder policies sit slightly above $\alpha$ (0.358 vs.\
+0.34 on HybridQA; 0.724 vs.\ 0.71 on QAMPARI): these are within one
+binomial standard error of the test split, and Table~\ref{tab:safety}
+shows the corresponding \emph{population} risks violate in at most
+0.6\% of draws --- the certificate promises the distributional
+guarantee, not that every finite sample lands below $\alpha$. Abacus
+lands inside the contract on
+ASQA at 1.31 mCNY --- but with no certificate: the identical procedure
+deploys truly out-of-contract policies in 28\% of draws on CRAG
+(Table~\ref{tab:safety}), and at
+$n_{\mathrm{cal}}=350$ the certified margin genuinely costs the
+difference; with more audit data the certified policy converges to the
+same cheap plan (Proposition~\ref{prop:consistency}). The fair skyline
+for \system's objective is the \emph{matched oracle} --- the cheapest
+hindsight per-query assignment with test mean loss $\le\alpha$,
+unattainable since it requires knowing each answer's outcome in
+advance: \system\ pays 1.4--3.2$\times$ its cost on HybridQA, CRAG, and
+QAMPARI, and 6.7$\times$ on ASQA where two-constraint feasibility
+forces a conservative policy --- the gap is the price of feasibility
+established from finite samples rather than hindsight. The zero-loss
+skyline solves a stricter objective (no loss on any query) and is shown
+only for context; on three of four tracks \system\ is cheaper than it,
+which says nothing about optimality --- the two solve different
+problems. When the contract is infeasible for every candidate (e.g.,
+$\alpha$ below the strongest plan's risk), \system\ correctly refuses to
+certify and falls back to best-effort --- the planner-side analogue of
+rejecting an unsatisfiable query.
+
+\textbf{Strict contracts via certified deferral.} The headline levels
+above are dictated by what always-answer pipelines can achieve; a
+regulated deployment wants $\alpha \le 0.2$. Adding one knob --- defer
+to human review when even the final rung's sufficiency score is below
+$\kappa$ --- turns the contract into the certified pair
+$\Pr(\text{answered} \wedge \text{violating}) \le \alpha$,
+$\Pr(\text{deferred}) \le \beta$. At $\alpha=0.1$ \system\ certifies
+HybridQA at $\beta=0.75$ (test: answered-and-violating 0.091, deferral
+0.597) and ASQA at the same budget with far less deferral used (0.087,
+0.219; 7.64 vs.\ 10.90 mCNY for the strongest plan); at $\alpha=0.2$
+all four tracks certify --- ASQA defers only 2.9\% at $\beta=0.25$,
+CRAG and QAMPARI need $\beta=0.75$ --- and at $\alpha=0.05$ no track
+certifies at any tested $\beta \le 0.9$, which \system\ reports as
+infeasible. Strictness is purchased transparently with deferral volume,
+and the human-review load is itself certified.
+
+\smallskip\noindent\textit{Takeaway: the guarantee costs little --- the
+certified policy is 6.9--20$\times$ cheaper than the strongest plan and
+within 1.4--6.7$\times$ of the matched hindsight oracle; strict
+contracts down to $\alpha=0.1$ certify once deferral is priced in; every
+method that beats \system\ on cost does so by breaking the contract.}
+
+\begin{table}[t]
+\caption{RQ2: single-draw test-split empirical risk / mean cost (mCNY
+per query) at representative contract levels. Bold: the certified
+policy, whose \emph{population} risk meets the contract with
+probability $\ge 1-\delta$ (Table~\ref{tab:safety}); a single test
+split carries $\pm .01$--$.04$ binomial noise and may sit on either
+side of $\alpha$. The matched oracle is the cheapest hindsight
+per-query assignment with test mean loss $\le\alpha$ (same objective
+as \system); the zero-loss skyline solves a stricter objective and is
+not cost-comparable. Full $\alpha$-grids in the artifact.}
+\label{tab:main}
+\centering\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{2}{c}{HybridQA $\alpha{=}.34$} &
+\multicolumn{2}{c}{CRAG $\alpha{=}.65$} &
+\multicolumn{2}{c}{ASQA $\alpha{=}.216$} &
+\multicolumn{2}{c}{QAMPARI $\alpha{=}.71$} \\
+Method & risk & cost & risk & cost & risk & cost & risk & cost \\
+\midrule
+Fixed strongest      & .290 & 7.21 & .600 & 6.00 & .116 & 9.01 & .610 & 6.49 \\
+Complexity router    & .509 & 1.46 & .620 & 4.74 & .281 & 1.14 & .612 & 6.47 \\
+Utility router       & .387 & 0.40 & .625 & 0.28 & .223 & 1.02 & .712 & 0.43 \\
+BO-tuned             & .380 & 0.97 & .621 & 0.89 & .221 & 1.41 & .708 & 0.94 \\
+Abacus               & .321 & 1.75 & .600 & 6.00 & .201 & 1.31 & .666 & 1.23 \\
+Empirical (no cert.) & .372 & 1.45 & .635 & 1.39 & .199 & 5.67 & .784 & 1.84 \\
+\system\ (ladder)    & .358 & 2.11 & .618 & 2.16 & .165 & 6.42 & .724 & 2.88 \\
+\system\ (full)      & \textbf{.338} & \textbf{1.05} & \textbf{.624} & \textbf{0.30} & \textbf{.145} & \textbf{6.56} & \textbf{.712} & \textbf{0.43} \\
+\midrule
+Matched oracle       & .340 & 0.33 & .649 & 0.18 & .214 & 0.98 & .710 & 0.30 \\
+Zero-loss skyline    & .193 & 2.97 & .491 & 4.74 & .056 & 2.83 & .514 & 5.47 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/cost_risk_hybridqa.pdf}
+\caption{RQ2: cost--risk positions on HybridQA at $\alpha=0.34$
+(test split). Certified methods (stars/triangles) sit below the contract
+line; uncertified tuners that are cheaper sit above it.}
+\label{fig:tradeoff}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/violation_sweep.pdf}
+\caption{RQ1/RQ3: probability that the deployed policy's exact
+finite-population risk exceeds $\alpha$, across 1000 calibration draws
+as the contract level varies. The dotted line is the certified budget
+$\delta=0.1$; only \system\ stays below it everywhere.}
+\label{fig:sweep}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/calibration.pdf}
+\caption{RQ3: target level $\alpha$ vs.\ realized violation of the
+certified policy (test split). Valid (below diagonal) but tight.}
+\label{fig:calibration}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/drift.pdf}
+\caption{RQ6: workload drift on CRAG ($\alpha=0.66$). Left: rolling
+violation rate; the static-certified policy breaks silently after the
+shift at $t{=}1500$; the e-process alarm (dash-dotted) triggers
+recalibration. Right: detection delays over 20 seeded streams; no false
+alarms on the 20 drift-free controls.}
+\label{fig:drift}
+\end{figure*}
+
+\subsection{RQ3: calibration}
+\label{sec:exp-calibration}
+
+Figure~\ref{fig:calibration} sweeps $\alpha$ and plots realized test
+violation of the certified policy. All points lie on or below the
+diagonal up to test-sampling noise (maximum excess 0.009, about one
+binomial standard error at $n_{\mathrm{test}}=3466$): the certificates
+are valid but not vacuous --- where the contract binds, realized risk
+tracks $\alpha$ with a margin of 0.02--0.07 that shrinks with calibration
+size, matching the $O(\sqrt{\log(1/\delta)/n})$ radius of the HB test,
+and saturates only once the cheapest plan is already feasible. The
+uncertified ablation (empirical thresholds) sits \emph{on} the diagonal on
+average --- and therefore above it in half the draws, which is precisely
+the RQ1 failure mode.
+
+\subsection{RQ4: rewrite vouchers}
+\label{sec:exp-rewrites}
+
+On HybridQA we fix the base plan $P^\ast$ (hybrid retrieval $k{=}16$,
+rerank, qwen-plus) and apply four single rewrites, all chain prefixes
+$P_1..P_4$, and the full composition on 500 calibration + 500 test
+queries (Table~\ref{tab:rewrites}). A voucher is a $1-\delta_r$
+confidence bound, so the correct empirical test is \emph{coverage}:
+pooling cal+test into a fixed 1000-query population and redrawing the
+500-query calibration set 1000 times, each single-rewrite voucher
+(Clopper--Pearson, $\delta_r{=}.05$) covers the population's exact harm
+rate in 98.9--99.5\% of draws, above its 95\% nominal level --- the
+one-sided bound's expected conservatism. (A single test-split column
+can land on either side of the voucher, as R1 and R2 do in the table;
+that is binomial noise, not a coverage failure.) The harm ordering
+(prefilter $<$ rerank-elision $\approx$ $k$-truncation $<$ generator
+downgrade) matches the intuition that evidence-preserving rewrites are
+safest. The composed plan cuts cost 8.3$\times$ (1.74 $\to$ 0.21 mCNY)
+with population harm 0.240.
+
+\textbf{Composition.} The base-relative union bound (0.342) requires the
+no-synergistic-harm assumption --- and the data \emph{violate} it: 8\% of
+harmed queries are harmed only by the composition (synergy between
+truncation and generator downgrade), so that bound's nominal coverage is
+unfounded even where its number happens to be large enough. The
+telescoping path voucher of Proposition~\ref{prop:composition}
+(steps $.026/.081/.105/.164$, sum 0.376) costs only 10\% extra width
+over the union bound while being assumption-free --- covering the
+population chain harm in every one of the 1000 redraws ($>$99.7\% at
+95\% confidence) --- and both remain
+looser than the direct certificate (0.251 mean, 98.9\% coverage) on the
+deployed chain --- which is why \system\ uses vouchers to order search
+and certifies directly.
+
+\textbf{Selectivity-conditioned vouchers.} The flat prefilter voucher
+($\hat\eps = .026$) is marginally valid but hides heterogeneity that the
+planner's selectivity estimate exposes: stratifying by pool selectivity
+$\sigma$, realized test harm is 0.075 on the vague-predicate stratum
+($\sigma \in [.79, .91)$) --- 3$\times$ the flat voucher --- versus
+none observed on the $\sigma = 1$ stratum. The per-stratum vouchers
+($.076/.088/.128/.020$, Bonferroni $\delta_r/4$) cover every stratum's
+realized harm, giving the rewrite search a risk signal that tracks
+\emph{which queries} a pushdown endangers rather than an average.
+
+\begin{table}[t]
+\caption{RQ4: rewrite vouchers on HybridQA ($n_{\mathrm{cal}}{=}500$;
+cost in mCNY per query).
+Harm = loss strictly worse than the base plan's. Vouchers $\hat\eps$
+are $1-\delta_r$ confidence bounds; ``cover.'' = fraction of 1000
+calibration redraws whose voucher covers the exact harm rate of the
+pooled 1000-query population (nominal 95\%). The three composition
+rows price the \emph{same} composed plan, so their execution columns
+coincide by construction and only the bound differs; the telescoping
+voucher covered in every one of the 1000 redraws, reported as the
+one-sided 95\% lower bound $>$.997 against its nominal $.80$ level
+($m{=}4$ steps at $\delta_r{=}.05$) --- the deliberate price of
+dropping the NSH assumption, which the workload violates
+(8\% synergistic harm); the telescoping path voucher
+(Prop.~\ref{prop:composition}) is assumption-free at 10\% extra width
+over the (invalid) union bound.}
+\label{tab:rewrites}
+\centering\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{lcccccc}
+\toprule
+Variant & cost & harm$_{\mathrm{cal}}$ & voucher $\hat\eps$
+& harm$_{\mathrm{te}}$ & harm$_{\mathrm{pop}}$ & cover. \\
+\midrule
+base $P^\ast$    & 1.74 & ---  & ---  & ---  & --- & --- \\
+R1 prefilter     & 1.75 & .014 & .026 & .030 & .022 & .995 \\
+R2 $k$-trunc     & 1.11 & .060 & .081 & .084 & .072 & .991 \\
+R3 no-rerank     & 1.69 & .058 & .078 & .070 & .064 & .994 \\
+R4 gen-downgr.   & 0.33 & .130 & .157 & .152 & .141 & .989 \\
+\midrule
+comp.\ (union, NSH) & 0.21 & .218 & .342 & .262 & .240 & --- \\
+comp.\ (telescoping) & 0.21 & .218 & .376 & .262 & .240 & $>$.997 \\
+comp.\ (direct cert.) & 0.21 & .218 & .251 & .262 & .240 & .989 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{RQ5: group-conditional contracts}
+\label{sec:exp-group}
+
+CRAG's dynamism labels expose what marginal guarantees hide. With
+group-wise contract levels
+$\alpha_{\text{static}} = .62$, $\alpha_{\text{slow}} = .72$,
+$\alpha_{\text{fast}} = .92$, and
+$\alpha_{\text{rt}} = .93$, a single marginally-certified
+policy (at the mixture level) violates the real-time group's contract in
+\textbf{99\%} of 200 draws (realized risk 0.99 vs.\ 0.93 target: the cheap
+rungs it certifies for the average workload have no fresh evidence for
+real-time queries) and the static group's in 14.5\%. Group-conditional
+certification (Bonferroni $\delta/4$ per group) brings every group to
+$\le 3.5\%$, escalating real-time queries to the KG-API rung (per-query
+cost 7.3 mCNY on that 9\% slice) while \emph{lowering} static-group cost.
+When a group's contract is infeasible in the plan space --- fast-changing
+at $\alpha=.65$, where even the strongest plan's group risk is 0.79 ---
+\system\ reports non-certifiability instead of silently under-delivering.
+For Example~\ref{ex:finance} this is the difference between a compliance
+report that says ``real-time market questions cannot currently meet the
+freshness bar'' and one that quietly averages the failure away.
+
+\subsection{RQ6: drift detection and recovery}
+\label{sec:exp-drift}
+
+\textbf{Workload drift.} A stream of 1500 static/slow queries followed by
+1500 fast/real-time queries (real losses, designed arrival order) breaks
+the marginally-certified policy: violation rises from 0.58 to 0.88
+(contract $\alpha=0.66$), and without monitoring it never knows
+(Fig.~\ref{fig:drift}). The e-process monitor fires at a median of 78
+queries after onset (range 36--125 over 20 seeds) with \textbf{zero} false
+alarms across 20 drift-free control streams --- an expected zero, not a
+suspicious one: the per-stream Ville bound is $\delta = 0.1$, and on a
+compliant stream the supermartingale in fact decays, so the realized
+false-alarm rate sits far below the bound (confirmed at 0/200 in the
+magnitude study below).
+Post-alarm, \system\ switches to group-conditional certified policies
+(strongest-plan best effort plus an infeasibility flag for the fast-changing
+group), cutting phase-2 violation to 0.82 --- the residual gap is the
+infeasible slice, now \emph{reported} rather than hidden.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/drift2.pdf}
+\caption{RQ6: measured detection delay (mean and p90 over 30 seeds per
+drift magnitude) versus the Proposition~\ref{prop:delay} rate
+$(\log(1/\delta) + \log(T|W|))/g^\ast$ --- mean delay sits below the
+rate at every magnitude and the p90 tracks it within 0.6--1.0$\times$
+(left). The $O(1)$ CUSUM
+recursion localizes the changepoint to within a few queries for
+strong drifts (right). No false alarms on the 200 drift-free
+controls.}
+\label{fig:drift2}
+\end{figure}
+
+\textbf{Delay scaling and changepoint localization.} Varying the drift
+magnitude by mixing pools (post-change dynamic fraction
+$\rho \in \{.5, .75, 1\}$, 30 seeds each) makes
+Proposition~\ref{prop:delay} quantitatively checkable: for each
+magnitude we compute the post-change optimal log-growth $g^\ast$ on the
+monitor's bet grid ($.0071/.049/.137$) and compare measured delays
+($760/203/82$ queries mean) against the rate
+$(\log(1/\delta) + \log(T|W|))/g^\ast = 15.4/g^\ast$. Mean delay sits
+below the rate at every magnitude, is unaffected by the 1500-query
+compliant prefix, and the rate is \emph{tight}, not ornamental: the
+p90 delay reaches 0.91--1.04$\times$ of it at moderate and strong
+drifts (Fig.~\ref{fig:drift2}) --- the analysis predicts the
+detector's operating curve, not just its order of magnitude. False
+alarms: none across the 200
+drift-free control streams ($<1.5\%$ at 95\% confidence; Ville's
+inequality is
+conservative in practice). The $O(1)$ CUSUM recursion localizes the
+changepoint to a median error of \emph{4 queries} at $\rho{=}1$ and 10
+queries at $\rho{=}.75$ --- sharp enough that recalibration can discard
+exactly the pre-change prefix.
+
+\textbf{Closed-loop certified recalibration.} An alarm is not yet a
+repaired policy. Over 10 seeded streams we run the full loop: alarm
+$\to$ safe mode (strongest rung --- a best-effort fallback that carries
+\emph{no} certificate on the unseen post-change distribution, and is
+flagged as such) for a 250-query labeled window $\to$ fixed-sequence
+recertification on that window $\to$ deploy the newly certified policy,
+which is where the post-drift guarantee resides. The loop holds phase-2
+violation to
+0.819 versus 0.886 for the static policy, within half a point of the
+oracle that switches to the post-change-certified policy at the exact
+drift time (0.815), and beats the DB-style periodic reoptimizer
+(recheck every 250 queries: 0.837) --- while spending less than the
+oracle (4.77 vs.\ 4.94 mCNY/query) because the certified post-alarm
+policy backs off from the safe mode as soon as the window certifies a
+cheaper ladder.
+
+\textbf{Lifetime operation across repeated alarms.}
+Proposition~\ref{prop:lifetime} prices an unbounded alarm--recalibrate
+loop by geometric budget spending ($\delta_k = \delta/2^{k+1}$ per
+epoch); we exercise it on a four-phase stream (static $\to$ real-time
+$\to$ static $\to$ fast, 1200 queries each, $\alpha=0.85$, 20 seeds).
+Runs average 1.75 alarms; the first drift is caught in a median of 98
+queries and the second --- three epochs later, on a quarter of the
+initial budget --- in 801, the logarithmic delay price the proposition
+predicts. Recalibration certifies a post-change policy in 84\% of alarm
+epochs; in the remainder (the real-time phase, where even the strongest
+plan is out of contract) the system reports non-certifiability and
+stays in flagged safe mode. Scheduled quiet-period rechecks recover
+cheap policies after drifts revert (post-drift static phase: violation
+0.574 vs.\ 0.603 up to complete failure --- every real-time-phase
+query out of contract --- for never recalibrating). No false alarms
+occurred
+across 100 null streams ($<3\%$ at 95\% confidence) despite five
+sequential tests per run.
+
+\textbf{Audit accounting and subsampled monitoring.} The monitor
+consumes audited violation indicators, which are not free: on CRAG,
+exact-match short answers resolve 44\% of audits at negligible cost and
+the rest need a qwen-max judge call at 0.52 mCNY --- an effective 0.29
+mCNY per audited query, comparable to the certified policy's own 0.30
+mCNY deployment cost. Charged honestly, at 100\% audit the certified
+system's total cost of ownership (deployment + audit + amortized
+calibration) is 0.60 mCNY/query --- RQ2's ``20$\times$'' saving is
+10.0$\times$ with the monitor metered in. Auditing an independent
+random $r$-fraction of traffic keeps every guarantee on the audited
+subsequence (the audited stream is an unbiased draw;
+\S\ref{sec:monitor}) and dilates delay by $1/r$: measured medians
+74/343/878 queries at $r = 1/0.25/0.1$ with no false alarms at any
+rate, restoring savings to 15.8$\times$ and 17.9$\times$. The audit
+rate is thus an explicit dial between reaction time and monitoring
+spend.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/stale.pdf}
+\caption{RQ6b: index staleness on CRAG (joint correct-and-fresh contract,
+$\alpha=0.75$). Left: the index silently falls one week behind at
+$t{=}2000$; every plan's joint risk exceeds $\alpha$, the static-certified
+policy breaks, the e-process alarm triggers a switch to the
+stale-state-certified policy (freshness-honest re-execution, KG-API
+escalation). Right: detection delays over 20 seeded streams; no false
+alarms on the 20 in-sync controls.}
+\label{fig:stale}
+\end{figure*}
+
+\textbf{Index staleness.} We re-execute the CRAG ladder (real retrieval
+and generation; expanded cal/test of 1000/1006 queries per index state)
+under a 72h freshness contract in two index states: in-sync, and one week
+behind. The joint loss is
+$\mathbf{1}[\text{not correct} \vee \ell_{\text{fresh}}]$. When the index
+falls behind \emph{silently}, the executor keeps serving dated web
+evidence that is actually 168h older than it believes: per-rung joint risk
+jumps from $(.79, .74, .71, .71)$ to $(.94, .91, .91, .90)$ --- even the
+strongest plan now violates $\alpha=0.75$, so no amount of static
+escalation helps (Fig.~\ref{fig:stale}). The static-certified policy runs
+at phase-2 violation 0.926 and never knows; the monitor alarms after a
+median of 117 queries
+(range 38--240 over 20 seeds, no false alarms on the 20 in-sync
+controls)
+and switches to the policy certified on stale-state calibration data ---
+a freshness-honest re-execution whose filter knows the lag, drops
+out-of-contract evidence, and escalates to the still-fresh KG API ---
+restoring violation to 0.759~$\approx\alpha$ at 2.52 mCNY/query, within
+1\% of the oracle that recalibrates exactly at the drift point (0.752 at
+2.55). Freshness contracts are thus operationally different from quality
+contracts: staleness breaks \emph{every} plan at once, and only
+detect-and-recertify --- not conservative planning --- restores the
+guarantee.
+
+\subsection{RQ7: multi-constraint contracts and optimizer ablation}
+\label{sec:exp-multi}
+
+Joint contracts expose the value of a heterogeneous certified policy
+space. On ASQA with citation $\alpha_q{=}.3$ \emph{and} a 10s latency SLO
+($\alpha_\ell{=}.15$): quality-only certification meets citations but
+violates the SLO on 24.8\% of queries (escalation accumulates latency);
+the escalation-only family has \emph{no} feasible candidate; the full
+optimizer certifies a jump router that satisfies both constraints
+(realized citation risk 0.230; no SLO violation observed on test) at
+0.98 mCNY --- 5.0$\times$ cheaper than the
+quality-only policy --- because jumping pays a single rung's latency.
+
+\textbf{Four-constraint contracts.} The full contract of
+Example~\ref{ex:finance} binds four dimensions at once. On CRAG we
+certify correctness $\le .65$, hallucination $\le .30$, staleness
+$\le .05$, and latency-budget exceedance $\le .10$ (8s) jointly: the
+IUT-certified policy satisfies all four on test (correctness .603,
+hallucination .258, latency .057, every per-constraint p-value
+$\le 5.5{\times}10^{-3}$; the staleness loss never fires on the
+1006-query test split, $<.003$ at 95\% confidence,
+because the certified policy escalates every stale-evidence query) at
+5.02 mCNY/query, certifying 47 candidates
+against Bonferroni's 44 and selecting a 3\% cheaper policy. On ASQA
+(citation recall $\le .25$, citation precision $\le .35$, quality
+$\le .40$, latency $\le .15$ at 15s) the gap is qualitative: IUT
+certifies 45 candidates (test risks $.188/.230/.261/.033$) while
+Bonferroni certifies \emph{none} --- at $n_{\mathrm{cal}}{=}350$ the
+$\delta/4$ split is fatal, exactly as \S\ref{sec:certification}
+predicts.
+
+\textbf{Multi-constraint drift attribution.} Post-deployment, four
+e-process monitors (one per constraint, each at $\delta_{\mathrm{mon}}/4$,
+so the familywise false-alarm budget is one global
+$\delta_{\mathrm{mon}}$) watch the certified CRAG policy. Under a
+fresh-to-stale index transition the freshness monitor alarms after a
+median of 13.5 queries (range 5--25, 20 seeds) while the correctness,
+hallucination, and latency monitors --- whose constraints genuinely
+remain in contract --- stay silent; all four are silent on 40
+drift-free controls. The alarm is thus also an \emph{attribution}: the
+operator learns that the index, not the generator, is failing.
+
+\smallskip\noindent\textit{Takeaway: multi-dimensional contracts of the
+kind in Example~\ref{ex:finance} are exactly where the heterogeneous
+policy space and the IUT earn their keep --- Bonferroni certifies
+nothing on ASQA where the IUT certifies 45 candidates, and per-constraint
+monitors under one global budget turn alarms into attributions.}
+
+\subsection{RQ8: generalization across model families and serving
+backends}
+\label{sec:exp-families}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/families.pdf}
+\caption{RQ8: the same certified optimizer across four generator
+families (HybridQA, $\alpha{=}0.35$; gemma at $\alpha{=}0.45$).
+Retrieval is materialized once and shared; only the generator column
+changes. Grey: the four fixed rungs; star: the certified policy.
+The optimizer picks a \emph{different} policy family per price
+structure (threshold ladder for Qwen, jump routers for DeepSeek/GLM/
+Gemma) and stays below the contract line everywhere it certifies.}
+\label{fig:families}
+\end{figure*}
+
+\begin{table*}[t]
+\caption{RQ8: the same certified optimizer across four generator
+families from four model developers, served through two backends ---
+Qwen, DeepSeek, and GLM hosted on one API platform (DashScope,
+token-metered at each developer's list prices), Gemma-3 served locally
+by Ollama and metered in GPU-seconds (HybridQA, quality contract
+$\mathbf{1}[\text{F1}<0.5]$, $\delta{=}0.1$; splits 300/500/600 over
+shared materialized retrieval). ``Viol.\ prob.'' = fraction of 200
+repeated calibration/test draws whose exact finite-population risk
+exceeds $\alpha$ (must be $\le \delta$); ``emp.'' = the
+empirical-no-certificate ablation; cells with no violating draw report
+the one-sided 95\% upper bound $<.015$ --- the protocol's resolution
+at 200 draws --- the expected outcome under the
+certificate's built-in margin; held-out rates are 4.5\% (Qwen) and
+9.5\% (DeepSeek). \system\ is the only method within
+budget on every family; the certified policy family itself adapts to
+each developer's price structure. At $\alpha{=}0.35$ the Gemma-3 plan
+space is infeasible and \system\ reports non-certifiability instead of
+deploying the least-bad plan.}
+\label{tab:families}
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llcccccccccc}
+\toprule
+& & & \multicolumn{2}{c}{Strongest fixed plan}
+& \multicolumn{4}{c}{\system\ (certified)}
+& \multicolumn{2}{c}{Utility router} & Oracle \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-9}\cmidrule(lr){10-11}
+Family (serving) & $\alpha$ & metering
+& risk & mCNY & risk & mCNY & saving & selected policy
+& risk & mCNY & mCNY \\
+\midrule
+Qwen (DashScope)     & .35 & tokens & .300 & 7.29 & \textbf{.320} & 6.94 & 1.1$\times$ & ladder $q{=}.85$ & .395 & 0.37 & 3.18 \\
+DeepSeek (DashScope) & .35 & tokens & .295 & 33.51 & \textbf{.337} & 2.02 & \textbf{16.6$\times$} & router $\lambda{=}32$ & .365 & 1.32 & 12.84 \\
+GLM (DashScope)      & .35 & tokens & .277 & 22.71 & \textbf{.317} & 4.06 & 5.6$\times$ & router $\lambda{=}100$ & .355 & 3.76 & 13.68 \\
+Gemma-3 (local Ollama) & .45 & GPU-s & .395 & 0.66 & \textbf{.432} & 0.57 & 1.2$\times$ & router $\lambda{=}178$ & .465 & 0.49 & 1.06 \\
+\midrule
+\multicolumn{3}{l}{Viol.\ prob.\ over 200 draws (cert.\ / emp.)}
+& \multicolumn{9}{l}{Qwen \textbf{$<$.015}/.300 \quad DeepSeek \textbf{$<$.015}/.095 \quad GLM \textbf{$<$.015}/.055 \quad Gemma-3 \textbf{$<$.015}/$<$.015 \qquad (population risk; $\delta{=}0.1$)} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+A fair objection to any cost-optimization result is that it may be an
+artifact of one vendor's price sheet. We therefore hold the entire
+optimizer fixed --- retrieval ladder, sufficiency scorers, candidate
+families, certification --- and swap only the generator column across
+four model families ---
+Qwen~\cite{qwen25}, DeepSeek~\cite{deepseekv3,deepseekr1},
+GLM~\cite{glm2024}, and open-weight Gemma-3~\cite{gemma3} ---
+(Table~\ref{tab:families},
+Fig.~\ref{fig:families}; splits 300/500/600
+train/cal/test over shared materialized retrieval). What varies is the
+model developer and its price structure (four developers, two serving
+backends: one hosted API platform plus one local deployment); testing
+robustness across independent hosting platforms for the \emph{same}
+model would require replicating the ladder on a second API vendor,
+which we leave outside scope and do not claim. Four results.
+\emph{(i) The guarantee transfers}: on every family where the contract
+is feasible, the certified policy's realized test risk is below
+$\alpha$ --- Qwen 0.320, DeepSeek 0.337, GLM 0.317 at $\alpha{=}0.35$;
+Gemma-3 0.432 at $\alpha{=}0.45$ --- and over 200 repeated
+calibration/test draws per family (RQ1's population protocol on the
+pooled 1{,}100 queries) the certified policy's exact population risk
+never exceeds $\alpha$ in \emph{any} draw (below 1.5\% at 95\%
+confidence on all four families
+against the $\delta{=}0.1$ budget; up to 9.5\% on the noisier held-out
+criterion), while the
+empirical-no-certificate ablation deploys truly out-of-contract
+policies in up to \textbf{30\%} of
+draws (Qwen; 9.5\% DeepSeek, 5.5\% GLM) and the tuned utility router's
+single deployment exceeds $\alpha$ on \emph{all four} families
+(risk .355--.465). Uncertified selection does not fail on one vendor's
+quirk; it fails everywhere.
+\emph{(ii) The savings are not
+Qwen-specific --- they grow with the family's price spread}: against
+each family's strongest plan, certified cost drops 16.6$\times$ for
+DeepSeek (2.0 vs.\ 33.5 mCNY/query), 5.6$\times$ for GLM (4.1 vs.\
+22.7), 1.1--1.2$\times$ for Qwen and Gemma at these $\alpha$ (the Qwen
+figure is smaller than RQ2's 6.9$\times$ because $n_{\mathrm{cal}}$
+here is 500, not 3000: the wider certificate radius forces a deeper
+stopping rule --- the price of a smaller audit budget, not a property
+of the family); and the
+\emph{certified policy family itself changes} with the price structure
+--- a threshold ladder for Qwen's smooth tiering, jump routers for
+DeepSeek and GLM, whose flash tiers are strong but whose top tiers are
+disproportionately expensive. The optimizer discovers this from data;
+nothing in the system encodes a vendor. \emph{(iii) Infeasibility is
+reported, not hidden}: at $\alpha{=}0.35$ no Gemma-3 plan --- not even
+the 27b rung (risk 0.395) --- can meet the contract, and \system\
+returns non-certifiable instead of deploying the least-bad plan, the
+same honest failure mode as RQ5. \emph{(iv) Cost-metric generality}:
+Gemma plans are metered in measured GPU-seconds (0.66 mCNY/query at
+the 27b rung --- an order of magnitude below hosted tiers at 10 points
+more risk), and certification is indifferent to which currency the
+cost column uses. Re-certifying over the 8{,}029-candidate Cartesian
+grid instead of the 69-candidate default changes validity nowhere
+(selection-proofness) but illustrates a real power effect: at
+$n_{\mathrm{cal}}{=}500$ the grid's cross-fit walk order reaches the
+contract boundary sooner on Qwen and certifies nothing, falling back
+to the strongest plan --- more candidates are statistically free for
+\emph{safety} but not automatically better for \emph{power} at small
+audit budgets, which is why \system\ ships the compact curated space
+as the default.
+
+\subsection{RQ9: access-path selection and plan-space scale}
+\label{sec:exp-system}
+
+\textbf{Join ordering / access paths.} On HybridQA we execute four
+physical plans for the table$\bowtie$text join at a \emph{fixed}
+generator (qwen-flash), so plan differences are purely retrieval-side:
+\{table-first, text-first\} $\times$ \{lexical, hybrid+rerank\}, with
+GPU-priced retrieval included in cost. Estimated pool selectivity
+$\sigma$ (computed from the row-link cardinalities \emph{before}
+execution, \S\ref{sec:planner}) stratifies violation cleanly and
+monotonically for every path: e.g., text-first-hybrid moves from 0.511
+(lowest-$\sigma$ tercile) to 0.364 (highest), and the lexical paths pay
+a violation premium over hybrid that \emph{grows} with $\sigma$ (1.9
+points on the vague-predicate tercile, where even reranking cannot
+recover a poor pool, versus 5.1 on the selective one) --- the
+selectivity-dependent crossover that access-path selection exploits.
+Feeding the chooser family (fixed paths + selectivity-threshold rules
+over a target grid) to the certification layer at $\alpha{=}0.5$
+certifies a mixed policy at 0.337 mCNY/query --- 31\% below the
+strongest fixed path (text-first-hybrid, 0.492) with realized test
+violation 0.481 $\le \alpha$; the per-query oracle path (0.374 at
+0.347) bounds the headroom better cardinality estimates could still
+buy. Everything a relational optimizer does with selectivities ---
+pick the join order, skip the expensive operator when the predicate is
+strong --- transfers, except that feasibility is established by the
+test, not by the estimate.
+
+\textbf{Plan-space scalability.} Certification is a vectorized pass
+over the materialized ladder matrix, so enlarging the plan space is
+cheap: growing the threshold grid from 69 to 97{,}365 candidates
+(Cartesian per-rung thresholds, the $10^5$ regime of combinatorial
+plan enumeration) raises certification wall-clock to 8.5s on HybridQA,
+4.1s on CRAG, and 0.9s on ASQA --- still below the cost of a single
+qwen-max call, with selection-proofness (Theorem~\ref{thm:validity})
+guaranteeing that the extra $10^3\times$ candidates cost nothing in
+validity. \textbf{Operator sharing.} Materializing retrieval once and
+sharing it across the four generator families of RQ8 removes
+three-quarters of retrieval compute (8--19\% of single-family
+wall-clock, a measured 1.06--1.17$\times$ end-to-end speedup for
+$F{=}4$) and, more importantly, eliminates GPU contention between the
+reranker and locally served generators.

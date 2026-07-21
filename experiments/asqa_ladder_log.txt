@@ -1,0 +1,85 @@
+﻿python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-23e9ce12-5345-4d91-ad9b-fe170fc36a6a.ps1:81 字符: 75
++ ... EVICES="1"; python scripts\run_ladder.py asqa --split all --workers 2 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+=== asqa / train: 200 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_train_matrix.jsonl
+rung 0: all cached
+rung 1: all cached
+rung 2: all cached
+rung 3: 192 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 9993.13it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 393/393 [00:00<00:00, 9304.37it/s]
+  generate: 192 calls, 0.890 CNY, 3s
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 202/202 [00:00<00:00, 6458.97it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  repair: 160 queries
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_train_matrix.jsonl
+=== asqa / cal: 300 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_cal_matrix.jsonl
+rung 0: 300 queries
+  retrieve 200/300 (4s)
+  generate: 300 calls, 0.086 CNY, 17s
+  features 200/300 (1s)
+rung 1: 300 queries
+  retrieve 200/300 (30s)
+  generate: 300 calls, 0.087 CNY, 15s
+  features 200/300 (1s)
+rung 2: 300 queries
+  retrieve 200/300 (56s)
+  generate: 300 calls, 0.396 CNY, 31s
+  features 200/300 (5s)
+rung 3: 300 queries
+  retrieve 200/300 (78s)
+  generate: 300 calls, 1.401 CNY, 60s
+  features 200/300 (4s)
+  repair: 249 queries
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_cal_matrix.jsonl
+=== asqa / test: 448 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_test_matrix.jsonl
+rung 0: 448 queries
+  retrieve 200/448 (3s)
+  retrieve 400/448 (6s)
+  generate: 448 calls, 0.130 CNY, 25s
+  features 200/448 (2s)
+  features 400/448 (3s)
+rung 1: 448 queries
+  retrieve 200/448 (30s)
+  retrieve 400/448 (59s)
+  generate: 448 calls, 0.128 CNY, 22s
+  features 200/448 (1s)
+  features 400/448 (2s)
+rung 2: 448 queries
+  retrieve 200/448 (54s)
+  retrieve 400/448 (109s)
+  generate: 448 calls, 0.588 CNY, 41s
+  features 200/448 (4s)
+  features 400/448 (9s)
+rung 3: 448 queries
+  retrieve 200/448 (76s)
+  retrieve 400/448 (153s)
+  generate: 448 calls, 2.078 CNY, 185s
+  features 200/448 (7s)
+  features 400/448 (14s)
+  repair: 368 queries
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\asqa_test_matrix.jsonl

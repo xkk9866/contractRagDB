@@ -1,0 +1,71 @@
+{
+ "track": "crag",
+ "contract": "correct",
+ "tau": 0.5,
+ "alpha": 0.7,
+ "delta": 0.1,
+ "repeats": 1000,
+ "strongest_cost": 0.008260847382851445,
+ "methods": {
+  "contractrag_opt": {
+   "violation_rate": 0.07,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6451960132890365,
+   "mean_pop_risk": 0.6451256231306083,
+   "mean_excess_when_violate": 0.005885144755576698,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.00021714101333056477,
+   "cost_ratio_vs_strongest": 0.02628556167026208
+  },
+  "contractrag": {
+   "violation_rate": 0.074,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6694335548172757,
+   "mean_pop_risk": 0.6692741774675972,
+   "mean_excess_when_violate": 0.005733141779653459,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.0006507054605897009,
+   "cost_ratio_vs_strongest": 0.07876981990255498
+  },
+  "empirical_no_cert": {
+   "violation_rate": 0.161,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6895415282392027,
+   "mean_pop_risk": 0.6894641076769692,
+   "mean_excess_when_violate": 0.0037050411671241284,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.0001956252971345515,
+   "cost_ratio_vs_strongest": 0.023681020610627282
+  },
+  "bo_thresholds": {
+   "violation_rate": 0.124,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6690589700996677,
+   "mean_pop_risk": 0.6687647058823529,
+   "mean_excess_when_violate": 0.0033945986496624657,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.00030879277724252485,
+   "cost_ratio_vs_strongest": 0.03738027867256604
+  },
+  "utility_router": {
+   "violation_rate": 0.0,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6431046511627907,
+   "mean_pop_risk": 0.6430707876370889,
+   "mean_excess_when_violate": 0.0,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.00021387996291528238,
+   "cost_ratio_vs_strongest": 0.025890801875758197
+  },
+  "abacus": {
+   "violation_rate": 0.096,
+   "violation_rate_pop": 0.0,
+   "mean_risk": 0.6629186046511628,
+   "mean_pop_risk": 0.6627437686939184,
+   "mean_excess_when_violate": 0.0037998338870432386,
+   "mean_pop_excess_when_violate": 0.0,
+   "mean_cost": 0.0005791193977990034,
+   "cost_ratio_vs_strongest": 0.07010411534792274
+  }
+ }
+}

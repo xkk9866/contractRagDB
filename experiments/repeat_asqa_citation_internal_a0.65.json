@@ -1,0 +1,53 @@
+{
+ "track": "asqa",
+ "contract": "citation_internal",
+ "tau": 0.5,
+ "alpha": 0.65,
+ "delta": 0.1,
+ "repeats": 100,
+ "strongest_cost": 0.010949464438502672,
+ "methods": {
+  "contractrag_opt": {
+   "violation_rate": 0.0,
+   "mean_risk": 0.5706458797327394,
+   "mean_excess_when_violate": 0.0,
+   "mean_cost": 0.003958618277282851,
+   "cost_ratio_vs_strongest": 0.3615353334874329
+  },
+  "contractrag": {
+   "violation_rate": 0.07,
+   "mean_risk": 0.5953897550111359,
+   "mean_excess_when_violate": 0.012742602608972309,
+   "mean_cost": 0.00427322964922049,
+   "cost_ratio_vs_strongest": 0.3902683709528399
+  },
+  "empirical_no_cert": {
+   "violation_rate": 0.56,
+   "mean_risk": 0.6510690423162583,
+   "mean_excess_when_violate": 0.030122494432071246,
+   "mean_cost": 0.003430718992204899,
+   "cost_ratio_vs_strongest": 0.3133229950627655
+  },
+  "bo_thresholds": {
+   "violation_rate": 0.0,
+   "mean_risk": 0.6096881959910914,
+   "mean_excess_when_violate": 0.0,
+   "mean_cost": 0.0018903285734966596,
+   "cost_ratio_vs_strongest": 0.17264119027132618
+  },
+  "utility_router": {
+   "violation_rate": 0.0,
+   "mean_risk": 0.5544766146993317,
+   "mean_excess_when_violate": 0.0,
+   "mean_cost": 0.003217999606904232,
+   "cost_ratio_vs_strongest": 0.293895616993692
+  },
+  "abacus_style": {
+   "violation_rate": 0.15,
+   "mean_risk": 0.5574387527839644,
+   "mean_excess_when_violate": 0.0782850779510022,
+   "mean_cost": 0.009575825272828506,
+   "cost_ratio_vs_strongest": 0.8745473649976976
+  }
+ }
+}

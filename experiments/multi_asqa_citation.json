@@ -1,0 +1,24 @@
+{
+ "track": "asqa",
+ "alpha_q": 0.3,
+ "alpha_l": 0.15,
+ "lat_budget": 10.0,
+ "delta": 0.1,
+ "policies": {
+  "quality_only": {
+   "risk_q": 0.234375,
+   "risk_lat": 0.24776785714285715,
+   "cost_mean": 0.004875634598214286,
+   "lat_p95": 13.503275132179258
+  },
+  "iut": null,
+  "bonferroni": null,
+  "opt_multi": {
+   "risk_q": 0.22991071428571427,
+   "risk_lat": 0.0,
+   "cost_mean": 0.0009794689732142857,
+   "lat_p95": 3.831048941612243,
+   "selected": "util(lam=316)"
+  }
+ }
+}

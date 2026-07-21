@@ -1,0 +1,106 @@
+﻿python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-70d54091-aa05-45e8-9ccc-f45e521b7bea.ps1:83 字符: 106
++ ... PYTHONIOENCODING="utf-8"; python scripts\run_rewrites.py 2>&1 | Out-F ...
++                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+rung 0: 500 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 199/199 [00:00<00:00, 4640.98it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 393/393 [00:00<00:00, 4273.64it/s]
+  retrieve 200/500 (100s)
+  retrieve 400/500 (132s)
+  generate: 500 calls, 0.877 CNY, 0s
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 202/202 [00:00<00:00, 8560.06it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/500 (20s)
+  features 400/500 (27s)
+rung 1: 500 queries
+  retrieve 200/500 (31s)
+  retrieve 400/500 (62s)
+  generate: 500 calls, 0.881 CNY, 7s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 2: 500 queries
+  retrieve 200/500 (19s)
+  retrieve 400/500 (37s)
+  generate: 500 calls, 0.555 CNY, 11s
+  features 200/500 (7s)
+  features 400/500 (15s)
+rung 3: 500 queries
+  retrieve 200/500 (4s)
+  retrieve 400/500 (8s)
+  generate: 500 calls, 0.846 CNY, 11s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 4: 500 queries
+  retrieve 200/500 (32s)
+  retrieve 400/500 (63s)
+  generate: 500 calls, 0.168 CNY, 9s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 5: 500 queries
+  retrieve 200/500 (4s)
+  retrieve 400/500 (7s)
+  generate: 500 calls, 0.106 CNY, 9s
+  features 200/500 (7s)
+  features 400/500 (15s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_cal_rewrites.jsonl
+rung 0: 500 queries
+  retrieve 200/500 (33s)
+  retrieve 400/500 (65s)
+  generate: 500 calls, 0.866 CNY, 0s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 1: 500 queries
+  retrieve 200/500 (31s)
+  retrieve 400/500 (62s)
+  generate: 500 calls, 0.867 CNY, 6s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 2: 500 queries
+  retrieve 200/500 (18s)
+  retrieve 400/500 (37s)
+  generate: 500 calls, 0.551 CNY, 11s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 3: 500 queries
+  retrieve 200/500 (4s)
+  retrieve 400/500 (8s)
+  generate: 500 calls, 0.843 CNY, 11s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 4: 500 queries
+  retrieve 200/500 (31s)
+  retrieve 400/500 (63s)
+  generate: 500 calls, 0.166 CNY, 10s
+  features 200/500 (7s)
+  features 400/500 (14s)
+rung 5: 500 queries
+  retrieve 200/500 (4s)
+  retrieve 400/500 (8s)
+  generate: 500 calls, 0.104 CNY, 9s
+  features 200/500 (7s)
+  features 400/500 (15s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_test_rewrites.jsonl
+REWRITES_DONE

@@ -1,0 +1,126 @@
+{
+ "delta": 0.1,
+ "alphas": [
+  0.05,
+  0.1,
+  0.2
+ ],
+ "betas": [
+  0.25,
+  0.5,
+  0.75,
+  0.9
+ ],
+ "tracks": {
+  "hybridqa": {
+   "strongest_cost_mCNY": 9.357462261973458,
+   "settings": [
+    {
+     "alpha": 0.05,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.1,
+     "beta": 0.75,
+     "n_certified": 6,
+     "kappa": 0.8187203801559829,
+     "test_risk_answered_marginal": 0.09117137911136756,
+     "test_defer_rate": 0.5969417195614541,
+     "test_risk_conditional": 0.22619899785254116,
+     "test_cost_mCNY": 7.865903750721291
+    },
+    {
+     "alpha": 0.2,
+     "beta": 0.25,
+     "n_certified": 21,
+     "kappa": 0.7440235808074803,
+     "test_risk_answered_marginal": 0.20657818811309867,
+     "test_defer_rate": 0.24495095210617426,
+     "test_risk_conditional": 0.27359572029040885,
+     "test_cost_mCNY": 5.310370874206578
+    }
+   ]
+  },
+  "crag": {
+   "strongest_cost_mCNY": 8.157706958250497,
+   "settings": [
+    {
+     "alpha": 0.05,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.1,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.2,
+     "beta": 0.75,
+     "n_certified": 7,
+     "kappa": 0.5865048286167261,
+     "test_risk_answered_marginal": 0.16600397614314116,
+     "test_defer_rate": 0.5288270377733598,
+     "test_risk_conditional": 0.35232067510548526,
+     "test_cost_mCNY": 5.836442246520875
+    }
+   ]
+  },
+  "asqa": {
+   "strongest_cost_mCNY": 10.895200558035715,
+   "settings": [
+    {
+     "alpha": 0.05,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.1,
+     "beta": 0.75,
+     "n_certified": 7,
+     "kappa": 0.9453944131365601,
+     "test_risk_answered_marginal": 0.08705357142857142,
+     "test_defer_rate": 0.21875,
+     "test_risk_conditional": 0.11142857142857143,
+     "test_cost_mCNY": 7.642355803571428
+    },
+    {
+     "alpha": 0.2,
+     "beta": 0.25,
+     "n_certified": 24,
+     "kappa": 0.8270934422338062,
+     "test_risk_answered_marginal": 0.13169642857142858,
+     "test_defer_rate": 0.029017857142857144,
+     "test_risk_conditional": 0.135632183908046,
+     "test_cost_mCNY": 6.75667109375
+    }
+   ]
+  },
+  "qampari": {
+   "strongest_cost_mCNY": 8.1797888,
+   "settings": [
+    {
+     "alpha": 0.05,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.1,
+     "beta": null,
+     "certified": false
+    },
+    {
+     "alpha": 0.2,
+     "beta": 0.75,
+     "n_certified": 2,
+     "kappa": 0.5488934233238761,
+     "test_risk_answered_marginal": 0.146,
+     "test_defer_rate": 0.678,
+     "test_risk_conditional": 0.453416149068323,
+     "test_cost_mCNY": 7.3751581
+    }
+   ]
+  }
+ }
+}

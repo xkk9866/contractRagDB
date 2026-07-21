@@ -1,0 +1,161 @@
+﻿=== hybridqa / cal: 3000 queries -> Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_cal_matrix.jsonl
+rung 0: 3000 queries
+  retrieve 200/3000 (0s)
+  retrieve 400/3000 (1s)
+  retrieve 600/3000 (1s)
+  retrieve 800/3000 (1s)
+  retrieve 1000/3000 (2s)
+  retrieve 1200/3000 (2s)
+  retrieve 1400/3000 (2s)
+  retrieve 1600/3000 (3s)
+  retrieve 1800/3000 (3s)
+  retrieve 2000/3000 (4s)
+  retrieve 2200/3000 (4s)
+  retrieve 2400/3000 (4s)
+  retrieve 2600/3000 (5s)
+  retrieve 2800/3000 (5s)
+  retrieve 3000/3000 (5s)
+  generate: 3000 calls, 0.529 CNY, 44s
+python : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate l
+imits and faster downloads.
+所在位置 C:\Users\Admin\AppData\Local\Temp\ps-script-6a11d796-cbe3-4ad2-ae9a-673dca9fefe6.ps1:83 字符: 178
++ ... f0a578873"; python scripts\run_ladder.py hybridqa --split cal --worke ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 202/202 [00:00<00:00, 8599.60it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-base
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+  features 200/3000 (23s)
+  features 400/3000 (28s)
+  features 600/3000 (33s)
+  features 800/3000 (38s)
+  features 1000/3000 (43s)
+  features 1200/3000 (47s)
+  features 1400/3000 (52s)
+  features 1600/3000 (57s)
+  features 1800/3000 (62s)
+  features 2000/3000 (67s)
+  features 2200/3000 (72s)
+  features 2400/3000 (77s)
+  features 2600/3000 (82s)
+  features 2800/3000 (87s)
+  features 3000/3000 (91s)
+rung 1: 3000 queries
+
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 199/199 [00:00<00:00, 10771.00it/s]
+[1mBertModel LOAD REPORT[0m from: BAAI/bge-base-en-v1.5
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]
+Loading weights: 100%|鈻堚枅鈻堚枅鈻堚枅鈻堚枅鈻堚枅| 393/393 [00:00<00:00, 10050.56it/s]
+  retrieve 200/3000 (46s)
+  retrieve 400/3000 (71s)
+  retrieve 600/3000 (95s)
+  retrieve 800/3000 (118s)
+  retrieve 1000/3000 (139s)
+  retrieve 1200/3000 (161s)
+  retrieve 1400/3000 (181s)
+  retrieve 1600/3000 (202s)
+  retrieve 1800/3000 (222s)
+  retrieve 2000/3000 (242s)
+  retrieve 2200/3000 (263s)
+  retrieve 2400/3000 (283s)
+  retrieve 2600/3000 (303s)
+  retrieve 2800/3000 (323s)
+  retrieve 3000/3000 (343s)
+  generate: 3000 calls, 0.683 CNY, 150s
+  features 200/3000 (6s)
+  features 400/3000 (12s)
+  features 600/3000 (18s)
+  features 800/3000 (24s)
+  features 1000/3000 (30s)
+  features 1200/3000 (36s)
+  features 1400/3000 (42s)
+  features 1600/3000 (48s)
+  features 1800/3000 (54s)
+  features 2000/3000 (61s)
+  features 2200/3000 (67s)
+  features 2400/3000 (73s)
+  features 2600/3000 (80s)
+  features 2800/3000 (86s)
+  features 3000/3000 (92s)
+rung 2: 3000 queries
+  retrieve 200/3000 (29s)
+  retrieve 400/3000 (59s)
+  retrieve 600/3000 (89s)
+  retrieve 800/3000 (119s)
+  retrieve 1000/3000 (147s)
+  retrieve 1200/3000 (177s)
+  retrieve 1400/3000 (206s)
+  retrieve 1600/3000 (235s)
+  retrieve 1800/3000 (264s)
+  retrieve 2000/3000 (293s)
+  retrieve 2200/3000 (323s)
+  retrieve 2400/3000 (353s)
+  retrieve 2600/3000 (382s)
+  retrieve 2800/3000 (412s)
+  retrieve 3000/3000 (441s)
+  generate: 3000 calls, 5.274 CNY, 68s
+  features 200/3000 (6s)
+  features 400/3000 (13s)
+  features 600/3000 (20s)
+  features 800/3000 (26s)
+  features 1000/3000 (32s)
+  features 1200/3000 (39s)
+  features 1400/3000 (45s)
+  features 1600/3000 (51s)
+  features 1800/3000 (58s)
+  features 2000/3000 (64s)
+  features 2200/3000 (71s)
+  features 2400/3000 (77s)
+  features 2600/3000 (84s)
+  features 2800/3000 (90s)
+  features 3000/3000 (97s)
+rung 3: 3000 queries
+  retrieve 200/3000 (40s)
+  retrieve 400/3000 (81s)
+  retrieve 600/3000 (122s)
+  retrieve 800/3000 (163s)
+  retrieve 1000/3000 (203s)
+  retrieve 1200/3000 (244s)
+  retrieve 1400/3000 (283s)
+  retrieve 1600/3000 (323s)
+  retrieve 1800/3000 (362s)
+  retrieve 2000/3000 (401s)
+  retrieve 2200/3000 (442s)
+  retrieve 2400/3000 (482s)
+  retrieve 2600/3000 (522s)
+  retrieve 2800/3000 (563s)
+  retrieve 3000/3000 (603s)
+  generate: 3000 calls, 21.771 CNY, 515s
+  features 200/3000 (6s)
+  features 400/3000 (13s)
+  features 600/3000 (20s)
+  features 800/3000 (26s)
+  features 1000/3000 (32s)
+  features 1200/3000 (39s)
+  features 1400/3000 (45s)
+  features 1600/3000 (51s)
+  features 1800/3000 (58s)
+  features 2000/3000 (65s)
+  features 2200/3000 (71s)
+  features 2400/3000 (77s)
+  features 2600/3000 (84s)
+  features 2800/3000 (90s)
+  features 3000/3000 (97s)
+ladder matrix complete: Y:\xkk_workspace\workspace\contractRAG\experiments\hybridqa_cal_matrix.jsonl

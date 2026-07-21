@@ -1,0 +1,191 @@
+\section{Progressive Execution and Online Monitoring}
+\label{sec:runtime}
+
+\input{fig_runtime}
+
+The optimizer of \S\ref{sec:optimizer} certifies a policy once; this
+section covers what happens while it runs --- how escalation executes
+progressively, how contracts specialize to query groups, and how the
+certificate is defended against drift after deployment
+(Fig.~\ref{fig:runtime}).
+
+\subsection{Escalation as certified progressive execution}
+
+The T-family realizes the database idea of progressive
+re-optimization~\cite{kabra1998efficient,markl2004robust} in statistical
+form. Classical progressive execution compares runtime cardinalities
+against optimizer estimates and re-plans when they diverge; \system\
+compares runtime \emph{sufficiency evidence} against certified thresholds
+and escalates to a stronger plan when the current rung cannot demonstrate
+contract compliance. The critical difference is that the escalation rule
+itself carries the contract guarantee (Theorem~\ref{thm:validity}): the
+thresholds are not tuned heuristics but the output of the risk-controlled
+selection, so ``how sure must rung $j$ be before answering'' is exactly as
+conservative as the contract demands, no more.
+
+Cost accounting is conservative: a query stopping at rung $j$ is charged
+the cumulative cost of rungs $0..j$. In deployment rungs share retrieval
+state (indexes, fused pools, reranker scores), so realized savings exceed
+what we report.
+
+\subsection{Group-conditional contracts}
+\label{sec:group}
+
+Marginal risk control can hide systematic failures on identifiable slices
+--- e.g., \emph{real-time} queries in CRAG whose evidence goes stale within
+hours. For a grouping $G(q) \in \{1..m\}$ known at query time, \system\
+certifies a threshold family per group on the group's calibration subsample,
+each at level $\delta/m$ (Bonferroni across groups). The result is the
+stronger guarantee $R_j(\hat\pi \mid G = g) \le \alpha_j$ for all $g$
+simultaneously with probability $\ge 1-\delta$, at the price of wider
+per-group confidence radii. Empirically (\S\ref{sec:exp-group}) the
+marginal policy under-serves dynamic queries by wide margins that the
+group-conditional policy eliminates.
+
+\subsection{Anytime-valid contract monitoring}
+\label{sec:monitor}
+
+Certificates are only as good as the exchangeability between calibration
+and deployment; hybrid RAG deployments drift (workload mix, index
+staleness, API degradation). \system\ monitors deployed violation
+indicators $\ell_t \in [0,1]$ with a \emph{restart-mixture}
+e-detector~\cite{shin2024edetectors,ramdas2023savi}. Fix a horizon $T$ and
+a finite bet grid $W \subset (0, 1/\alpha)$. For restart time $r$ and bet
+$w$ the wealth process is
+$E_t^{(r,w)} = \prod_{i=r}^{t} \big(1 + w\,(\ell_i - \alpha)\big)$
+(with $E_t^{(r,w)} = 1$ for $t < r$). Rather than taking a
+\emph{maximum} over restarts --- which is not an e-process and cannot be
+scaled by Ville's inequality --- the detector statistic is the weighted
+\emph{mixture}
+\begin{equation}
+\label{eq:mixdetector}
+M_t \;=\; \sum_{r=1}^{t}\sum_{w \in W}
+  \frac{1}{T\,|W|}\, E_t^{(r,w)} \;+\; \Big(1 - \frac{t}{T}\Big),
+\end{equation}
+where the trailing term is the prior mass of restarts not yet started. The
+mixture weights sum to one, so $M_t$ is itself a nonnegative
+supermartingale with $M_0 = 1$ (App.~\ref{app:proofs}); an alarm fires when
+$M_t \ge 1/\delta$. The recursion $A^{(w)}_t = (A^{(w)}_{t-1} +
+\tfrac{1}{T|W|})\,(1 + w(\ell_t - \alpha))$ maintains all started restarts
+of bet $w$ jointly, so the update is $O(|W|) = O(1)$ per query in time and
+space, independent of $t$.
+
+\begin{proposition}[Anytime validity]
+\label{prop:eprocess}
+If the conditional risk stays within contract,
+$\E[\ell_t \mid \mathcal{F}_{t-1}] \le \alpha$ for all $t$, then for $M_t$
+in~\eqref{eq:mixdetector}, $\Prob(\exists t \le T : M_t \ge 1/\delta) \le \delta$.
+\end{proposition}
+
+Seeding a fresh restart at \emph{every} step is what makes the mixture
+practical, and it recovers the ``forgetting'' that a single product
+e-process lacks: a plain product sinks exponentially during a long
+compliant prefix and goes numb, whereas in~\eqref{eq:mixdetector} a change
+at any time $\tau$ is caught by the restart component born at $\tau$, whose
+growth is unaffected by the compliant history before it. The detection
+delay therefore depends on the horizon but \emph{not} on $\tau$.
+
+\begin{proposition}[Detection delay]
+\label{prop:delay}
+Suppose a persistent change at $\tau$ makes
+$\E[\ell_t \mid \mathcal{F}_{t-1}] \ge \alpha' > \alpha$ for all $t > \tau$,
+and let $g^\ast = \max_{w \in W}\, \E\big[\log(1 + w(\ell_t - \alpha))\big]$
+be the best post-change log-growth rate on the grid ($g^\ast > 0$ whenever
+some $w \in W$ bets in the right direction, with
+$g^\ast = \Theta(\mathrm{KL}(\alpha' \Vert \alpha))$ for a grid that
+brackets the Kelly bet). Then for any $\delta' \in (0,1)$, with probability
+$\ge 1 - \delta'$ the monitor alarms by time $\tau + N$ with
+\[
+N \;=\; O\!\left(\frac{\log(1/\delta) + \log(T|W|) + \log(1/\delta')}
+                     {g^\ast}\right),
+\]
+a bound independent of the change time $\tau$ and of the length of the
+preceding compliant stretch.
+\end{proposition}
+
+\textbf{Changepoint localization.} Alongside the mixture, \system\
+maintains one $O(1)$ CUSUM-style recursion: the log-wealth of a single
+restarted product that resets whenever it falls to zero; at alarm time
+the start of its currently-growing run is the standard changepoint
+estimate $\hat\tau$. Validity comes exclusively from the mixture
+$M_t$; the recursion is a free diagnostic that tells the operator
+\emph{which} prefix of audited losses still reflects the old regime ---
+exactly the window recalibration must exclude. Empirically $\hat\tau$
+lands within a few queries of the true onset for strong drifts
+(\S\ref{sec:exp-drift}).
+
+\textbf{Closed-loop certified recalibration.} An alarm is a statistical
+statement (some prefix was out of contract), not a repaired policy. On
+alarm, \system\ (i) switches to \emph{safe mode} --- the strongest rung,
+optionally with deferral to human review. Safe mode is a best-effort
+fallback, not a certified policy: no plan can carry a certificate for a
+distribution that has not yet been sampled, and the system flags it as
+such. (ii) It collects a recalibration window of $W$ audited post-alarm
+queries; (iii) re-runs the fixed-sequence walk of
+\S\ref{sec:certification} on that window with the epoch's certification
+budget; and (iv) deploys the newly certified policy --- or, if the new
+distribution is infeasible for every candidate, reports
+non-certifiability and stays in flagged safe mode. The recalibration
+certificate is the only post-drift guarantee, and it is with respect to
+the post-change distribution, requiring only that the \emph{post-alarm}
+window be exchangeable with what follows --- drift before the alarm is
+irrelevant by construction. Between alarms no labels are wasted: the
+same audited losses double as the next calibration set.
+
+\textbf{Lifetime validity across repeated alarms.} A deployment does
+not stop after one alarm, and re-using a fixed $\delta/2$ per cycle
+would accumulate error without bound. Each monitor
+in~\eqref{eq:mixdetector} is also defined for a \emph{finite} horizon
+$T$, so unbounded operation must be built from finite blocks. \system\
+does both with one mechanism: the lifetime is divided into
+\emph{epochs}, where an epoch ends either at an alarm or when its
+monitor exhausts its horizon $T$ without alarming --- a
+\emph{scheduled restart} that triggers the same recertification path
+as an alarm (cheap, since it re-uses the epoch's audited losses).
+Epoch $k \ge 0$ receives budget $\delta_k = \delta/2^{k+1}$, split
+evenly between its certification ($\delta_k/2$) and its (fresh,
+horizon-$T$) monitor ($\delta_k/2$). The \emph{initial} certification
+is epoch 0's certification and runs at $\delta_0/2 = \delta/4$, not at
+the full $\delta$: in lifetime operation $\delta$ is the global
+budget, and no stage --- initial certification included --- spends
+outside the schedule. Since $\sum_k \delta_k = \delta$, the union
+bound over every certification and every monitor holds
+over an unbounded horizon, with every monitor operating strictly
+inside the finite-$T$ regime where
+Propositions~\ref{prop:eprocess}--\ref{prop:delay} apply. (A
+single-epoch deployment with no monitoring loop may of course spend
+the whole $\delta$ on its one certification; that is the regime of
+Theorem~\ref{thm:validity} and of \S\ref{sec:exp-safety}.)
+
+\begin{proposition}[Lifetime validity]
+\label{prop:lifetime}
+Run the alarm--recalibrate loop for arbitrarily many epochs
+(alarm-triggered or horizon-triggered) with the
+geometric schedule above, the initial certification being epoch 0's
+(level $\delta/4$). Then with probability $\ge 1-\delta$,
+simultaneously over the whole deployment lifetime: every epoch's
+certified policy satisfies its contract on that epoch's distribution,
+and no compliant epoch raises a false alarm. The $k$-th monitor's delay
+bound (Prop.~\ref{prop:delay}) grows only additively, by
+$(k+2)\log 2 / g^\ast$ relative to a fixed budget $\delta$.
+\end{proposition}
+
+An alternative to horizon blocks is an infinite-horizon restart prior
+(weights $\propto 1/(r(r+1))$ over restart times $r$), which removes
+$T$ entirely but makes the $\log(T|W|)$ term in
+Prop.~\ref{prop:delay} grow as $\log \tau$ --- the delay then depends
+on the change time. We prefer the block construction precisely because
+it preserves the change-time-independent delay
+(App.~\ref{app:proofs}).
+
+\textbf{Monitoring from subsampled audits.} The monitor consumes
+audited violation indicators, and auditing costs money (an LLM judge,
+an NLI check, or a human label). Full-traffic auditing is not required:
+if each query is audited independently with probability $r$, the
+audited subsequence is an i.i.d.\ draw from the deployment
+distribution, so Propositions~\ref{prop:eprocess}--\ref{prop:lifetime}
+apply verbatim to the audited stream --- only the clock dilates,
+multiplying detection delays by $1/r$ in wall-clock queries
+(App.~\ref{app:proofs}). The audit rate is an explicit dial between
+monitoring spend and reaction time; \S\ref{sec:exp-drift} meters both
+sides of it.

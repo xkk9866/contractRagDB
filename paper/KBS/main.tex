@@ -1,0 +1,231 @@
+%% Knowledge-Based Systems submission
+%% Built on the Elsevier CAS double-column template (cas-dc), unmodified.
+\documentclass[a4paper,fleqn]{cas-dc}
+
+% If the frontmatter runs over more than one page
+% use the longmktitle option.
+%\documentclass[a4paper,fleqn,longmktitle]{cas-dc}
+
+%\usepackage[numbers]{natbib}
+\usepackage[authoryear,longnamesfirst]{natbib}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%%%Author macros
+\def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
+%%%
+
+% Theorem-like environments (interface provided by the template)
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newdefinition{rmk}{Remark}
+\newproof{pf}{Proof}
+
+\newcommand{\system}{\textsc{ContractRAG}\xspace}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{Certified evidence contracts for reliable and cost-efficient RAG}
+
+% Short author
+\shortauthors{Yao et~al.}
+
+% Main title of the paper
+\title[mode = title]{Certified evidence contracts for reliable and
+cost-efficient retrieval-augmented generation over heterogeneous
+knowledge sources}
+
+\author[1,2]{Kang Yao}
+\ead{yaokang@mail.ustc.edu.cn}
+\credit{Conceptualization, Methodology, Software, Formal analysis,
+Writing -- original draft}
+
+\author[3]{Congcong Tian}
+\ead{24b903119@stu.hit.edu.cn}
+\credit{Software, Validation, Investigation, Data curation}
+
+\author[1,2]{Quanbo Cheng}
+\ead{qbcheng@ustc.edu}
+\credit{Investigation, Visualization, Writing -- review \& editing}
+
+\author[1,2]{Shengjiang Zhang}
+\ead{zhangshengjiang@mail.ustc.edu.cn}
+\credit{Validation, Data curation, Writing -- review \& editing}
+
+\author[1,2]{Hao Yin}
+\ead{hao_yin@mail.ustc.edu.cn}
+\credit{Investigation, Resources, Writing -- review \& editing}
+
+\author[2]{Jinjiang Cui}
+\cormark[1]
+\ead{cuijj@sibet.ac.cn}
+\credit{Conceptualization, Supervision, Project administration,
+Writing -- review \& editing}
+
+\author[2]{Weiwei Fu}
+\cormark[2]
+\ead{fuww@sibet.ac.cn}
+\credit{Supervision, Funding acquisition, Writing -- review \& editing}
+
+\affiliation[1]{organization={School of Biomedical Engineering
+(Suzhou), Division of Life Sciences and Medicine, University of Science
+and Technology of China},
+            city={Suzhou},
+            country={China}}
+
+\affiliation[2]{organization={Suzhou Institute of Biomedical Engineering
+and Technology, Chinese Academy of Sciences},
+            city={Suzhou},
+            country={China}}
+
+\affiliation[3]{organization={Faculty of Computing, Harbin Institute of
+Technology},
+            city={Harbin},
+            country={China}}
+
+\cortext[1]{Corresponding author}
+\cortext[2]{Corresponding author}
+
+\begin{abstract}
+Retrieval-augmented generation (RAG) grounds large language models
+(LLMs) in external knowledge sources, yet the reliability of the
+resulting knowledge service remains uncalibrated: practitioners tune
+pipelines on development sets and hope the observed quality persists in
+deployment. Existing adaptive RAG systems reduce cost with routing or
+cascading heuristics, but none can state, with quantified confidence,
+what fraction of deployed answers will violate an application's quality,
+citation, freshness, or latency requirements. We propose \emph{evidence
+contracts}, a declarative specification of admissible violation rates
+for a RAG knowledge service, and \system, a framework that certifies
+contract feasibility by statistical testing rather than point-estimate
+comparison. \system\ organizes cost-decreasing pipeline rewrites into a
+plan lattice annotated with assumption-free \emph{risk vouchers},
+materializes progressive knowledge-acquisition policies --- including
+policies that defer to human review under strict contracts --- over
+the lattice, and deploys the cheapest policy in the prefix certified
+by a distribution-free fixed-sequence test on calibration data,
+yielding a finite-sample guarantee that all contract constraints hold
+with probability at least $1-\delta$. After deployment, an
+anytime-valid e-process monitor --- valid also under subsampled
+auditing --- detects knowledge drift with a change-time-independent
+delay bound, localizes the changepoint, and drives a recalibration
+loop whose geometric error-budget schedule preserves validity over
+arbitrarily many alarms. Experiments on four heterogeneous benchmarks
+(HybridQA, CRAG, ASQA, QAMPARI) with fully metered execution verify
+the guarantee directly on exact finite-population risk: across 1000
+repeated calibration draws, \system's deployed policies exceed their
+contract in at most 0.8\% of draws against a 10\% budget, versus up to
+64\% for Bayesian optimization and empirical tuning, while cutting LLM
+cost by up to 20$\times$ against the strongest fixed pipeline
+(10--18$\times$ after charging monitoring audits). The guarantee
+transfers unchanged across four LLM families from four model
+developers and two serving backends, including a locally served
+open-weight family metered in GPU-seconds. These results suggest that
+knowledge-intensive LLM systems should move beyond point-estimate
+tuning toward certified, contract-driven deployment.
+\end{abstract}
+
+% Research highlights
+\begin{highlights}
+\item Evidence contracts declare auditable reliability targets for RAG
+knowledge services
+\item Fixed-sequence tests certify cost-efficient policies with
+finite-sample guarantees
+\item Assumption-free risk vouchers order a lattice of cost-decreasing
+plan rewrites
+\item Anytime-valid drift monitor stays valid over repeated alarms and
+subsampled audits
+\item Population-risk guarantees hold across four LLM families at up
+to 20$\times$ lower cost
+\end{highlights}
+
+% Keywords
+\begin{keywords}
+Retrieval-augmented generation \sep Evidence contracts \sep
+Distribution-free risk control \sep Large language models \sep
+Knowledge drift \sep Certified deployment
+\end{keywords}
+
+\maketitle
+
+\input{sec_intro}
+\input{sec_related}
+\input{sec_prelim}
+\input{sec_method}
+\input{sec_setup}
+\input{sec_results}
+\input{sec_discussion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+This paper reframed the deployment of retrieval-augmented generation as
+a certified knowledge-service problem. Evidence contracts give
+applications a declarative vocabulary for reliability --- admissible
+violation rates for answer quality, citation completeness, evidence
+freshness, and latency --- and \system\ makes the vocabulary
+enforceable: plan rewrites are priced by assumption-free risk vouchers,
+progressive knowledge-acquisition policies are searched over a plan
+lattice, feasibility is established by a distribution-free
+fixed-sequence test whose guarantee survives unlimited search, and an
+anytime-valid e-process monitor defends the certificate against
+knowledge drift with certified recalibration, geometric error spending
+across repeated alarms, and explicitly metered audit costs. Across
+four heterogeneous benchmarks and four LLM families from four model
+developers, certification was the only mechanism that kept the
+declared promise --- verified on exact finite-population risk, at most
+0.8\% violation probability against a 10\% budget, where uncertified
+tuning violated in up to 64\% of draws --- while remaining up to
+20$\times$ cheaper than the strongest fixed pipeline before audit
+costs and 10--18$\times$ after. We believe contract-driven
+certification offers a principled and practical path for
+knowledge-based systems that must be simultaneously economical and
+accountable, and we release all execution matrices and code to support
+replication and extension.
+
+%% Declarations
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+
+\section*{Data availability}
+All code, execution matrices, calibration artifacts, and the
+token-exact LLM-call cache are publicly available at
+%% TODO: create the repository (or mint a Zenodo DOI) and update this
+%% URL before submission.
+\url{https://github.com/contractrag/contractrag}; every number in the
+paper regenerates from the artifact without further LLM calls.
+
+% To print the credit authorship contribution details
+\printcredits
+
+%% Loading bibliography style file
+\bibliographystyle{cas-model2-names}
+
+% Loading bibliography database
+\bibliography{refs}
+
+\appendix
+\input{sec_appendix}
+
+% Flush all deferred floats before the class's AtEndDocument hook
+% records \lastpage, so the "Page X of Y" footer counts float pages.
+% After \clearpage the page counter already points at the (empty) next
+% page, so step it back to make \lastpage equal the last shipped page.
+\clearpage
+\addtocounter{page}{-1}
+
+\end{document}

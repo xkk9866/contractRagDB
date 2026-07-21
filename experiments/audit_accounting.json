@@ -1,0 +1,83 @@
+{
+ "audit_cost": {
+  "judge_model": "qwen-max",
+  "mean_judge_call_cost_mCNY": 0.5182737567474446,
+  "n_cached_judge_calls": 8707,
+  "llm_judged_fraction": 0.5600697906281157,
+  "effective_audit_cost_mCNY": 0.2902694744295883
+ },
+ "tco_crag_a0.65": {
+  "deploy_mCNY": 0.30413677932405564,
+  "strongest_mCNY": 6.002722664015904,
+  "n_cal": 1000,
+  "recert_cycle": 100000,
+  "rows": [
+   {
+    "audit_rate": 1.0,
+    "deploy_mCNY": 0.30413677932405564,
+    "monitor_audit_mCNY": 0.2902694744295883,
+    "calib_amortized_mCNY": 0.0029026947442958827,
+    "total_mCNY": 0.5973089484979399,
+    "savings_vs_strongest": 10.04961114195765
+   },
+   {
+    "audit_rate": 0.25,
+    "deploy_mCNY": 0.30413677932405564,
+    "monitor_audit_mCNY": 0.07256736860739707,
+    "calib_amortized_mCNY": 0.0029026947442958827,
+    "total_mCNY": 0.3796068426757486,
+    "savings_vs_strongest": 15.812999106402545
+   },
+   {
+    "audit_rate": 0.1,
+    "deploy_mCNY": 0.30413677932405564,
+    "monitor_audit_mCNY": 0.02902694744295883,
+    "calib_amortized_mCNY": 0.0029026947442958827,
+    "total_mCNY": 0.33606642151131033,
+    "savings_vs_strongest": 17.86171506519845
+   },
+   {
+    "audit_rate": 0.05,
+    "deploy_mCNY": 0.30413677932405564,
+    "monitor_audit_mCNY": 0.014513473721479415,
+    "calib_amortized_mCNY": 0.0029026947442958827,
+    "total_mCNY": 0.32155294778983096,
+    "savings_vs_strongest": 18.667913652402035
+   },
+   {
+    "audit_rate": 0.0,
+    "deploy_mCNY": 0.30413677932405564,
+    "monitor_audit_mCNY": 0.0,
+    "calib_amortized_mCNY": 0.0029026947442958827,
+    "total_mCNY": 0.3070394740683515,
+    "savings_vs_strongest": 19.55032877199239
+   }
+  ]
+ },
+ "subsampled_monitoring": {
+  "alpha": 0.66,
+  "delta": 0.1,
+  "P1": 1500,
+  "P2": 6000,
+  "rates": {
+   "1.0": {
+    "n_detected": 20,
+    "delay_median": 74.0,
+    "delay_mean": 82.4,
+    "false_alarms_of_20": 0
+   },
+   "0.25": {
+    "n_detected": 20,
+    "delay_median": 342.5,
+    "delay_mean": 335.7,
+    "false_alarms_of_20": 0
+   },
+   "0.1": {
+    "n_detected": 20,
+    "delay_median": 877.5,
+    "delay_mean": 884.05,
+    "false_alarms_of_20": 0
+   }
+  }
+ }
+}
