@@ -1,19 +1,19 @@
 \begin{table*}[t]
 \centering
-\caption{What enlarging the plan space does to a certificate, measured by the contracts it can actually honour rather than by its cost at levels chosen in advance. $\alpha$ is scanned on a $0.01$ grid from $0.10$ to $0.80$ ($71$ levels) and each space is certified with the same randomised construction, calibration split and $\delta=0.1$. \emph{floor} is the risk of the best single plan, what the models and retrieval physically permit; $\alpha_{\mathrm{cert}}$ is the strictest contract the certifier returns anything at, and the gap between them is the range of contracts that the space can meet but certification cannot reach. \emph{levels} counts how many of the $71$ the certifier serves. The ledger serves all $71$ in every space, including every level below the floor, because declining carries no contract loss, so the column would read $71$ four times and is omitted. Sampling that claim at $15$ levels per space (Sec.~\ref{sec:res:grid}) gives $60$ cells with no breach and a worst prefix rate between $0.71$ and $0.996$ of $\alpha$. Enlarging the space moves these quantities in opposite directions on the two tasks -- on HybridQA it costs one level and widens the gap, on CRAG it buys four levels and lets a contract $0.04$ stricter be honoured -- which is the point: the sign is a property of the task. Costs are mCNY per query at $\alpha_{\mathrm{cert}}$, where both mechanisms return something and the comparison is defined.}
+\caption{What enlarging the plan space does to a certificate, measured by the contracts it can actually honour rather than by its cost at levels chosen in advance. $\alpha$ is scanned on a $0.01$ grid from $0.10$ to $0.80$ ($71$ levels) and each space is certified with the same randomised construction, calibration split and $\delta=0.1$. \emph{floor} is the risk of the best single plan, what the models and retrieval physically permit; $\alpha_{\mathrm{cert}}$ is the strictest contract the certifier returns anything at, and the \emph{slack} between them, in percentage points, is the range of contracts the space can meet but certification cannot reach. \emph{levels} counts how many of the $71$ the certifier serves. The ledger serves all $71$ in every space, including every level below the floor, because declining carries no contract loss, so the column would read $71$ four times and is omitted. Sampling that claim at $15$ levels per space (Sec.~\ref{sec:res:grid}) gives $60$ cells, none breached, reaching $71$--$99.6\%$ of the allowance. Enlarging the space moves these quantities in opposite directions on the two tasks -- on HybridQA it costs one level and widens the gap, on CRAG it buys four levels and lets a contract $0.04$ stricter be honoured -- which is the point: the sign is a property of the task. Costs are mCNY per query at $\alpha_{\mathrm{cert}}$, where both mechanisms return something and the comparison is defined.}
 \label{tab:grid}
 \footnotesize
 \begin{tabular}{llrrrrrrr}
 \toprule
  & & & & \multicolumn{3}{c}{what the certifier can honour} & \multicolumn{2}{c}{cost at $\alpha_{\mathrm{cert}}$} \\
 \cmidrule(lr){5-7}\cmidrule(lr){8-9}
-Task & Space & $|\mathcal{P}|$ & floor & $\alpha_{\mathrm{cert}}$ & gap & levels & cert. & ledger \\
+Task & Space & $|\mathcal{P}|$ & floor & $\alpha_{\mathrm{cert}}$ & slack (pp) & levels & cert. & ledger \\
 \midrule
-HybridQA & ladder & 4 & 0.280 & 0.31 & 0.030 & 50 & 4.93 & 1.69 \\
- & grid & 36 & 0.280 & 0.32 & 0.040 & 49 & 2.70 & 2.44 \\
+HybridQA & ladder & 4 & 0.280 & 0.31 & 3.0 & 50 & 4.93 & 1.69 \\
+ & grid & 36 & 0.280 & 0.32 & 4.0 & 49 & 2.70 & 2.44 \\
 \addlinespace[2pt]
-CRAG & ladder & 4 & 0.579 & 0.63 & 0.051 & 18 & 1.60 & 0.40 \\
- & grid & 24 & 0.536 & 0.59 & 0.054 & 22 & 1.45 & 0.42 \\
+CRAG & ladder & 4 & 0.579 & 0.63 & 5.1 & 18 & 1.60 & 0.40 \\
+ & grid & 24 & 0.536 & 0.59 & 5.4 & 22 & 1.45 & 0.42 \\
 \bottomrule
 \end{tabular}
 \end{table*}

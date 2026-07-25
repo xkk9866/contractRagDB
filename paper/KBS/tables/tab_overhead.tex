@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Run-time cost of the guarantee, microseconds per arrival. \emph{gate} is the ledger test, \emph{LP} the action program amortised over the $20$ arrivals between re-solves, \emph{draw} the sample from the resulting mixture and \emph{upd.} the ledger and estimate update. Retrieval and generation are the latencies recorded in the execution matrices over $64\,480$ metered calls, in milliseconds. Enforcement is four to five orders of magnitude below the query it governs, so the contract is free in wall-clock terms and the cost figures elsewhere in this paper are the whole story.}
+\label{tab:overhead}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & & \multicolumn{5}{c}{enforcement ($\mu$s)} & \multicolumn{2}{c}{query (ms)} \\
+\cmidrule(lr){3-7}\cmidrule(lr){8-9}
+Task & $|\mathcal{P}|$ & gate & LP & draw & upd.\ & total & retr.\ & gen.\ \\
+\midrule
+HybridQA & 69 & 0.11 & 5.1 & 8.7 & 0.50 & 14.4 & 124 & 674 \\
+CRAG & 69 & 0.11 & 5.3 & 8.5 & 0.50 & 14.4 & 221 & 904 \\
+ASQA & 69 & 0.10 & 39.6 & 8.8 & 0.54 & 49.0 & 283 & 2545 \\
+QAMPARI & 69 & 0.11 & 5.3 & 9.8 & 0.51 & 15.7 & 693 & 1542 \\
+\midrule
+\multicolumn{9}{l}{enforcement as a share of the pipeline: $0.0007\%$--$0.0018\%$} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -104,7 +104,7 @@ with every LLM call priced and every label charged.
       plan space (Theorem~\ref{thm:gate}). We show empirically that this
       is not a technicality: under a mid-stream distribution shift, a
       calibration certificate is breached on $100\%$ of streams while
-      the ledger's worst prefix rate never reaches $\alpha$.
+      the ledger is breached on none of them.
 \item \textbf{Declining as a first-class action, and what it buys.}
       Adding $\bot$ to the action space makes every $\alpha > 0$
       attainable and forces the minimum decline rate
@@ -139,9 +139,11 @@ with every LLM call priced and every label charged.
       without further LLM calls.
 \end{itemize}
 
-Across the four benchmarks the executor operates at $1.22$--$1.59\times$
-the cost of an offline optimum that knows every plan's risk, against
-$2.51$--$5.16\times$ for one-shot certification given the same action
-space. Over $4\,500$ streams spanning every task, contract level, decline
-price and query order we ran, the largest excess of the worst prefix rate
-over $\alpha$ was zero.
+Across the four benchmarks, at each task's strictest non-degenerate
+contract, the executor operates at $1.27$--$1.75\times$ the cost of an
+offline optimum that knows every plan's risk, against
+$2.86$--$5.85\times$ for one-shot certification given the same action
+space. Swept over $15$ contract levels per task, it honoured every level
+on every stream where the certifier breached $545$ of $1\,200$; over
+every stream in this paper, spanning every task, contract level, decline
+price and query order we ran, no ledger run ever exceeded its contract.

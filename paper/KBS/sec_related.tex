@@ -35,6 +35,26 @@ identity, so an anytime bound is not something it achieves at a
 confidence level but something it satisfies by construction. We use a
 confidence sequence in this paper only to report diagnostics.
 
+The closest work to ours in setting is conformal selective acting
+\citep{csa2026}, which also deploys per round, also lets the system
+refuse rather than act, and also asks for a guarantee that survives at
+every time rather than on average. It runs an e-process per candidate
+threshold and keeps the threshold whose process has not yet rejected, so
+its bound has the form $R_T \le \alpha + O(N_T^{-1/2})$ and holds with
+probability $1-\delta$. It inherits the usual consequences: a $\delta$
+to choose, a Bonferroni grid to pay for, a slack term that vanishes only
+asymptotically, and a statement about the distribution of paths rather
+than the path in front of you. Our mechanism removes the inference step
+rather than sharpening it. The gate is arithmetic on the realised loss,
+so the bound is $V_t \le \alpha t$ with no additive slack, no $\delta$,
+and no dependence on the number of candidates; the price is that the
+loss must be observed, which is why this paper prices auditing
+explicitly in Section~\ref{sec:res:audit} rather than treating labels
+as free. The
+two designs are complementary: theirs applies when labels are scarce and
+a probabilistic guarantee is acceptable, ours when labels exist and the
+obligation is contractual.
+
 \paragraph{Selective prediction and abstention}
 Rejecting inputs rather than predicting on them is classical
 \citep{chow1970optimum,geifman2017selective,elyaniv2010foundations} and

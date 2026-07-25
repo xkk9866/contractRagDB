@@ -340,11 +340,82 @@ def fig_regret():
     save(fig, "fig_regret")
 
 
+# ---------------------------------------------------------------------------
+
+def fig_validity():
+    """Realised risk against the contract that was asked for.
+
+    The standard validity plot of this literature: anything on or below the
+    diagonal honoured its contract, anything above it did not. Sweeping the
+    contract rather than fixing it is what separates a mechanism that works
+    over a range from one that happens to work at the level an experiment
+    chose.
+    """
+    fig, axes = plt.subplots(1, 4, figsize=(7.16, 2.05))
+    meths = [("static/no-decline", "LTT", C_STATIC, "s", "-"),
+             ("static", "LTT + decline", C_ACCENT, "^", "--"),
+             ("ledger/lp", "Ledger", C_LEDGER, "o", "-")]
+    for ax, tr in zip(axes.ravel(), TRACKS):
+        d = load(f"ledger_{tr}_sweep.json")
+        if d is None:
+            continue
+        ref = max(d.get("abstain_costs") or [max(d["pop_cost"])])
+        al = np.array(sorted(float(x) for x in d["results"]))
+        lo, hi = al[0] - 0.02, al[-1] + 0.02
+
+        # the region a contract forbids
+        ax.fill_between([lo, hi], [lo, hi], hi + 0.1, color="#f2b8b0",
+                        alpha=0.5, lw=0, zorder=0)
+        ax.plot([lo, hi], [lo, hi], color="#8a8a8a", lw=0.9,
+                ls=(0, (3, 2)), zorder=2)
+        floor = float(np.min(d["pop_risk"]))
+        ax.axhline(floor, color=C_ORACLE, lw=0.7, ls=(0, (1, 2)), zorder=1)
+
+        for m, lab, col, mk, ls in meths:
+            xs, ys = [], []
+            for a in al:
+                v = next((v for v in d["results"][f"{a:g}"]["rows"].values()
+                          if v["method"] == m
+                          and abs(v["abstain_cost"] - ref) < 1e-9), None)
+                if v is None:
+                    continue
+                xs.append(a)
+                ys.append(v["worst_rate"])
+            ax.plot(xs, ys, marker=mk, ms=2.8, lw=1.0, ls=ls, color=col,
+                    markeredgecolor="white", markeredgewidth=0.35,
+                    label=lab, zorder=3)
+
+        ax.set_xlim(lo, hi)
+        ax.set_ylim(lo, hi)
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel(r"contract $\alpha$")
+        ax.set_title(PRETTY[tr], pad=2.5)
+        ax.grid(alpha=0.18, ls=":")
+        ax.set_xticks([0.2, 0.4, 0.6, 0.8])
+        ax.set_yticks([0.2, 0.4, 0.6, 0.8])
+        if tr == TRACKS[0]:
+            ax.set_ylabel("worst running rate\n" r"$\max_t V_t/t$")
+            ax.annotate("contract broken", xy=(0.30, 0.66),
+                        fontsize=6.4, color="#9b3a2c", rotation=39,
+                        ha="center", va="center")
+        ax.annotate(r"$\min_p r_p$", xy=(lo + 0.03, floor), xytext=(0, -2.0),
+                    textcoords="offset points", ha="left", va="top",
+                    fontsize=6.2, color=C_ORACLE)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, frameon=False,
+               bbox_to_anchor=(0.5, -0.055), handlelength=1.9,
+               columnspacing=1.6)
+    fig.tight_layout(w_pad=0.9, rect=(0, 0.045, 1, 1))
+    save(fig, "fig_validity")
+
+
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["frontier", "ledger", "regret"]
+    which = sys.argv[1:] or ["frontier", "ledger", "regret", "validity"]
     if "frontier" in which:
         fig_frontier()
     if "ledger" in which:
         fig_ledger()
     if "regret" in which:
         fig_regret()
+    if "validity" in which:
+        fig_validity()

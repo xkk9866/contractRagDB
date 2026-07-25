@@ -21,8 +21,23 @@
 % page. Set the total here; scripts/check_pagination.py fails the build if
 % it stops matching the PDF. The template files themselves are untouched.
 \makeatletter
-\AtBeginDocument{\def\lastpage{17}}
+\AtBeginDocument{\def\lastpage{18}}
 \makeatother
+
+% The results section has more floats than the default queue can place
+% near their callouts, which pushed the main table five pages past the
+% text that reads it. These are the standard float parameters, loosened;
+% no template file is modified.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.6}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.72}
+\renewcommand{\dbltopfraction}{0.92}
+\renewcommand{\dblfloatpagefraction}{0.72}
+\setcounter{dbltopnumber}{3}
 
 
 %%%Author macros
@@ -133,17 +148,21 @@ a linear program over plans plus declining, prove
 $O(\sqrt{P\log T/T})$ cost regret, and price partial auditing exactly.
 On fully metered executions of HybridQA, CRAG, ASQA and QAMPARI over a
 plan space spanning three model developers and three open-weight
-models, the executor runs at 1.22--1.61$\times$ an offline optimum that
-knows every plan's risk, against 2.46--5.16$\times$ for one-shot
-certification given the same action space, and never exceeds its
-contract in 4\,500 streams while spending 89--99\% of the allowance, so
-the guarantee binds without slack. Under a mid-stream distribution shift
-the certificate is breached on up to 100\% of streams while the ledger is
+models, the executor runs at 1.27--1.75$\times$ an offline optimum that
+knows every plan's risk, against 2.86--5.85$\times$ for one-shot
+certification given the same action space. Sweeping the contract over
+15 levels per task, it honours every level on every stream while
+spending 92--99\% of the allowance, where the certifier breaches 545 of
+1\,200 streams; handed the decline action the certifier stops breaching
+and its bill does not move (5.49$\times$ against 5.47$\times$ the
+optimum), because a confidence width is paid whether it is spent on a
+plan or on refusing. Under a mid-stream distribution shift the
+certificate is breached on up to 100\% of streams while the ledger is
 breached on none, and tightening the certifier's error budget by
-200$\times$ moves its breach rate in one of twelve cells -- its failure
+200$\times$ moves its breach count in one of twelve cells -- its failure
 is a calibration sample that misrepresents the stream, which no
-confidence correction repairs. Declining alone explains almost none of
-this: handed the same action, the certifier improves by under 2\%.
+confidence correction repairs. Enforcement costs 14--49 microseconds per
+query against 0.8--2.8 seconds of retrieval and generation.
 \end{abstract}
 
 % Research highlights
@@ -187,13 +206,13 @@ plans plus declining, with $O(\sqrt{P\log T/T})$ regret.
 
 The empirical consequences are consistent across four metered benchmarks
 and two plan grids built by unbundling retrieval from generation. The
-executor operates at 1.22--1.61$\times$ an offline optimum that knows
+executor operates at 1.27--1.75$\times$ an offline optimum that knows
 every plan's risk, where one-shot certification with the same action
-space costs 2.46--5.16$\times$; it never exceeded its contract in
-4\,500 streams while spending 89--99\% of the allowance, so the
-constraint binds without ever being crossed, and the certificate was
-breached on up to 100\% of streams once the traffic stopped being
-exchangeable with its calibration prefix. Enlarging the plan space
+space costs 2.86--5.85$\times$; swept over 15 contract levels per task
+it honoured every one of them on every stream while spending 92--99\%
+of the allowance, so the constraint binds without ever being crossed,
+where the certifier breached 545 of 1\,200 streams and, once the traffic
+stopped being exchangeable with its calibration prefix, up to 100\%. Enlarging the plan space
 sharpened the contrast in an unexpected way: the certified cost got
 worse on one grid and better on the other, so an operator cannot know
 in advance whether building a larger space will be rewarded, whereas the

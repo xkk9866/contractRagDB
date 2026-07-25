@@ -1,38 +1,40 @@
-\begin{table*}[t]
+\begin{table}[t]
 \centering
-\caption{Cost of ownership and contract adherence over a served stream. \emph{LTT} is one-shot certification, \emph{LTT+dec} the same certifier handed the decline action, \emph{Ledger} this paper's executor. All three see the same plan space, the same decline price and the same stream, and all are charged for calibration, service, declines and labels. The adherence column is the worst prefix rate $\max_{t \ge 200} V_t/t$, averaged over draws, divided by the contract, so it reads directly as compliance: at most $1$ is a contract kept, above $1$ is a contract broken and says by how much. For the ledger this ratio cannot exceed $1$ -- Theorem~\ref{thm:gate} makes it an identity, not an outcome that 30 streams happened to produce -- and the fact that it sits at $0.96$--$1.00$ rather than well below is what shows the allowance is spent rather than hoarded. Levels marked $\dagger$ lie below the risk of every plan in the space, so a certifier that must answer every query has nothing feasible to return, falls back to its safest plan and overshoots by a factor of $1.5$--$3.9$; its numbers repeat down such a block for that reason. Over all $4\,500$ streams in this paper \emph{LTT} exceeds its contract on $62.6\%$ and the ledger on none. \emph{LTT} never declines by definition, so that column is omitted. Costs in mCNY per query.}
+\caption{Contract adherence and cost of ownership at each task's strictest non-degenerate contract $\alpha^{*}$, the first level at or above the risk floor $\min_p r_p$. \emph{LTT} is one-shot certification, \emph{LTT + decline} the same certifier handed the decline action, \emph{Ledger, greedy} the deterministic ablation. All see the same plan space, the same decline price and the same stream, and all are charged for calibration, service, declines and labels. \emph{Risk} is the realised rate over the stream and $\sup_t$ the worst it reached at any point after $t=200$; both are to be read against the $\alpha^{*}$ in the block heading. \emph{PathV} counts the streams, of $30$, whose running rate exceeded $\alpha^{*}$ at any time -- the quantity a pathwise guarantee speaks to, and $0/30$ for the ledger by Theorem~\ref{thm:gate} rather than by luck. \emph{OPT} is the offline optimum, which knows every plan's risk in advance and is not implementable. Best implementable cost among methods that did not breach is in bold. Costs are mCNY per query.}
 \label{tab:main}
 \footnotesize
-\setlength{\tabcolsep}{3.4pt}
-\begin{tabular}{llrrrrrrrrrrr}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{lrrrrrr}
 \toprule
-Task & $\alpha$ & \multicolumn{3}{c}{cost} & \multicolumn{3}{c}{risk} & \multicolumn{2}{c}{decline\%} & \multicolumn{3}{c}{worst rate $/\,\alpha$} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-10}\cmidrule(lr){11-13}
- & & LTT & LTT+dec & Ledger & LTT & LTT+dec & Ledger & LTT+dec & Ledger & LTT & LTT+dec & Ledger \\
+Method & Risk & $\sup_t$ & PathV & Decl.\% & Cost & Cost/OPT \\
 \midrule
-HybridQA & 0.15$^\dagger$ & 7.25 & 7.15 & 4.60 & 0.268 & 0.093 & 0.143 & 60.0 & 57.7 & 1.94 & 0.62 & 0.99 \\
- & 0.20$^\dagger$ & 7.25 & 7.12 & 3.70 & 0.268 & 0.131 & 0.193 & 47.1 & 43.5 & 1.45 & 0.65 & 0.99 \\
- & 0.25$^\dagger$ & 7.25 & 7.07 & 2.79 & 0.268 & 0.179 & 0.242 & 30.4 & 30.4 & 1.16 & 0.72 & 0.99 \\
- & 0.30 & 7.11 & 6.97 & 1.90 & 0.273 & 0.202 & 0.291 & 22.5 & 14.8 & 0.97 & 0.68 & 0.99 \\
- & 0.34 & 5.02 & 4.97 & 1.19 & 0.291 & 0.261 & 0.330 & 5.2 & 5.2 & 0.91 & 0.77 & 0.99 \\
-\addlinespace[2pt]
-CRAG & 0.35$^\dagger$ & 0.83 & 0.83 & 0.58 & 0.591 & 0.128 & 0.334 & 53.3 & 49.7 & 1.77 & 0.37 & 0.98 \\
- & 0.45$^\dagger$ & 0.83 & 0.83 & 0.51 & 0.591 & 0.135 & 0.432 & 52.1 & 34.6 & 1.37 & 0.30 & 0.98 \\
- & 0.55$^\dagger$ & 0.83 & 0.83 & 0.45 & 0.591 & 0.140 & 0.534 & 51.3 & 18.5 & 1.11 & 0.26 & 0.99 \\
- & 0.62 & 0.78 & 0.79 & 0.41 & 0.592 & 0.317 & 0.600 & 21.8 & 9.0 & 1.00 & 0.51 & 0.98 \\
- & 0.70 & 0.41 & 0.41 & 0.35 & 0.635 & 0.489 & 0.674 & 0.0 & 1.2 & 0.92 & 0.70 & 0.97 \\
-\addlinespace[2pt]
-ASQA & 0.10$^\dagger$ & 7.81 & 7.87 & 5.08 & 0.120 & 0.015 & 0.083 & 25.0 & 59.0 & 1.36 & 0.16 & 0.89 \\
- & 0.15 & 7.79 & 7.87 & 3.77 & 0.121 & 0.035 & 0.129 & 10.1 & 38.5 & 0.91 & 0.24 & 0.92 \\
- & 0.20 & 7.34 & 7.38 & 2.32 & 0.136 & 0.062 & 0.174 & 0.0 & 15.7 & 0.71 & 0.31 & 0.92 \\
- & 0.25 & 6.73 & 6.78 & 1.44 & 0.151 & 0.074 & 0.219 & 0.0 & 2.4 & 0.62 & 0.30 & 0.92 \\
- & 0.30 & 5.29 & 5.32 & 1.24 & 0.172 & 0.098 & 0.271 & 0.0 & 0.9 & 0.58 & 0.33 & 0.93 \\
-\addlinespace[2pt]
-QAMPARI & 0.35$^\dagger$ & 7.35 & 7.37 & 4.09 & 0.591 & 0.077 & 0.329 & 28.3 & 51.9 & 1.75 & 0.22 & 0.97 \\
- & 0.45$^\dagger$ & 7.35 & 7.37 & 3.15 & 0.591 & 0.073 & 0.427 & 28.8 & 37.4 & 1.35 & 0.16 & 0.98 \\
- & 0.55$^\dagger$ & 7.35 & 7.37 & 2.24 & 0.591 & 0.090 & 0.521 & 25.8 & 23.7 & 1.12 & 0.16 & 0.97 \\
- & 0.60 & 7.35 & 7.38 & 1.74 & 0.591 & 0.131 & 0.573 & 18.9 & 15.9 & 1.02 & 0.22 & 0.97 \\
- & 0.66 & 6.88 & 6.89 & 1.19 & 0.598 & 0.219 & 0.632 & 5.5 & 7.4 & 0.93 & 0.33 & 0.97 \\
+\multicolumn{7}{l}{\textit{HybridQA} ($\alpha^{*}=0.30$, $\min_p r_p=0.268$, $N=6466$)} \\
+\quad LTT & 0.273 & 0.292 & 10/30 & 0.0 & 7.11 & 4.78 \\
+\quad LTT + decline & 0.202 & 0.203 & 0/30 & 22.5 & 6.97 & 4.68 \\
+\quad Ledger, greedy & 0.000 & 0.000 & 0/30 & 100.0 & 7.23 & 4.86 \\
+\quad \textbf{Ledger} & 0.291 & 0.297 & 0/30 & 14.8 & \textbf{1.90} & 1.27 \\
+\quad \textit{Offline OPT} & $\le\alpha^{*}$ & -- & -- & -- & \textit{1.49} & \textit{1.00} \\
+\addlinespace[3pt]
+\multicolumn{7}{l}{\textit{CRAG} ($\alpha^{*}=0.62$, $\min_p r_p=0.591$, $N=2006$)} \\
+\quad LTT & 0.592 & 0.623 & 13/30 & 0.0 & 0.78 & 3.37 \\
+\quad LTT + decline & 0.317 & 0.317 & 0/30 & 21.8 & 0.79 & 3.38 \\
+\quad Ledger, greedy & 0.000 & 0.000 & 0/30 & 100.0 & 0.79 & 3.39 \\
+\quad \textbf{Ledger} & 0.600 & 0.607 & 0/30 & 9.0 & \textbf{0.41} & 1.75 \\
+\quad \textit{Offline OPT} & $\le\alpha^{*}$ & -- & -- & -- & \textit{0.23} & \textit{1.00} \\
+\addlinespace[3pt]
+\multicolumn{7}{l}{\textit{ASQA} ($\alpha^{*}=0.15$, $\min_p r_p=0.120$, $N=798$)} \\
+\quad LTT & 0.121 & 0.136 & 2/30 & 0.0 & 7.79 & 2.86 \\
+\quad LTT + decline & 0.035 & 0.035 & 0/30 & 10.1 & 7.87 & 2.89 \\
+\quad Ledger, greedy & 0.000 & 0.000 & 0/30 & 100.0 & 7.69 & 2.82 \\
+\quad \textbf{Ledger} & 0.129 & 0.138 & 0/30 & 38.5 & \textbf{3.77} & 1.38 \\
+\quad \textit{Offline OPT} & $\le\alpha^{*}$ & -- & -- & -- & \textit{2.73} & \textit{1.00} \\
+\addlinespace[3pt]
+\multicolumn{7}{l}{\textit{QAMPARI} ($\alpha^{*}=0.60$, $\min_p r_p=0.591$, $N=850$)} \\
+\quad LTT & 0.591 & 0.614 & 21/30 & 0.0 & 7.35 & 5.83 \\
+\quad LTT + decline & 0.131 & 0.131 & 0/30 & 18.9 & 7.38 & 5.85 \\
+\quad Ledger, greedy & 0.000 & 0.000 & 0/30 & 100.0 & 7.23 & 5.73 \\
+\quad \textbf{Ledger} & 0.573 & 0.583 & 0/30 & 15.9 & \textbf{1.74} & 1.38 \\
+\quad \textit{Offline OPT} & $\le\alpha^{*}$ & -- & -- & -- & \textit{1.26} & \textit{1.00} \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}

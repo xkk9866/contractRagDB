@@ -146,10 +146,16 @@ competitor, and it is what "$\times$ oracle" means throughout.
 \paragraph{Reported quantities}
 For each configuration we run $20$--$30$ independent streams and report
 the mean per-query cost (serving $+$ declines $+$ audit), the realised
-risk over the whole stream, the decline rate, the \emph{worst prefix
-rate} $\max_{t \ge 200} V_t/t$, and the \emph{breach} fraction -- the
-share of streams whose worst prefix rate exceeded $\alpha$. The worst
-prefix rate is the quantity Definition~\ref{def:enforcing} controls and
-that Definition~\ref{def:certified} says nothing about; the first $200$
+risk over the whole stream, the decline rate, the worst rate the run
+ever reached, $\sup_t V_t/t$ over $t \ge 200$, and \emph{PathV} -- the
+number of streams on which that worst rate exceeded $\alpha$. All rates
+are reported in their own units and read against the $\alpha$ that was
+asked for, rather than normalised by it. The worst rate is the quantity
+Definition~\ref{def:enforcing} controls and that
+Definition~\ref{def:certified} says nothing about, and PathV is the
+count that a pathwise guarantee, as opposed to one that holds with
+probability $1-\delta$, is entitled to claim is zero. The first $200$
 arrivals are excluded because no method can control a rate over a
 handful of queries, and the exclusion is applied identically to both.
+Costs are additionally reported relative to the offline optimum, which
+we abbreviate \textsc{opt}.

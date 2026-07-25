@@ -1,45 +1,81 @@
 \section{Results}
 \label{sec:results}
 
+\input{tables/tab_main}
+
 \subsection{Does the contract hold? (RQ1)}
 \label{sec:res:valid}
 
-Table~\ref{tab:main} reports the main comparison. Across the $4\,500$
-streams spanning every task, contract level, decline price and query
-order in this paper, the largest value of $V_t/t - \alpha$ the ledger
-attained over any prefix with $t \ge 200$ was $0.0000$: the worst
-prefix rate reaches the contract level and never passes it. That
-is Theorem~\ref{thm:gate} visible in a table, and it is worth stressing
-that it is not an empirical finding that could have come out otherwise.
+Table~\ref{tab:main} reports the comparison at each task's strictest
+non-degenerate contract $\alpha^{*}$. The column that carries the claim
+is \emph{PathV}, the number of streams whose running rate exceeded the
+contract at any point: the ledger is $0/30$ on all four tasks, and by
+Theorem~\ref{thm:gate} this is an identity rather than an outcome that
+$30$ draws happened to produce. What makes it worth reporting anyway is
+the column beside it. The worst rate the executor ever reached is
+$0.297$ against a contract of $0.30$, $0.607$ against $0.62$, $0.138$
+against $0.15$ and $0.583$ against $0.60$ -- between $92$ and $99$
+percent of the allowance, spent and not crossed. A guarantee that never
+binds would be worth little; this one binds within one to eight percent
+everywhere, and the loosest figure belongs to ASQA, the shortest stream
+in the suite at $798$ queries, where the plan estimates are still in
+their transient.
 
-A guarantee that never binds would be worth little, so the reader is
-entitled to ask whether these zeros are bought with slack. They are not.
-Expressed as a fraction of the allowance, the worst prefix rate the
-executor reaches is $0.96$--$0.99$ of $\alpha$ on HybridQA, CRAG,
-QAMPARI and both plan grids, and $0.89$--$0.93$ on ASQA; its mean risk
-reaches $0.83$--$0.97$ of $\alpha$. The controller therefore runs within
-one to four percent of the boundary it may not cross, and the looser
-figure on ASQA is explained by the shortest stream in the suite ($798$
-queries), where the plan estimates are still in their transient. Zero
-breaches and a fully spent budget are the two halves of the claim: the
-constraint binds, and it binds without ever being violated.
+The certifier separates into two failure modes that the same table shows
+side by side. Without the decline action it breaches $2$ to $21$ streams
+in $30$, because $\alpha^{*}$ sits only a few points above the risk
+floor and its confidence width is wider than that margin, so the policy
+it certifies is the safest plan and that plan's risk is not below the
+contract. Handing it the decline action removes every breach, and the
+\emph{Risk} column shows what that costs: realised risks of $0.202$,
+$0.317$, $0.035$ and $0.131$ against contracts of $0.30$, $0.62$, $0.15$
+and $0.60$. It is safe because it aims at $\alpha - w_{\mathrm{stat}}$
+and then, for want of a plan there, refuses. Its bill barely moves --
+$6.97$ against $7.11$ mCNY on HybridQA, $7.38$ against $7.35$ on
+QAMPARI -- which is the cleanest statement of the problem we are
+attacking: the decline action buys a certifier validity and buys it
+nothing else, because the confidence width has to be paid whether it is
+spent on a plan or on refusing. The ledger pays $1.27$ to
+$1.75\times$ the offline optimum where the certifier pays $2.86$ to
+$5.85\times$.
 
-The one-shot certifier's behaviour is more interesting. Without the
-decline action it breaches on $62.6\%$ of streams overall -- almost
-entirely at levels below the risk floor, where it has nothing feasible
-to return and falls back to its safest plan, whose risk exceeds $\alpha$
-by construction. With the decline action it never breaches, and the
-reason is visible in the \emph{risk} column: its realised risks sit far
-below the contracts it was given ($0.090$ against $\alpha=0.15$ on
-HybridQA, $0.128$ against $0.35$ on CRAG, $0.073$ against $0.45$ on
-QAMPARI). It is safe because it is aiming at $\alpha - w_{\mathrm{stat}}$
-and then, for want of a plan there, declining. The ledger's risks
-instead track the contract closely -- $0.143$, $0.334$, $0.427$ at the
-same three settings -- because it is allowed to spend the allowance it
-has earned. Unspent allowance is the certifier's real cost, and it is
-paid in money.
+\paragraph{Over the whole contract range}
+One contract level per task is a thin basis for a claim about a
+mechanism, so Table~\ref{tab:sweep} sweeps $\alpha$ over $15$ levels per
+task and Figure~\ref{fig:validity} plots all of them. The picture is the
+standard validity diagram of this literature -- realised rate against
+the contract that was asked for, with the region above the diagonal
+forbidden -- and it separates the three mechanisms cleanly. The ledger
+tracks the diagonal from beneath across the entire range on all four
+tasks, honouring $15$ levels of $15$ everywhere including every level
+below the risk floor. The certifier without a decline action sits above
+the diagonal wherever the contract is stricter than what its safest plan
+delivers, breaching $545$ of the $1\,200$ streams swept and honouring as
+few as $3$ levels of $15$ on QAMPARI. Given the decline action it drops
+well below the diagonal instead, which is the visual signature of
+unspent allowance: valid, and conservative by a margin it pays for. Its
+mean cost over the sweep is $5.49\times$ the offline optimum against
+$5.47\times$ without the decline action, while the ledger averages
+$1.57\times$ and never exceeds $2.58\times$ at any level of any task.
 
-\input{tables/tab_main}
+\input{tables/tab_sweep}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_validity}
+\caption{Worst running violation rate $\max_{t\ge200} V_t/t$ against the
+contract it was asked to keep, swept over $15$ levels per task, $20$
+streams each. Anything in the shaded region broke its contract. The
+dotted horizontal line is the risk floor $\min_p r_p$: to the left of
+where it meets the diagonal, no plan satisfies the contract and keeping
+it requires declining. The ledger tracks the diagonal from beneath
+everywhere, including far below the floor. The certifier crosses it
+wherever the contract is stricter than its safest plan; given the
+decline action it stops crossing but drops well below instead, and the
+distance between that curve and the diagonal is allowance it paid for
+and did not use.}
+\label{fig:validity}
+\end{figure*}
 
 \begin{figure*}[t]
 \centering
@@ -74,18 +110,18 @@ $2.18\times$; \emph{mid-stream drift} does the same thing more mildly.
 Under \emph{hard-first} and \emph{adversarial} the prefix is pessimistic
 instead, so the certifier retreats to its safest plan, declines
 $33$--$92\%$ of the traffic, and lands at $2.9$ to $7.3\times$ the
-optimum. Those rows carry a worst rate of
-exactly zero, which is worth naming rather than glossing: a stream that
-is mostly refused and otherwise answered by the strongest plan accrues
-no violations at all. It is the arithmetic of a system that has stopped
-doing its job, not evidence that the certificate works.
+optimum. Those rows record no violations at all, which is worth naming
+rather than glossing: a stream that is mostly refused and otherwise
+answered by the strongest plan cannot accrue any. It is the arithmetic
+of a system that has stopped doing its job, not evidence that the
+certificate works.
 
 A certificate therefore fails unsafely in one direction and expensively
 in the other, and has no setting in which it is merely correct -- which
 is uncomfortable precisely because nothing tells the operator which
-direction they are in. The ledger has one behaviour instead of two: its
-worst rate stays between $0.85$ and $1.00$ of the contract on every row,
-and it pays $1.00$ to $2.77\times$ the optimum. Reordering does move
+direction they are in. The ledger has one behaviour instead of two: it
+reaches $85$ to $100\%$ of its allowance on every row without ever
+passing it, and pays $1.00$ to $2.77\times$ the optimum. Reordering does move
 that price -- on HybridQA the same contract costs $1.06\times$ the
 optimum under easy-first and $1.34\times$ under hard-first -- but it
 does not move the guarantee at all, which is the separation
@@ -228,7 +264,24 @@ short ones, which is what the argument in Section~\ref{sec:optimise}
 predicts: the margin matters while $n_a$ is small and is pure waste once
 it is large.
 
+\paragraph{What the bookkeeping costs}
+The other half of "how fast" is what enforcement adds to each arrival,
+and Table~\ref{tab:overhead} measures it against the latencies recorded
+in the execution matrices over $64\,480$ metered calls. The gate is a
+comparison, the ledger update is two floating-point operations, and the
+action program is re-solved once every $20$ arrivals; together they come
+to $14$--$49$ microseconds per query against retrieval and generation
+that take $0.8$ to $2.8$ seconds. Enforcement is thus between $0.0007\%$
+and $0.0018\%$ of the pipeline it governs. Two things follow. The
+contract is free in wall-clock terms, so the cost figures elsewhere in
+this paper -- which count LLM spend, declines and labels -- are the
+whole bill. And the mechanism does not become expensive as the plan
+space grows: the action LP is solved over $|\mathcal{P}|+1$ actions with
+a single risk constraint, so its basic optimum has at most two nonzero
+weights and it costs microseconds at $69$ plans.
+
 \input{tables/tab_regret}
+\input{tables/tab_overhead}
 
 \begin{figure*}[t]
 \centering
@@ -294,8 +347,9 @@ $0.01$ grid and reports the strictest level each mechanism returns
 anything at. Certification never reaches the risk floor: on the HybridQA
 ladder the best single plan attains $0.280$ but nothing certifies until
 $\alpha = 0.31$, and on the CRAG ladder the floor is $0.579$ against
-$\alpha_{\mathrm{cert}} = 0.63$. Those gaps of $0.030$ and $0.051$ are
-contracts the plan space can meet and the certificate cannot express.
+$\alpha_{\mathrm{cert}} = 0.63$. That slack of $3.0$ and $5.1$
+percentage points is a band of contracts the plan space can meet and the
+certificate cannot express.
 Counting the levels served makes the same point at scale: of the $71$
 levels scanned, the certifier serves $50$ on the HybridQA ladder and
 only $18$ on the CRAG ladder, while the ledger serves all $71$ in both,
@@ -304,8 +358,8 @@ contract loss.
 
 That last claim is the one worth sampling rather than asserting, so we
 ran the ledger at $15$ levels spanning $\alpha \in [0.10, 0.80]$ in all
-four spaces. None of the $60$ cells breached, and the worst prefix rate
-ranged from $0.71$ to $0.996$ of the contract -- close to the boundary
+four spaces. None of the $60$ cells breached, and the worst rate reached
+ranged from $71$ to $99.6\%$ of the allowance -- close to the boundary
 where the contract binds, comfortably inside it where it does not. What
 the strict levels cost is visible and gradual rather than catastrophic:
 on the CRAG ladder, whose floor is $0.579$, honouring $\alpha = 0.10$
@@ -319,8 +373,8 @@ violation; they get a bill for the fraction of traffic that has to go to
 a human, quoted before deployment.
 
 Enlarging the space moves these quantities in opposite directions on the
-two tasks. On HybridQA it costs a level ($50 \to 49$) and widens the gap
-above the floor ($0.030 \to 0.040$), because the floor does not move --
+two tasks. On HybridQA it costs a level ($50 \to 49$) and widens the
+slack ($3.0 \to 4.0$ pp), because the floor does not move --
 the plan that attains it already lies on the diagonal -- so the space
 contributes multiplicity and no new headroom. On CRAG it buys four
 levels ($18 \to 22$) and lets a contract $0.04$ stricter be honoured,
@@ -346,9 +400,9 @@ mentions $|\mathcal{P}|$. Priced identically in the two spaces -- a
 decline costs what it costs the incumbent deployment, so the comparison
 is not confounded by a cheaper fallback -- it averages $1.22\times$ the
 offline optimum on the HybridQA ladder against $1.23\times$ on the
-HybridQA grid, and $1.59\times$ against $1.61\times$ on CRAG, its worst
-prefix rate staying within $0.99$ of the contract at every level of
-either space and never above it. The worst level is
+HybridQA grid, and $1.59\times$ against $1.61\times$ on CRAG, reaching
+at most $99\%$ of the allowance at every level of either space and never
+passing it. The worst level is
 in fact better on the larger space ($1.53\times$ to $1.45\times$ on
 HybridQA, $2.11\times$ to $2.07\times$ on CRAG), because the extra plans
 give the action LP more interior points to mix. The gap to the offline

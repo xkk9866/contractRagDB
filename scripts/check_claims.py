@@ -374,3 +374,77 @@ for t in TRACKS:
           f"cost {min(sc):.2f}-{max(sc):.2f}x | "
           f"ledger w/a {min(lw):.2f}-{max(lw):.2f} "
           f"cost {min(lc):.2f}-{max(lc):.2f}x")
+print("=" * 72)
+print("14. Table 1 (main): pivotal alpha*, PathV counts, Cost/OPT")
+lo_r, hi_r, lo_c, hi_c, cl, ch = 9, 0, 9, 0, 9, 0
+for t in TRACKS:
+    d = load(f"ledger_{t}.json")
+    if not d:
+        continue
+    floor = float(np.min(d["pop_risk"]))
+    al = sorted(float(x) for x in d["results"])
+    a = next((x for x in al if x >= floor), al[-1])
+    dr = int(d.get("draws", 30))
+    ref = max(d["pop_cost"])
+    blk = d["results"][str(a)]["rows"]
+    got = {}
+    for m in ("static/no-decline", "static", "ledger/lp"):
+        got[m] = next((v for v in blk.values() if v["method"] == m
+                       and abs(v["abstain_cost"] - ref) < 1e-12), None)
+    g, s = got["ledger/lp"], got["static/no-decline"]
+    sd = got["static"]
+    frac = g["worst_rate"] / a
+    lo_r, hi_r = min(lo_r, frac), max(hi_r, frac)
+    lo_c, hi_c = min(lo_c, g["vs_oracle"]), max(hi_c, g["vs_oracle"])
+    cl = min(cl, s["vs_oracle"], sd["vs_oracle"])
+    ch = max(ch, s["vs_oracle"], sd["vs_oracle"])
+    print(f"   {t:<9} a*={a:.2f} floor={floor:.3f} | ledger sup={g['worst_rate']:.3f}"
+          f" ({100*frac:.0f}% of a*) PathV={round(g['breach']*dr)}/{dr}"
+          f" cost/OPT={g['vs_oracle']:.2f}"
+          f" | LTT PathV={round(s['breach']*dr)}/{dr} cost/OPT={s['vs_oracle']:.2f}"
+          f" | LTT+dec risk={sd['risk']:.3f} cost/OPT={sd['vs_oracle']:.2f}")
+print(f"   CLAIM ledger spends {100*lo_r:.0f}-{100*hi_r:.0f}% of allowance, "
+      f"costs {lo_c:.2f}-{hi_c:.2f}x OPT; certifiers {cl:.2f}-{ch:.2f}x")
+
+print("=" * 72)
+print("15. Table 3 (sweep): breached streams and mean cost over 15 levels")
+tot = {}
+for t in TRACKS:
+    d = load(f"ledger_{t}_sweep.json")
+    if not d:
+        continue
+    ref = max(d.get("abstain_costs") or [0])
+    dr = int(d.get("draws", 20))
+    for m in ("static/no-decline", "static", "ledger/lp"):
+        nb, n, vs = 0, 0, []
+        for a in d["results"]:
+            v = next((x for x in d["results"][a]["rows"].values()
+                      if x["method"] == m
+                      and abs(x["abstain_cost"] - ref) < 1e-9), None)
+            if v:
+                nb += round(v["breach"] * dr)
+                n += dr
+                vs.append(v["vs_oracle"])
+        e = tot.setdefault(m, [0, 0, []])
+        e[0] += nb
+        e[1] += n
+        e[2] += vs
+for m, (nb, n, vs) in tot.items():
+    print(f"   {m:<20} breached {nb}/{n} streams | cost/OPT "
+          f"{min(vs):.2f}-{max(vs):.2f} mean {np.mean(vs):.2f}")
+
+print("=" * 72)
+print("16. Table 4 (overhead): enforcement vs measured pipeline latency")
+d = load("overhead.json")
+if d:
+    per = [v["per_query_s"] * 1e6 for v in d.values()]
+    pct = [v["pct_of_pipeline"] for v in d.values()]
+    gen = [v["generation_s"] for v in d.values()]
+    calls = sum(v["n_latency_obs"] for v in d.values())
+    for t, v in d.items():
+        print(f"   {t:<9} {v['per_query_s']*1e6:6.1f} us enforcement | "
+              f"retr {v['retrieval_s']*1e3:5.0f} ms gen {v['generation_s']*1e3:6.0f} ms"
+              f" -> {v['pct_of_pipeline']:.4f}% of pipeline")
+    print(f"   CLAIM {min(per):.0f}-{max(per):.0f} us, "
+          f"{min(pct):.4f}-{max(pct):.4f}% of pipeline, "
+          f"gen {min(gen):.1f}-{max(gen):.1f} s, {calls} metered calls")
