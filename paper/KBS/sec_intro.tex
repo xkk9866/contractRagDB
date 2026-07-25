@@ -90,23 +90,6 @@ to the executor is the whole of our proposal, and the rest -- strict
 contracts becoming feasible, plan spaces becoming free to enlarge,
 drift needing no detector -- follows rather than being added.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_paradigm_ledger}
-\caption{From statistical certification to ledger accounting.
-(a)~One-shot Learn-then-Test pays a confidence width on every query and
-cannot express contracts below the risk floor.
-(b)~Handing the certifier a decline action repairs validity but barely
-moves the bill, because the width is still paid.
-(c)~Online e-process monitors restore anytime validity in probability
-$1-\delta$, with an asymptotic slack.
-(d)~Our executor gates each arrival on the ledger
-$B_t=\alpha t-V_t$: serve a plan only when the allowance can absorb a
-violation, otherwise decline. Validity becomes the pathwise identity
-$V_t\le\alpha t$; statistics are left to minimise cost alone.}
-\label{fig:paradigm}
-\end{figure*}
-
 We instantiate this as \system, a contract-enforcing executor for
 hybrid RAG, and evaluate it on fully metered executions of four
 benchmarks (HybridQA, CRAG, ASQA, QAMPARI) over a plan space spanning

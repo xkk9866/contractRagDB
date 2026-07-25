@@ -11,35 +11,18 @@ design makes with the one a calibration certificate makes.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig_method_ledger}
-\caption{System overview of ledger-gated contract enforcement.
-Left: the evidence contract, the online query stream (any order) and
-the hybrid RAG plan space including the decline action $\bot$.
-Centre: the executor separates a gate that enforces
-$B_t=\alpha t-V_t$, an account of realised losses, and an action LP
-that minimises cost under optimistic risk estimates; the LLM serving
-layer is unchanged.
-Right: answers or declines, with pathwise guarantees independent of
-$\delta$ and $|\mathcal{P}|$, at microsecond enforcement cost.}
-\label{fig:method}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_pipeline_ledger}
-\caption{Online operation in three stages.
-(1)~A fixed plan menu plus $\bot$ makes every $\alpha>0$ attainable,
-including levels below the risk floor $\min_p r_p$.
-(2)~At each arrival the gate tests $B_{t-1}\ge 1-\alpha$; a closed
-gate forces decline, an open gate samples from the action mixture, and
-the ledger is updated from the observed loss so that
-$V_t\le\alpha t$ holds on every path.
-(3)~Cost is learned by an optimistic LP over plans plus declining, with
-worst-case or inverse-probability auditing; regret decays as
-$O(T^{-1/2})$ and the bill stays at $1.27$--$1.75\times$ the offline
-optimum where the same-action-space certifier pays
-$2.89$--$5.85\times$.}
-\label{fig:pipeline}
+\includegraphics[width=\textwidth]{figures/fig_paradigm_contrast}
+\caption{From statistical certification to accounting. (a)~A plain RAG
+pipeline carries no rate contract. (b)~Learn-then-Test certifies a plan
+on a calibration sample and pays a confidence width forever; the width
+grows with $|\mathcal{P}|$ and any level below the risk floor is
+infeasible. (c)~An online e-process can raise an alarm and trigger
+recertification, but the guarantee remains probabilistic and assumption
+dependent. (d)~Ledger-gated execution replaces the certificate with a
+deterministic gate $B_{t-1}\ge 1-\alpha$, an optimistic action LP over
+plans plus declining, and an audited ledger update; validity is an
+identity of the trajectory and cost is a pure learning problem.}
+\label{fig:paradigm}
 \end{figure*}
 
 \subsection{The ledger gate}
@@ -106,6 +89,20 @@ is that validity has been removed from the optimisation problem
 entirely, so the optimiser can be judged on cost alone -- and, being
 unable to cause a violation, can be far more aggressive than a
 certifier is allowed to be. The rest of this section is about cost.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_method_framework}
+\caption{Overview of ledger-gated execution. A query arrives under an
+evidence contract and a heterogeneous plan space that includes the
+decline action $\bot$ (left). The ledger gate opens only when the
+unspent allowance can absorb a worst-case loss, otherwise the arrival is
+declined at zero contract loss (centre). When the gate is open an
+optimistic action LP spends the allowance on cost, the chosen plan is
+executed and audited, and the ledger is updated (right). Validity is
+discharged by accounting; statistics serve cost alone.}
+\label{fig:method}
+\end{figure*}
 
 \begin{rmk}[Bounded losses]
 The gate uses $\ell_t \le 1$ to size the reserve $1-\alpha$. For a
@@ -181,6 +178,20 @@ ones. Every $\texttt{resolve\_every}$ arrivals the executor solves
 \end{equation}
 and samples its action from the optimal $w$. Algorithm~\ref{alg:ledger}
 is the whole controller.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_controller_loop}
+\caption{Per-arrival controller. The stream supplies the contract and
+the plan catalog (left). The gate, the optimistic action LP and the
+ledger update form a closed loop whose only feedback is the realised
+allowance $B_t$ (centre). The service either answers or declines
+(right). The three ingredients at the bottom are individually useless:
+without the ledger the optimiser cannot be aggressive; without declining
+strict contracts are infeasible; without randomisation the controller
+cannot interpolate between plan risks.}
+\label{fig:controller}
+\end{figure*}
 
 \begin{algorithm}[t]
 \caption{Ledger-gated execution}
