@@ -9,6 +9,39 @@ optimisation layer and its regret; Section~\ref{sec:labels} prices
 partial labelling; Section~\ref{sec:width} compares the concession this
 design makes with the one a calibration certificate makes.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_method_ledger}
+\caption{System overview of ledger-gated contract enforcement.
+Left: the evidence contract, the online query stream (any order) and
+the hybrid RAG plan space including the decline action $\bot$.
+Centre: the executor separates a gate that enforces
+$B_t=\alpha t-V_t$, an account of realised losses, and an action LP
+that minimises cost under optimistic risk estimates; the LLM serving
+layer is unchanged.
+Right: answers or declines, with pathwise guarantees independent of
+$\delta$ and $|\mathcal{P}|$, at microsecond enforcement cost.}
+\label{fig:method}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_pipeline_ledger}
+\caption{Online operation in three stages.
+(1)~A fixed plan menu plus $\bot$ makes every $\alpha>0$ attainable,
+including levels below the risk floor $\min_p r_p$.
+(2)~At each arrival the gate tests $B_{t-1}\ge 1-\alpha$; a closed
+gate forces decline, an open gate samples from the action mixture, and
+the ledger is updated from the observed loss so that
+$V_t\le\alpha t$ holds on every path.
+(3)~Cost is learned by an optimistic LP over plans plus declining, with
+worst-case or inverse-probability auditing; regret decays as
+$O(T^{-1/2})$ and the bill stays at $1.27$--$1.75\times$ the offline
+optimum where the same-action-space certifier pays
+$2.89$--$5.85\times$.}
+\label{fig:pipeline}
+\end{figure*}
+
 \subsection{The ledger gate}
 \label{sec:gate}
 
