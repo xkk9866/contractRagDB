@@ -95,6 +95,23 @@ hybrid RAG, and evaluate it on fully metered executions of four
 benchmarks (HybridQA, CRAG, ASQA, QAMPARI) over a plan space spanning
 three commercial vendors and two locally served open-weight models,
 with every LLM call priced and every label charged.
+Figure~\ref{fig:paradigm} places the proposal against the three
+incumbent ways of discharging a rate obligation.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_paradigm}
+\caption{Four ways to discharge a rate obligation on a RAG stream.
+(a)~Standard RAG answers without a contract.
+(b)~Learn-then-Test pays a confidence width forever, grows with
+$|\mathcal{P}|$, and cannot express contracts below the risk floor.
+(c)~Online e-processes restore anytime monitoring but remain
+probabilistic and still lean on exchangeability-type assumptions.
+(d)~\system{} replaces inference with accounting: the ledger gate
+enforces $V_t\le\alpha t$ pathwise, declining makes every $\alpha>0$
+feasible, and statistics are used only to minimise cost.}
+\label{fig:paradigm}
+\end{figure*}
 
 \paragraph{Contributions.}
 \begin{itemize}
