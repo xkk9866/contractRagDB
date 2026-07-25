@@ -36,8 +36,8 @@ QAMPARI -- which is the cleanest statement of the problem we are
 attacking: the decline action buys a certifier validity and buys it
 nothing else, because the confidence width has to be paid whether it is
 spent on a plan or on refusing. The ledger pays $1.27$ to
-$1.75\times$ the offline optimum where the certifier pays $2.86$ to
-$5.85\times$.
+$1.75\times$ the offline optimum where the certifier with the same
+action space pays $2.89$ to $5.85\times$.
 
 \paragraph{Over the whole contract range}
 One contract level per task is a thin basis for a claim about a
@@ -178,15 +178,16 @@ displacement is unspent allowance, and it is paid for in money.}
 \end{figure*}
 
 Relative to the offline action LP -- which knows every plan's population
-risk and buys no labels -- the ledger operates at
-$1.22\times$ (HybridQA), $1.59\times$ (CRAG), $1.58\times$ (ASQA) and
-$1.33\times$ (QAMPARI), averaged over each task's contract levels. The
-one-shot certifier with the same action space operates at $3.54$,
-$2.51$, $5.16$ and $5.01\times$. The ratio between the two is
-$1.58$--$3.75\times$, and it widens as the contract tightens: on
-HybridQA the ledger is $1.5\times$ cheaper at $\alpha = 0.15$ and
-$4.3\times$ cheaper at $\alpha = 0.34$, because a tight contract leaves
-the certifier's confidence width a larger share of the allowance.
+risk and buys no labels -- Table~\ref{tab:main} places the ledger at
+$1.27\times$ (HybridQA), $1.75\times$ (CRAG), $1.38\times$ (ASQA) and
+$1.38\times$ (QAMPARI) the offline optimum at each task's $\alpha^{*}$.
+The one-shot certifier with the same action space sits at $4.68$,
+$3.38$, $2.89$ and $5.85\times$. The ratio between the two is
+$1.93$--$4.24\times$. Table~\ref{tab:sweep} shows that this gap is not
+an artefact of the pivotal level: it widens as the contract tightens,
+because a tight contract leaves the certifier's confidence width a
+larger share of the allowance, and it stays of the same order across
+the fifteen levels swept.
 
 The decline price sweep behaves as the mechanism predicts. Halving
 $c_\bot$ makes declining a more attractive action and both methods use
@@ -205,28 +206,27 @@ Table~\ref{tab:ablation} is the answer to the objection this design
 invites, namely that the gain comes from being allowed to decline.
 
 Handing the decline action to the one-shot certifier moves its cost from
-$3.60$ to $3.54\times$ oracle on HybridQA, from $2.51$ to $2.51\times$
-on CRAG, and makes it \emph{worse} on ASQA ($5.13 \to 5.16\times$) and
-QAMPARI ($5.00 \to 5.01\times$): between $-1.7\%$ and $+0.7\%$. What it
-does buy is validity -- the same certifier without $\bot$ breaches
-$21$--$80\%$ of streams, and on the HybridQA grid its apparent
-$0.94\times$ oracle is simply the cost of answering everything with the
-cheapest plan and exceeding the contract on four streams in five.
-Declining alone therefore buys safety and almost no money. The reason is
-that a certifier cannot
+$4.78$ to $4.68\times$ oracle on HybridQA, from $3.37$ to $3.38\times$
+on CRAG, and makes it slightly \emph{worse} on ASQA ($2.86 \to
+2.89\times$) and QAMPARI ($5.83 \to 5.85\times$): between $-2\%$ and
+$+1\%$. What it does buy is validity -- the same certifier without
+$\bot$ breaches $2$ to $21$ streams in $30$ at $\alpha^{*}$ on the
+four ladder tasks (Table~\ref{tab:main}). Declining alone therefore
+buys safety and almost no money. The reason is that a certifier cannot
 exploit it -- to certify a mixture of a plan and $\bot$ it must estimate
 the mixture's risk from the same calibration sample and concede the same
 width, so it ends up declining more than necessary rather than spending
 its allowance.
 
 Removing randomisation from the ledger is equally decisive in the other
-direction: the deterministic variant lands at $2.89$--$5.38\times$
-oracle, worse than the certifier on three tasks, and at levels below the
-risk floor it degenerates to declining $100\%$ of traffic, since no
-single plan clears $\alpha$ and a deterministic rule cannot interpolate.
-Only the combination -- a ledger that makes validity unconditional, plus
-a randomised action that can sit anywhere on the risk--cost segment --
-reaches $1.22$--$1.61\times$, and it does so in all six settings,
+direction: the deterministic variant lands at $2.79$--$5.73\times$
+oracle, worse than the certifier on three of the four ladder tasks, and
+at levels below the risk floor it degenerates to declining $100\%$ of
+traffic, since no single plan clears $\alpha$ and a deterministic rule
+cannot interpolate. Only the combination -- a ledger that makes
+validity unconditional, plus a randomised action that can sit anywhere
+on the risk--cost segment -- reaches $1.27$--$1.75\times$, and it does
+so in all six settings,
 including the two plan grids whose actions are executed physical plans
 rather than routing policies. The three ingredients are not additive
 modules; each is useless without the others, which is the sense in which
@@ -398,11 +398,12 @@ with, but that nobody can say beforehand whether it will.
 The ledger is indifferent by construction, since its guarantee never
 mentions $|\mathcal{P}|$. Priced identically in the two spaces -- a
 decline costs what it costs the incumbent deployment, so the comparison
-is not confounded by a cheaper fallback -- it averages $1.22\times$ the
-offline optimum on the HybridQA ladder against $1.23\times$ on the
-HybridQA grid, and $1.59\times$ against $1.61\times$ on CRAG, reaching
+is not confounded by a cheaper fallback -- at each space's own
+$\alpha_{\mathrm{cert}}$ it sits at $1.30\times$ the offline optimum on
+the HybridQA ladder against $1.43\times$ on the HybridQA grid, and
+$1.79\times$ against $1.69\times$ on CRAG, reaching
 at most $99\%$ of the allowance at every level of either space and never
-passing it. The worst level is
+passing it. The worst level of the fifteen-level sweep is
 in fact better on the larger space ($1.53\times$ to $1.45\times$ on
 HybridQA, $2.11\times$ to $2.07\times$ on CRAG), because the extra plans
 give the action LP more interior points to mix. The gap to the offline

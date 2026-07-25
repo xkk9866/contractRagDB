@@ -396,15 +396,16 @@ for t in TRACKS:
     frac = g["worst_rate"] / a
     lo_r, hi_r = min(lo_r, frac), max(hi_r, frac)
     lo_c, hi_c = min(lo_c, g["vs_oracle"]), max(hi_c, g["vs_oracle"])
-    cl = min(cl, s["vs_oracle"], sd["vs_oracle"])
-    ch = max(ch, s["vs_oracle"], sd["vs_oracle"])
+    cl = min(cl, sd["vs_oracle"])
+    ch = max(ch, sd["vs_oracle"])
     print(f"   {t:<9} a*={a:.2f} floor={floor:.3f} | ledger sup={g['worst_rate']:.3f}"
           f" ({100*frac:.0f}% of a*) PathV={round(g['breach']*dr)}/{dr}"
           f" cost/OPT={g['vs_oracle']:.2f}"
           f" | LTT PathV={round(s['breach']*dr)}/{dr} cost/OPT={s['vs_oracle']:.2f}"
           f" | LTT+dec risk={sd['risk']:.3f} cost/OPT={sd['vs_oracle']:.2f}")
 print(f"   CLAIM ledger spends {100*lo_r:.0f}-{100*hi_r:.0f}% of allowance, "
-      f"costs {lo_c:.2f}-{hi_c:.2f}x OPT; certifiers {cl:.2f}-{ch:.2f}x")
+      f"costs {lo_c:.2f}-{hi_c:.2f}x OPT; LTT+dec (same action space) "
+      f"{cl:.2f}-{ch:.2f}x")
 
 print("=" * 72)
 print("15. Table 3 (sweep): breached streams and mean cost over 15 levels")

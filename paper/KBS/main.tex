@@ -149,7 +149,7 @@ $O(\sqrt{P\log T/T})$ cost regret, and price partial auditing exactly.
 On fully metered executions of HybridQA, CRAG, ASQA and QAMPARI over a
 plan space spanning three model developers and three open-weight
 models, the executor runs at 1.27--1.75$\times$ an offline optimum that
-knows every plan's risk, against 2.86--5.85$\times$ for one-shot
+knows every plan's risk, against 2.89--5.85$\times$ for one-shot
 certification given the same action space. Sweeping the contract over
 15 levels per task, it honours every level on every stream while
 spending 92--99\% of the allowance, where the certifier breaches 545 of
@@ -208,7 +208,7 @@ The empirical consequences are consistent across four metered benchmarks
 and two plan grids built by unbundling retrieval from generation. The
 executor operates at 1.27--1.75$\times$ an offline optimum that knows
 every plan's risk, where one-shot certification with the same action
-space costs 2.86--5.85$\times$; swept over 15 contract levels per task
+space costs 2.89--5.85$\times$; swept over 15 contract levels per task
 it honoured every one of them on every stream while spending 92--99\%
 of the allowance, so the constraint binds without ever being crossed,
 where the certifier breached 545 of 1\,200 streams and, once the traffic
@@ -216,10 +216,11 @@ stopped being exchangeable with its calibration prefix, up to 100\%. Enlarging t
 sharpened the contrast in an unexpected way: the certified cost got
 worse on one grid and better on the other, so an operator cannot know
 in advance whether building a larger space will be rewarded, whereas the
-ledger's distance to the offline optimum was unchanged in both. The
+ledger's distance to the offline optimum stayed of the same order in
+both. The
 ablation is the part we would ask a sceptical reader to check first:
-giving the certifier the same decline action changes its cost by less
-than 2\%, and removing randomisation from the executor makes it worse
+giving the certifier the same decline action changes its cost by under
+2\%, and removing randomisation from the executor makes it worse
 than the certifier. None of the three ingredients works alone.
 
 The design has a price and we have tried to state it plainly. A

@@ -114,7 +114,7 @@ with every LLM call priced and every label charged.
       static certifier's cost changes by under $2\%$ and on two tasks
       gets slightly worse, because its confidence width still forces it
       to over-decline. Ledger plus randomisation is
-      $1.58$--$3.75\times$ cheaper than the same certifier with the same
+      $1.93$--$4.24\times$ cheaper than the same certifier with the same
       action space.
 \item \textbf{Cost as a pure learning problem.} With validity removed
       from the optimisation, the executor may steer aggressively; we
@@ -142,7 +142,7 @@ with every LLM call priced and every label charged.
 Across the four benchmarks, at each task's strictest non-degenerate
 contract, the executor operates at $1.27$--$1.75\times$ the cost of an
 offline optimum that knows every plan's risk, against
-$2.86$--$5.85\times$ for one-shot certification given the same action
+$2.89$--$5.85\times$ for one-shot certification given the same action
 space. Swept over $15$ contract levels per task, it honoured every level
 on every stream where the certifier breached $545$ of $1\,200$; over
 every stream in this paper, spanning every task, contract level, decline

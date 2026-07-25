@@ -1,6 +1,6 @@
 \begin{table*}[t]
 \centering
-\caption{Contribution of each ingredient, averaged over the $\alpha$ levels of each column and reported as cost relative to that column's offline action LP (lower is better). Removing the decline action makes strict levels infeasible, and the variant then serves its safest plan and breaches; removing randomisation leaves only frontier vertices, which cannot reach a level between two plans' risks; removing the ledger returns to a calibration certificate and reinstates its confidence width. The ordering of the four variants is the same in all six settings, including the two plan grids, where the action space is $36$ and $24$ executed physical plans rather than routing policies over a ladder. A superscript is the fraction of streams that variant breached; a breaching variant can undercut the offline optimum, which is not an achievement but the reason a cost figure alone cannot be compared. Only the variant denied a decline action ever breaches; once declining is available the certificate is safe but dear, and the remaining gap to the last row is what the ledger and randomisation contribute.}
+\caption{Contribution of each ingredient at the same pivotal $\alpha^{*}$ used in Table~\ref{tab:main} (the first level at or above the risk floor), reported as cost relative to the offline action LP (lower is better). Removing the decline action makes the strictest levels infeasible, and the variant then serves its safest plan and breaches; removing randomisation leaves only frontier vertices, which cannot reach a level between two plans' risks; removing the ledger returns to a calibration certificate and reinstates its confidence width. The ordering of the four variants is the same in all six settings, including the two plan grids, where the action space is $36$ and $24$ executed physical plans rather than routing policies over a ladder. A superscript is the fraction of streams that variant breached; a breaching variant can undercut the offline optimum, which is not an achievement but the reason a cost figure alone cannot be compared. Only the variant denied a decline action ever breaches; once declining is available the certificate is safe but dear, and the remaining gap to the last row is what the ledger and randomisation contribute.}
 \label{tab:ablation}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -8,10 +8,10 @@
 \toprule
 Variant & HybridQA & CRAG & ASQA & QAMPARI & HQ grid & CRAG grid \\
 \midrule
-certificate, no decline & 3.60$^{0.67}$ & 2.51$^{0.69}$ & 5.13$^{0.21}$ & 5.00$^{0.74}$ & 0.94$^{0.80}$ & 5.89$^{0.50}$ \\
-certificate + decline & 3.54 & 2.51 & 5.16 & 5.01 & 2.04 & 2.46 \\
-ledger, single plan & 4.18 & 2.89 & 5.38 & 5.05 & 2.81 & 2.86 \\
-\textbf{ledger + randomised} & 1.22 & 1.59 & 1.58 & 1.33 & 1.23 & 1.61 \\
+certificate, no decline & 4.78$^{0.33}$ & 3.37$^{0.43}$ & 2.86$^{0.07}$ & 5.83$^{0.70}$ & 1.63 & 7.33$^{0.50}$ \\
+certificate + decline & 4.68 & 3.38 & 2.89 & 5.85 & 3.18 & 2.43 \\
+ledger, single plan & 4.86 & 3.39 & 2.82 & 5.73 & 5.02 & 2.79 \\
+\textbf{ledger + randomised} & 1.27 & 1.75 & 1.38 & 1.38 & 1.45 & 1.56 \\
 \bottomrule
 \end{tabular}
 \end{table*}

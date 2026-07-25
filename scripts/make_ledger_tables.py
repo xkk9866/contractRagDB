@@ -466,30 +466,37 @@ def audit_table(tracks, out="tab_audit.tex"):
 
 
 def ablation_table(tracks, out="tab_ablation.tex"):
-    """Each row removes one ingredient; the last is the full controller."""
+    """Each row removes one ingredient; the last is the full controller.
+
+    Reported at the same pivotal alpha* as Table 1, so a number quoted
+    from the ablation can be read against the main comparison without a
+    change of denominator.
+    """
     cols = list(tracks) + [t for t in ("hqgrid", "cggrid")
                            if load(f"ledger_{t}.json")]
     lines = [
         r"\begin{table*}[t]",
         r"\centering",
-        r"\caption{Contribution of each ingredient, averaged over the "
-        r"$\alpha$ levels of each column and reported as cost relative to "
-        r"that column's offline action LP (lower is better). Removing the "
-        r"decline action makes strict levels infeasible, and the variant then "
-        r"serves its safest plan and breaches; removing randomisation leaves "
-        r"only frontier vertices, which cannot reach a level between two "
-        r"plans' risks; removing the ledger returns to a calibration "
-        r"certificate and reinstates its confidence width. The ordering of "
-        r"the four variants is the same in all six settings, including the "
-        r"two plan grids, where the action space is $36$ and $24$ executed "
-        r"physical plans rather than routing policies over a ladder. A "
-        r"superscript is the fraction of streams that variant breached; a "
-        r"breaching variant can undercut the offline optimum, which is not an "
-        r"achievement but the reason a cost figure alone cannot be compared. "
-        r"Only the variant denied a decline action ever breaches; once "
-        r"declining is available the certificate is safe but dear, and the "
-        r"remaining gap to the last row is what the ledger and randomisation "
-        r"contribute.}",
+        r"\caption{Contribution of each ingredient at the same pivotal "
+        r"$\alpha^{*}$ used in Table~\ref{tab:main} (the first level at "
+        r"or above the risk floor), reported as cost relative to the "
+        r"offline action LP (lower is better). Removing the decline "
+        r"action makes the strictest levels infeasible, and the variant "
+        r"then serves its safest plan and breaches; removing "
+        r"randomisation leaves only frontier vertices, which cannot "
+        r"reach a level between two plans' risks; removing the ledger "
+        r"returns to a calibration certificate and reinstates its "
+        r"confidence width. The ordering of the four variants is the "
+        r"same in all six settings, including the two plan grids, where "
+        r"the action space is $36$ and $24$ executed physical plans "
+        r"rather than routing policies over a ladder. A superscript is "
+        r"the fraction of streams that variant breached; a breaching "
+        r"variant can undercut the offline optimum, which is not an "
+        r"achievement but the reason a cost figure alone cannot be "
+        r"compared. Only the variant denied a decline action ever "
+        r"breaches; once declining is available the certificate is "
+        r"safe but dear, and the remaining gap to the last row is what "
+        r"the ledger and randomisation contribute.}",
         r"\label{tab:ablation}",
         r"\footnotesize",
         r"\setlength{\tabcolsep}{4pt}",
@@ -510,22 +517,21 @@ def ablation_table(tracks, out="tab_ablation.tex"):
             if d is None:
                 cells.append("--")
                 continue
+            a = pivotal_alpha(d)
             ref = min(d["abstain_costs"],
                       key=lambda x: abs(x - max(d["pop_cost"])))
-            vals, br = [], []
-            for a, blk in d["results"].items():
-                for k, r in blk["rows"].items():
-                    if (r["method"] == key
-                            and abs(r["abstain_cost"] - ref) < 1e-12):
-                        vals.append(r["vs_oracle"])
-                        br.append(r["breach"])
-            if not vals:
+            blk = d["results"].get(str(a)) or d["results"].get(f"{a:g}")
+            if blk is None:
                 cells.append("--")
                 continue
-            # a variant that breaches can be cheaper than the offline optimum,
-            # which is not an achievement; say so in the cell
-            mark = (r"$^{" + f"{np.mean(br):.2f}" + "}$") if any(br) else ""
-            cells.append(f"{np.mean(vals):.2f}{mark}")
+            r = next((v for v in blk["rows"].values()
+                      if v["method"] == key
+                      and abs(v["abstain_cost"] - ref) < 1e-12), None)
+            if r is None:
+                cells.append("--")
+                continue
+            mark = (r"$^{" + f"{r['breach']:.2f}" + "}$") if r["breach"] else ""
+            cells.append(f"{r['vs_oracle']:.2f}{mark}")
         lines.append(f"{label} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     write(out, lines)
