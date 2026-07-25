@@ -1,0 +1,125 @@
+\section{Preliminaries and problem formulation}
+\label{sec:prelim}
+
+We model hybrid RAG pipelines as plans over a small operator algebra,
+then define evidence contracts and certified deployment.
+
+\subsection{Hybrid RAG plans over heterogeneous knowledge sources}
+\label{sec:algebra}
+
+Let $\mathcal{S}$ be a set of evidence sources: relational tables, text
+corpora with sparse and dense indexes, and remote structured knowledge
+APIs. A \emph{plan} $P$ is a directed acyclic graph built from typed
+operators
+\[
+\textsf{Retrieve}_{s,k} \mid \textsf{Fuse} \mid \textsf{Rerank}_m
+\mid \textsf{Filter}_\phi \mid \textsf{Generate}_g \mid
+\textsf{Repair},
+\]
+where $\textsf{Retrieve}_{s,k}$ fetches $k$ evidence units from source
+$s$ (SQL row selection, BM25, dense approximate nearest neighbor, or
+API calls), $\textsf{Fuse}$ merges rankings (e.g., reciprocal-rank
+fusion), $\textsf{Rerank}_m$ re-scores with a cross-encoder $m$,
+$\textsf{Filter}_\phi$ drops evidence failing a predicate $\phi$ (e.g.,
+an entailment or freshness test), $\textsf{Generate}_g$ produces the
+answer with LLM $g$, and $\textsf{Repair}$ post-edits an answer using
+verification feedback. Executing $P$ on a query $q$ yields an answer,
+an evidence set $E$ with a citation map, and a realized execution
+vector (cost, latency, evidence ages, \dots) metered at run time.
+Different RAG plans rarely produce identical outputs, so their behavior
+must be compared statistically.
+
+\subsection{Evidence contracts}
+
+\begin{definition}[Evidence contract]
+\label{def:contract}
+Let $\mathcal{D}$ be a query distribution. An \emph{evidence contract}
+is a tuple $C = \langle (\ell_j, \alpha_j)_{j=1}^{d}, \delta \rangle$
+where each $\ell_j : (\pi, q) \mapsto [0,1]$ is a bounded violation
+loss --- for example,
+$\ell_{\mathrm{qual}} = \mathbf{1}[\mathrm{quality}(\pi(q)) < \tau_q]$,
+$\ell_{\mathrm{cite}} =
+\mathbf{1}[\mathrm{citation\ recall}(\pi(q)) < \tau_c]$,
+$\ell_{\mathrm{fresh}} =
+\mathbf{1}[\max_{e \in E(q)} \mathrm{age}(e) > \Delta_f]$,
+$\ell_{\mathrm{lat}} = \mathbf{1}[\mathrm{latency}(\pi(q)) > B_\ell]$
+--- $\alpha_j \in (0,1)$ are admissible violation rates, and
+$\delta \in (0,1)$ bounds, over the calibration sample, the probability
+of deploying a policy that violates at least one rate limit.
+\end{definition}
+
+As a running example, consider a financial-services assistant whose
+compliance office imposes requirements on the \emph{service}, not on
+any single answer: at most 10\% of answers may be incorrect, at most
+10\% may contain a claim without an entailed citation, at most 10\%
+may cite evidence older than 72 hours, and at most 5\% may exceed a
+10-second latency budget, all at minimal LLM spend. These requirements
+instantiate Definition~\ref{def:contract} with four losses,
+$\alpha = (.10, .10, .10, .05)$, and $\delta = 0.1$: with 90\%
+confidence over the calibration draw, the deployed pipeline violates
+none of the four rate limits.
+
+A \emph{policy} $\pi$ maps a query to an execution schedule over plans,
+possibly running several plans adaptively
+(Section~\ref{sec:families}). Its risks are
+$R_j(\pi) = \E_{q\sim\mathcal{D}}[\ell_j(\pi, q)]$ and its cost is
+$\mathrm{cost}(\pi) = \E_{q\sim\mathcal{D}}[c(\pi, q)]$ with $c$ the
+metered monetary cost. The optimization problem is
+\begin{equation}
+\label{eq:problem}
+\min_{\pi \in \Pi} \ \mathrm{cost}(\pi)
+\quad \text{s.t.} \quad R_j(\pi) \le \alpha_j \ \ \forall j ,
+\end{equation}
+where $\Pi$ is a policy space induced by the plan algebra. The
+distribution $\mathcal{D}$ is unknown; the optimizer sees $n$
+independent calibration queries with realized losses. Contract
+satisfaction can therefore only ever be established statistically.
+
+\begin{definition}[$C$-certified deployment]
+\label{def:certified}
+A data-dependent selection procedure $\mathcal{A}$ mapping a
+calibration sample $Z_{1:n}$ to a policy $\hat\pi$ is
+\emph{$C$-certified} if
+\[
+\Prob_{Z_{1:n}}\big( R_j(\hat\pi) \le \alpha_j \ \forall j \big)
+\ \ge\ 1-\delta.
+\]
+\end{definition}
+
+Existing RAG optimizers do not provide this guarantee. Workload-level
+optimizers such as Abacus
+\citep{russo2025abacus} compare point estimates of plan quality against
+the constraint; adaptive routers \citep{jeong2024adaptiverag} provide
+no feasibility statement at all. Both can --- and, as we show in
+Section~\ref{sec:results}, do --- deploy policies whose true violation
+rate exceeds $\alpha$ in a large fraction of calibration draws.
+Conformal RAG methods \citep{li2024traq,kang2024crag} do control risk,
+but for a single fixed pipeline; they leave the cost-minimization
+dimension of~\eqref{eq:problem} untouched.
+
+\begin{rmk}[What the guarantee is about]
+A contract is stated with respect to a loss that the operator can audit.
+Definition~\ref{def:certified} applies to any chosen $\ell_j$, such as
+token-F1 against gold
+answers, NLI-based citation entailment, an LLM judge following a
+benchmark's official protocol, evidence age, or wall-clock latency.
+The certificate concerns the declared predicate; it does not establish
+that the predicate captures the application's intent.
+If the operator upgrades the auditor --- for example, replacing the LLM
+judge with periodic human audits on the calibration sample --- the
+results continue to apply because the tests require bounded,
+independent losses, not machine-computed labels. The certificate does
+\emph{not} promise
+per-query correctness or robustness to a systematically biased
+auditor; Section~\ref{sec:discussion} discusses this limitation.
+\end{rmk}
+
+Two features of~\eqref{eq:problem} shape the framework design. First,
+the policy space $\Pi$ must be searched, not enumerated: it contains
+per-query adaptive policies, not just static plans. Second, the
+certificate must survive \emph{selection}: testing many candidates on
+the same calibration data and picking a passing one invalidates naive
+confidence intervals. \system\ therefore uses a fixed-sequence
+multiple-testing procedure that pays no union-bound penalty for
+searching an arbitrarily long candidate sequence
+(Section~\ref{sec:certification}).

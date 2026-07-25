@@ -1,0 +1,83 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,top=19mm,bottom=19mm,left=24mm,right=24mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\begin{document}
+\raggedright
+\hyphenpenalty=10000
+
+25 July 2026
+
+Editorial Office\\
+\textit{Neurocomputing}
+
+\textbf{Re: Research article submission, ``Distribution-free
+certification of learned progressive policies for retrieval-augmented
+generation under knowledge drift''}
+
+Dear Editor,
+
+On behalf of all authors, we submit this manuscript for consideration
+as a Research Article in \textit{Neurocomputing}.
+
+Dynamic retrieval-augmented generation (RAG) learns when to retrieve,
+rerank, stop, or escalate to a stronger model. Such mechanisms improve
+average accuracy and efficiency, but the learned score itself does not
+bound the population risk of the policy selected for deployment. This
+problem becomes more serious when many policy thresholds are searched
+or the external knowledge distribution changes.
+
+Our manuscript introduces ContractRAG, a learning-and-certification
+method for progressive RAG inference. Per-rung sufficiency models use
+retrieval and generation signals to control adaptive evidence
+acquisition. Composable risk vouchers order policies generated from a
+rewrite lattice. A separate distribution-free fixed-sequence algorithm
+then certifies the selected policy independently of candidate count and
+score quality. We prove finite-sample contract validity and cost
+consistency. We also develop a restart-mixture e-process with
+change-time-independent detection delay, constant-time updates, and a
+lifetime guarantee across repeated recertification.
+
+The evaluation uses HybridQA, CRAG, ASQA, and QAMPARI, four model
+families, and two serving backends. It includes ablations of score
+features and policy families, calibration-size scaling, dense candidate
+grids, strict and joint contracts, audit rates, and controlled drift.
+Across 1,000 calibration draws, selected policies exceed their
+contracts in at most 0.8\% of draws under a 10\% error budget, whereas
+empirical and Bayesian selection reach 64\%. Model cost falls by up to
+20$\times$, or 10--18$\times$ after auditing.
+
+The paper connects learned reranking, iterative retrieval, knowledge
+refinement, and uncertainty-aware retrieval through a general
+selection and certification layer that incorporates them as policies
+or rungs. We believe this combination of learned adaptive computation, statistical
+learning guarantees, drift adaptation, public-benchmark experiments,
+and mechanism-focused ablations fits the journal's interest in learning
+methods, computational learning theory, and resource-aware neural
+systems.
+
+This manuscript is original, has not been published previously, and is
+not under consideration elsewhere. All authors have approved the
+manuscript and its submission. The authors declare no competing
+financial interests or personal relationships that could have
+influenced the work.
+
+Thank you for considering our submission.
+
+Sincerely,
+
+\textbf{Weiwei Fu and Jinjiang Cui}\\
+Co-corresponding authors, on behalf of all authors\\
+Suzhou Institute of Biomedical Engineering and Technology\\
+Chinese Academy of Sciences\\
+No.\ 88 Keling Road, Suzhou New District, Suzhou 215163, China\\
+\href{mailto:fuww@sibet.ac.cn}{fuww@sibet.ac.cn};
+\href{mailto:cuijj@sibet.ac.cn}{cuijj@sibet.ac.cn}
+
+\end{document}

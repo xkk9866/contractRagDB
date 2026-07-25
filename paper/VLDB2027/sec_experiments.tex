@@ -1,0 +1,253 @@
+\section{Evaluation}
+\label{sec:experiments}
+
+We study four questions: (1) Does optimization preserve the declared
+contract across calibration samples? (2) How much does certification cost?
+(3) Do vouchers, group contracts, and monitoring behave as designed?
+(4) Does the system generalize across physical-plan choices and scale to
+large policy spaces?
+
+\subsection{Experimental setup}
+\label{sec:exp-setup}
+
+\textbf{Workloads.}
+\emph{HybridQA} joins Wikipedia tables with linked passages
+\cite{chen2020hybridqa}; loss is
+$\mathbf{1}[\mathrm{tokenF1}<0.5]$ and the train/calibration/test sizes are
+5000/3000/3466.
+\emph{CRAG} combines web retrieval with the benchmark's structured API
+\cite{yang2024cragbench}; correctness and hallucination follow its official
+grader, evidence has crawl timestamps, and splits are 700/1000/1006.
+\emph{ASQA} and \emph{QAMPARI} use the ALCE protocol
+\cite{stelmakh2022asqa,amouyal2022qampari,gao2023alce} and the official
+TRUE-NLI citation evaluator~\cite{honovich2022true}. Citation loss is
+$\mathbf{1}[\mathrm{citationRecall}<50]$; their splits are 150/350/448 and
+150/350/500. The tracks use every query in the corresponding public
+release.
+
+Each workload has four cost-ascending rungs, from sparse retrieval with a
+small generator to hybrid retrieval, reranking, verification, optional
+structured-API evidence, repair, and the strongest generator. All model
+calls are real and token metered. Escalation pays the cumulative cost of
+visited rungs; a router pays the selected rung.
+
+\textbf{Baselines.} Fixed plans execute one rung for the whole workload.
+The complexity router adapts Adaptive-RAG~\cite{jeong2024adaptiverag}; the
+utility router maximizes predicted sufficiency minus weighted cost.
+BO-tuned uses Optuna TPE~\cite{akiba2019optuna} over escalation thresholds.
+Abacus~\cite{russo2025abacus} uses its constrained, point-estimate plan
+selection with a 150-execution budget. Empirical-no-cert uses \system's
+candidate space but selects the cheapest policy whose empirical
+calibration risk is at most $\alpha$. Every method reads the same execution
+matrix.
+
+\textbf{Repeated-draw protocol.}
+For each track, we pool the calibration and test execution records into a
+fixed population. In each of 1000 trials, methods select a policy from a
+random calibration subset, and we measure that policy's exact risk over the
+whole population. The reported failure probability is therefore
+$\Pr(R(\hat\pi)>\alpha)$, exactly the quantity bounded by $\delta$.
+Sampling is without replacement. For a population of $N$ binary losses
+with $K_0=\lfloor N\alpha\rfloor+1$, the null tail
+$p_{\mathrm{hyp}}(k)=\Pr[\mathrm{Hyp}(N,K_0,n)\leq k]$ is exact. We
+exhaustively verified for every experimental $(N,n,\alpha)$ that the
+Hoeffding--Bentkus rejection region used by \system is contained in this
+exact rejection region, and reran the headline trials with
+$\min(p_{\mathrm{KL}},p_{\mathrm{hyp}})$. Both tests satisfy the contract;
+the exact test certifies deeper prefixes. The checks and trial-level
+outputs are in the artifact.
+
+\subsection{Contract validity}
+\label{sec:exp-safety}
+
+\begin{table*}[t]
+\caption{Probability over 1000 calibration draws that the selected
+policy's exact population risk exceeds $\alpha$, and mean cost relative to
+the strongest fixed plan. $\delta=0.1$; $<.003$ means no violating draw
+(one-sided 95\% upper bound).}
+\label{tab:safety}
+\centering\small
+\setlength{\tabcolsep}{4.0pt}
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{2}{c}{HybridQA ($\alpha=.35$)}
+& \multicolumn{2}{c}{CRAG ($\alpha=.65$)}
+& \multicolumn{2}{c}{ASQA ($\alpha=.25$)}
+& \multicolumn{2}{c}{QAMPARI ($\alpha=.66$)}\\
+Method & fail & cost & fail & cost & fail & cost & fail & cost\\
+\midrule
+Empirical, no cert. & .470 & .19 & .493 & .15 & .408 & .45 & .451 & .45\\
+BO-tuned            & .572 & .12 & .005 & .08 & .410 & .12 & .532 & .21\\
+Utility router      & .160 & .07 & $<$.003 & .03 & .106 & .08 & .497 & .40\\
+Abacus              & .099 & .34 & .275 & .16 & $<$.003 & .25 & .433 & .51\\
+\system (ladder)    & .006 & .31 & .005 & .38 & .002 & .51 & .004 & .75\\
+\system (full)      & \textbf{$<$.003} & .11
+                    & \textbf{$<$.003} & .07
+                    & \textbf{$<$.003} & .43
+                    & \textbf{.001} & .84\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:safety} shows a direct separation between estimated and
+certified feasibility. Empirical tuning deploys an out-of-contract policy
+in 41--49\% of draws; BO reaches 57\% at the displayed settings. The router
+and Abacus are safe at some settings and fail at others because neither
+adjusts its feasibility decision for selection uncertainty. \system stays
+below the 10\% budget on all tracks. Its full optimizer produces no
+violating draw on three tracks and one on QAMPARI.
+
+Figure~\ref{fig:sweep} extends the protocol to thirteen contract levels.
+No baseline remains below $\delta$ throughout; the worst baseline failure
+rate is 64\%. \system's worst rate is 0.8\%. The gap is not due to choosing
+only the strongest plan: on CRAG the full optimizer costs 7\% of that plan
+and is also the safest method.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/violation_sweep.pdf}
+\caption{Exact-population deployment-failure probability across contract
+levels. The dotted line is $\delta=0.1$.}
+\Description{Curves of deployment-failure probability across contract
+levels for ContractRAG and baseline optimizers. Only ContractRAG stays
+below the delta equals 0.1 budget throughout.}
+\label{fig:sweep}
+\end{figure}
+
+\subsection{Cost under matched contracts}
+\label{sec:exp-cost}
+
+\begin{table*}[t]
+\caption{Test risk and mean cost (mCNY/query) for one representative
+calibration draw. Bold policies are certified; Table~\ref{tab:safety}
+evaluates their population guarantee across draws.}
+\label{tab:main}
+\centering\small
+\setlength{\tabcolsep}{3.8pt}
+\begin{tabular}{lcccccccc}
+\toprule
+& \multicolumn{2}{c}{HybridQA $\alpha=.34$}
+& \multicolumn{2}{c}{CRAG $\alpha=.65$}
+& \multicolumn{2}{c}{ASQA $\alpha=.216$}
+& \multicolumn{2}{c}{QAMPARI $\alpha=.71$}\\
+Method & risk & cost & risk & cost & risk & cost & risk & cost\\
+\midrule
+Fixed strongest      & .290 & 7.21 & .600 & 6.00 & .116 & 9.01 & .610 & 6.49\\
+Complexity router    & .509 & 1.46 & .620 & 4.74 & .281 & 1.14 & .612 & 6.47\\
+Utility router       & .387 & .40 & .625 & .28 & .223 & 1.02 & .712 & .43\\
+BO-tuned             & .380 & .97 & .621 & .89 & .221 & 1.41 & .708 & .94\\
+Abacus               & .321 & 1.75 & .600 & 6.00 & .201 & 1.31 & .666 & 1.23\\
+Empirical, no cert.  & .372 & 1.45 & .635 & 1.39 & .199 & 5.67 & .784 & 1.84\\
+\system (ladder)     & .358 & 2.11 & .618 & 2.16 & .165 & 6.42 & .724 & 2.88\\
+\system (full)       & \textbf{.338} & \textbf{1.05}
+                     & \textbf{.624} & \textbf{.30}
+                     & \textbf{.145} & \textbf{6.56}
+                     & \textbf{.712} & \textbf{.43}\\
+\midrule
+Matched oracle       & .340 & .33 & .649 & .18 & .214 & .98 & .710 & .30\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+At matched contracts, \system reduces cost relative to the strongest plan
+by $6.9\times$ on HybridQA, $20\times$ on CRAG, $1.4\times$ on ASQA, and
+$15\times$ on QAMPARI (Table~\ref{tab:main}). Methods that are cheaper on
+HybridQA or ASQA exceed the selected contract. On QAMPARI, certification
+selects the same low-cost routing policy as the utility router; the
+difference is that the former has passed a valid feasibility test. The
+matched oracle knows every query outcome in advance and lower-bounds the
+same constrained objective. \system is within $1.4$--$6.7\times$ of this
+unattainable bound.
+
+Adding a final deferral action extends the contract with a bound on human
+review volume. At answer-risk $\alpha=.1$, \system certifies HybridQA and
+ASQA with a maximum deferral rate $\beta=.75$; observed deferral is .597
+and .219, respectively. At $\alpha=.2$, all four tracks certify. The
+optimizer therefore exposes strictness as an explicit tradeoff between
+automated risk, cost, and review load.
+
+\subsection{Optimizer and runtime components}
+\label{sec:exp-components}
+
+\textbf{Rewrite vouchers.}
+On 1000 HybridQA queries, four rewrites reduce a reference plan from 1.74
+to 0.21 mCNY/query. Across 1000 calibration redraws, individual 95\%
+vouchers cover their exact harm rates in 98.9--99.5\% of trials. The
+composed plan harms 24.0\% of queries. A base-relative composition is not
+valid because 8\% of harmed queries arise only from rewrite interaction.
+The path voucher of Proposition~\ref{prop:composition} covers every redraw;
+its bound is .376, compared with .251 for direct certification. This
+supports the intended division: vouchers order the lattice, and the final
+policy is certified directly. Selectivity conditioning further separates a
+.075 pushdown harm rate on vague predicates from no observed harm at
+$\sigma=1$.
+
+\textbf{Group contracts.}
+On CRAG, a marginal policy exceeds the real-time group's target in 99\% of
+200 draws. Group-conditional certification reduces every group's
+deployment-failure rate to at most 3.5\% by assigning more KG-API
+executions to the 9\% real-time slice. It also identifies groups for which
+no physical plan meets the requested limit.
+
+\textbf{Drift and recertification.}
+A 3000-query CRAG stream changes from static/slow to fast/real-time at
+$t=1500$. The static policy's violation rate rises from .58 to .88 against
+$\alpha=.66$. The monitor alarms after a median of 78 queries (36--125
+over 20 seeds), with no false alarm in 200 drift-free streams, and
+localizes the changepoint within a median of four queries for the strongest
+shift. A 250-query post-alarm window then certifies a new policy. Across ten
+streams, the loop yields phase-two risk .819 versus .886 without
+recertification and .815 for an oracle that knows the change time.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{figures/drift.pdf}
+\caption{CRAG workload shift. The certified static policy breaks after
+$t=1500$; the e-process alarm triggers post-change recertification.}
+\Description{A CRAG stream shifts from static and slow queries to fast
+and real-time queries at position 1500. The violation rate rises, the
+e-process alarms, and ContractRAG changes to a recertified policy.}
+\label{fig:drift}
+\end{figure*}
+
+Auditing all CRAG queries costs .29 mCNY/query, bringing deployment plus
+monitoring cost to .60 mCNY/query and retaining a $10\times$ saving over
+the strongest plan. Independent 25\% and 10\% audit rates increase median
+delay to 343 and 878 wall-clock queries while increasing savings to
+$15.8\times$ and $17.9\times$.
+
+\textbf{Multiple constraints.}
+On CRAG, one policy jointly certifies correctness $\leq.65$,
+hallucination $\leq.30$, staleness $\leq.05$, and 8-second latency
+exceedance $\leq.10$. Its test risks are .603, .258, $<.003$, and .057 at
+5.02 mCNY/query. The intersection--union test certifies 47 candidates,
+versus 44 after splitting $\delta$ across constraints. On ASQA, the same
+comparison is decisive: the intersection--union test certifies 45
+candidates for a four-constraint contract, while Bonferroni certifies
+none.
+
+\subsection{Physical planning, portability, and scale}
+\label{sec:exp-system}
+
+On HybridQA, we compare table-first and text-first access paths with
+lexical or hybrid retrieval at a fixed generator. Pool selectivity predicts
+a consistent crossover. At $\alpha=.5$, the certified mixed access-path
+policy has test risk .481 and costs .337 mCNY/query, 31\% less than the
+strongest fixed path (.492 mCNY/query). Thus cardinality estimates improve
+cost while the statistical test supplies feasibility.
+
+Replacing only the generator column on shared retrieval results confirms
+that the optimizer is not tied to one price schedule. Certified savings
+relative to each family's strongest plan are $1.1\times$ for Qwen,
+$16.6\times$ for DeepSeek, $5.6\times$ for GLM, and $1.2\times$ for
+locally served Gemma~3. In 200 repeated draws per family, no certified
+policy exceeds its contract; empirical selection reaches 30\%. When the
+Gemma plan space cannot meet $\alpha=.35$, \system reports no feasible
+candidate.
+
+Finally, expanding the threshold grid from 69 to 97,365 candidates takes
+8.5\,s on HybridQA, 4.1\,s on CRAG, and .9\,s on ASQA. Materializing
+retrieval once across four generator families removes three quarters of
+duplicated retrieval work. These results confirm that certification is a
+small vectorized pass over execution records, rather than an additional
+model-serving workload.

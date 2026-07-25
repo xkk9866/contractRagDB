@@ -1,0 +1,96 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why certification improves reliability and when it adds no cost}
+The experiments show why point-estimate tuning fails:
+selecting the cheapest configuration whose measured risk clears a
+threshold is an uncorrected multiple-testing procedure, so its winner
+is systematically the configuration with favorable measurement noise,
+an instance of the winner's curse. The effect is strongest where adaptive
+systems are most attractive: many candidates, small quality gaps
+between adjacent tiers, and moderate audit budgets. Certification
+neutralizes the curse not by testing less but by testing in a
+data-independent order and stopping at the first failure, which caps
+the family-wise error at $\delta$ regardless of how many candidates
+follow. The cost of the guarantee is a finite-sample margin of
+0.02--0.07 at practical calibration sizes --- and on benchmarks where
+the certified family is richer than the baselines' (CRAG), the
+certified policy is simultaneously the safest and among the cheapest,
+so certification adds no cost in those settings. The margin shrinks at the standard
+$O(n^{-1/2})$ rate, so operators can trade audit budget for cost
+directly.
+
+\subsection{Learning mechanism and complementarity}
+The proposed separation between learning and certification is useful
+for adaptive inference. Sufficiency models compress retrieval margins,
+support, citation, age, and abstention signals into a stopping score.
+Better scores move more easy queries to early rungs and improve cost.
+However, Theorem~\ref{thm:validity} does not require the score to be
+calibrated or even informative. This is deliberate: prediction quality
+determines efficiency, while the held-out test determines validity.
+The score ablation makes the distinction visible. Removing informative
+signals reduces the savings and shortens the certified prefix, but it
+does not increase the allowed certification error.
+
+ContractRAG is therefore not an alternative to RAG-LER, IRAGKR,
+AIR-RAG, or uncertainty-aware retrieval. Those methods learn stronger
+rerankers, query transformations, and retrieval gates. They can be used
+as rungs or features in the policy family, improving its attainable
+frontier. ContractRAG contributes the selection rule above that family.
+The dense-grid and policy-family studies show that a richer frontier is
+useful only when its ordering retains enough power; validity itself is
+unchanged. Finally, a learned gate is tied to the distribution on which
+it was fitted. The restart-mixture detector supplies the missing
+temporal mechanism by deciding when the old certificate and score
+should be replaced with a fresh epoch.
+
+\subsection{Limitations and future directions}
+The study has several limitations. (i) The guarantee is relative to
+the audited loss: a systematically biased auditor (an LLM judge that
+overrates fluent answers) shifts what is being certified; the
+procedure also accepts human audits, and the audit
+accounting of Section~\ref{sec:exp-drift} shows their cost is a
+first-order term that must be (and in our tables is) charged against
+the savings. (ii) Certification assumes the calibration sample is
+exchangeable with deployment within an epoch; adversarial or rapidly
+cycling drift would trigger frequent recalibration, and although the
+geometric spending schedule keeps lifetime validity, each cycle halves
+the remaining budget and lengthens detection delays logarithmically
+--- safe mode between an alarm and the next successful recertification
+is best-effort, not certified. (iii) The fixed-sequence procedure
+returns the cheapest policy of its certified prefix; this coincides
+with the family-wide cheapest feasible policy only under the ordering
+conditions of Proposition~\ref{prop:consistency}, and the dense-grid
+experiment shows the power cost of violating them. (iv) The policy
+families we certify are built over a linear ladder plus routers;
+richer spaces (per-operator adaptive plans, multi-agent pipelines)
+enlarge the search but also stress the power of a fixed-sequence walk
+at small audit budgets. (v) Group-conditional certification requires
+groups known at query time and pays a Bonferroni factor; overlapping
+or learned groups are future work. (vi) Our cost model is monetary;
+extending contracts to energy or carbon budgets is straightforward but
+unexplored.
+
+\subsection{Threats to validity}
+\emph{Internal validity}: all methods consume identical execution
+matrices, so comparisons cannot be confounded by retrieval variance;
+the repeated-draw protocol (1000 draws) evaluates each selected policy
+on the \emph{exact} finite population, so the reported violation
+probabilities carry Monte Carlo error of about $\pm 0.014$ and no
+test-sampling error at all. \emph{Statistical validity}: the protocol
+samples calibration sets without replacement while the certificate's
+p-value assumes i.i.d.\ draws. As discussed in Section~\ref{sec:setup},
+the p-value remains conservative in the finite-population regime, and
+the exact hypergeometric refinement only strengthens the results.
+\emph{Construct validity}: losses follow each benchmark's official
+protocol (token-F1, CRAG's LLM-judge grading, ALCE's TRUE-NLI citation
+entailment), whose agreement with human raters is documented by their
+authors; the certificate is exact for these losses, and
+Section~\ref{sec:discussion} discusses auditor bias. \emph{External
+validity}: results cover four benchmarks, four LLM families from four
+model developers, two serving backends (one hosted API platform, one
+local deployment), and two cost currencies, but all workloads are
+English-language QA; agentic and multilingual workloads may distribute
+difficulty differently. \emph{Reproducibility}: every LLM call is
+cached token-exactly, and all numbers regenerate from the released
+artifact without further API calls.

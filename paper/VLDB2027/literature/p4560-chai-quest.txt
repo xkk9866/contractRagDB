@@ -1,0 +1,217 @@
+QUEST: Query Optimization in Unstructured Document Analysis
+                    Zhaoze Sun                                           Chengliang Chai∗                                            Qiyan Deng
+             sunzhaoze@bit.edu.cn                                          ccl@bit.edu.cn                                             Kaisen Jin
+        Beijing Institute of Technology                           Beijing Institute of Technology                                 qiyandeng@bit.edu.cn
+                     China                                                     China                                                  jks@bit.edu.cn
+                                                                                                                             Beijing Institute of Technology
+                                                                                                                                          China
+                     Xinyu Guo                                                Ye Yuan                                                  Lei Cao
+                      Han Han                                               Guoren Wang                                           caolei@arizona.edu
+              xinyuguo@arizona.edu                                      yuan-ye@bit.edu.cn                                       University of Arizona
+              hanhan1@arizona.edu                                       wanggr@bit.edu.cn                                            United States
+               University of Arizona                              Beijing Institute of Technology
+                   United States                                               China
+ABSTRACT                                                                                      PVLDB Artifact Availability:
+Most recently, researchers have started building large language                               The source code, data, and/or other artifacts have been made available at
+models (LLMs) powered data systems that allow users to analyze                                https://github.com/qiyandeng/QUEST.
+unstructured text documents like working with a database because
+LLMs are very effective in extracting attributes from documents. In                           1    INTRODUCTION
+such systems, LLM-based extraction operations constitute the per-                              Modern corporations often maintain a large amount of unstruc-
+formance bottleneck of query execution due to the high monetary                               tured data including text documents such as web pages. In fact,
+cost and slow LLM inference. Existing systems typically borrow                                according to IDC research [2], unstructured data accounts for 80%-
+the query optimization principles popular in relational databases                             90% of the data. Recently, researchers have started building LLMs-
+to produce query execution plans, which unfortunately are inef-                               powered systems, such as UQE [9], ZenDB [29], Lotus [35], and
+fective in minimizing LLM cost. To fill this gap, we propose QUEST,                           Palimpzest [30], to analyze the valuable information hidden in text
+which features a bunch of novel optimization strategies for un-                               documents. These systems allow a user to select a set of documents,
+structured document analysis. First, we introduce an index-based                              specify some attributes that can be extracted from them, and apply
+strategy to minimize the cost of each extraction operation. With                              some database analytical operations on these attributes, e.g., filter,
+this index, QUEST quickly retrieves the text segments relevant to                             aggregation, or join. The core is to leverage LLMs [4, 36, 39] to
+the target attributes and only feeds them to LLMs. Furthermore,                               effectively extract out the attribute values that users are interested
+we design an evidence-augmented retrieval strategy to reduce the                              in because recent research [3] shows that LLMs are remarkably
+possibility of missing relevant segments. Moreover, we develop an                             good at data extraction. These efforts, if successful, can turn un-
+instance-optimized query execution strategy: because the attribute                            structured data into actionable insights. For instance, a lawyer may
+extraction cost could vary significantly document by document,                                employ this system to swiftly locate legal cases about murder with
+QUEST produces different plans for different documents. For each                              a minimum of three charges and a 15-year sentence.
+document, QUEST produces a plan to minimize the frequency of                                     Similar to traditional databases, a successful unstructured data
+attribute extraction. The innovations include LLM cost-aware oper-                            analysis system relies on a query optimizer that automatically pro-
+ator ordering strategies and an optimized join execution approach                             duces a plan, minimizing query execution costs. However, LLMs
+that transforms joins into filters. Extensive experiments on 3 real-                          play a central role in such a system, raising unique challenges
+world datasets demonstrate the superiority of QUEST, achieving                                and optimization opportunities. More specifically, compared to
+30%-6× cost savings while improving the F1 score by 10% -27%                                  traditional database operations, LLM inferences are much more
+compared with state-of-the-art baselines.                                                     expensive in both execution time and monetary cost [30], no mat-
+                                                                                              ter whether using commercial LLM services or deploying open
+PVLDB Reference Format:                                                                       source LLMs on high-performance thus expensive GPUs. Because
+Zhaoze Sun, Chengliang Chai, Qiyan Deng, Kaisen Jin, Xinyu Guo, Han                           unstructured data analysis relies on LLMs to extract attributes, the
+Han, Ye Yuan, Guoren Wang, and Lei Cao. QUEST: Query Optimization in                          extraction operation thus constitutes its performance bottleneck.
+Unstructured Document Analysis. PVLDB, 18(11): 4560 - 4573, 2025.                             Therefore, the key optimization objective in this scenario is to min-
+doi:10.14778/3749646.3749713                                                                  imize the LLM cost incurred during extraction, equivalent to (1)
+∗ Chengliang Chai is the corresponding author.                                                minimizing the LLM cost of each extraction operation, which de-
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                   pends on the number of input tokens to an LLM, and (2) minimizing
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of           the frequency of invoking the data extraction operations.
+this license. For any use beyond those covered by this license, obtain permission by
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights
+licensed to the VLDB Endowment.                                                               doi:10.14778/3749646.3749713
+Proceedings of the VLDB Endowment, Vol. 18, No. 11 ISSN 2150-8097.
+
+
+
+
+                                                                                       4560
+    To achieve the above optimization objective, we propose QUEST                  instance-optimized order for each individual document, leverag-
+with two key components: (1) an index-based attribute extraction                   ing the observation that extracting the same attribute could incur
+strategy to minimize the number of input tokens per extraction;                    significantly different cost across documents.
+(2) an instance-optimized query execution strategy to minimize                        To accurately estimate the extraction cost per document – the
+the frequency of attribute extraction. Crucially, these optimization               key of this instance optimized strategy, QUEST adopts an “optimize
+strategies are model-agnostic. Although the cost and performance                   at execution time” architecture. That is, unlike traditional database
+may vary across different LLMs, the core principles of QUEST remain                optimizers, which produce optimized plans before query execution,
+effective in reducing the number of input tokens and extraction                    QUEST estimates the cost during query execution time and produces
+frequency. QUEST thus offers an affordable and scalable approach                   a plan per document on the fly.
+that allows users to select thousands of documents from a large                       Moreover, we show that pushing down the predicates does not
+document collection, specify any attributes out of tens or even                    always yield the optimal plan. Instead, QUEST introduces a join
+hundreds of attributes that these documents potentially contain,                   transformation method that converts a join into a specialized fil-
+and analyze these attributes.                                                      ter and orders it with other filters in the query. We theoretically
+(1) Index-based Attribute Extraction. QUEST designs an index                       show that the plan produced in this way is guaranteed to be bet-
+for LLMs to efficiently and effectively extract attributes from docu-              ter than predicate pushdown. For a multi-way join, QUEST faces
+ments. Rather than using LLMs to scan each document routinely,                     challenges in estimating join selectivities as data records are not
+it only feeds LLMs the relevant text segments, thus significantly                  available in advance. To address this, we introduce a dynamic join
+reducing the number of input tokens. This retrieval augmented gen-                 ordering strategy that determines which tables to join during query
+eration (RAG) inspired solution features two innovative designs: a                 execution, leveraging our optimize at execution time architecture.
+two-level index and evidence augmented retrieval.                                     To summarize, we make the following contributions.
+Two-level Index. First, QUEST summarizes the subject of each docu-                 (1) We propose an execution-time optimizer that produces query
+ment and indexes this information to filter documents irrelevant to                plans instance-optimized w.r.t. different documents.
+the target attributes. Then QUEST builds a segment level index to                  (2) We propose a join transformation technique that is guaranteed
+retrieve relevant segments from the remaining documents. Com-                      to outperform the classical predicate pushdown strategy.
+pared to existing document analysis systems such as ZenDB [29],                    (3) We propose a two-level index to effectively filter irrelevant seg-
+which filter data only at the segment level, our two-level strategy                ments, reducing extraction costs without compromising accuracy.
+more accurately identifies the relevant segments because it avoids                 (4) Extensive experiments demonstrate the superiority of QUEST,
+erroneously recognizing some segments as relevant when they are                    achieving 0.3–6× cost savings while improving the F1-score by
+from documents in different subjects.                                              10%-27% compared with the state-of-the-art baselines.
+Evidence Augmented Retrieval. Second, when searching the index,
+existing RAG style solutions tend to miss relevant segments, be-                   2     QUEST OVERVIEW
+cause the query, which typically contains the attributes and their
+                                                                                   In this section, we first introduce how a user specifies a query and
+text description, is often not informative enough. To solve this prob-
+                                                                                   the types of queries that QUEST supports. We then describe QUEST’s
+lem, one can rely on users to manually enhance text descriptions
+                                                                                   overall architecture and highlight the novel designs.
+like prompt engineering, but it is tedious and time-consuming. We
+propose a sampling-based approach to automatically collect the
+evidence on what the relevant segments should look like and use                    2.1    User Queries
+this evidence to augment the retrieval.                                            In QUEST, a user could formulate a query in SQL semantics similar
+(2) Instance-optimized Query Execution. Rather than first ex-                      to ZenDB [29]. That is, the user selects a subset of documents from
+tracting out the attribute values involved in a query and then em-                 her data sources, e.g., the legal documents produced in the last two
+ploying the database query optimizer to produce an execution plan,                 years. She then specifies some attributes that can potentially be
+QUEST adopts a lazy extraction strategy. That is, it interleaves at-               extracted from these documents and applies some analytical opera-
+tribute extraction and analytical operations (e.g., filter or join), only          tions such as filtering and joining on these attributes. Note that the
+extracting an attribute when an analytical operation has to evaluate               key techniques of QUEST are orthogonal to the query language and
+it. In this way, QUEST opens optimization opportunities to minimize                thus are compatible with other systems such as Palimpzest [30],
+the frequency of data extraction. For example, if a legal case in a                which uses Python-style interfaces. Moreover, users who favor
+document is not about murder, QUEST does not have to extract other                 querying in natural language can use QUEST, which can employ
+attributes, e.g., the number of charges or the years of the sentence.              current NL2SQL techniques [15, 16, 31] to convert NL queries into
+Intuitively, similar to relational databases, appropriately ordering               SQL-like queries.
+the filters or the joins in a query could effectively avoid extracting             Supported Queries. In this work, we target optimizing Selection-
+the values that have no chance to appear in the final query results.               Projection-Join (SPJ) queries over unstructured documents. We
+    Guided by the optimization objective of QUEST, we revisit the                  leave optimizations on other important types of queries as future
+query optimization principles in databases, e.g., filter ordering, pred-           work, such as aggregation.
+icate pushdown, and join ordering. As detailed in Sec. 3, rather than                 We first introduce some notations. 𝐴 denotes the set of attributes
+simply ordering the filters based on their selectivities and apply-                in the user-specified query 𝑄, and 𝑎𝑖 denotes each attribute in 𝐴.
+ing the same order to process all documents, QUEST produces an                     𝜗 denotes the expression in the WHERE clause of 𝑄, consisting of
+                                                                                   a series of filters, and 𝜃 𝑗 corresponds to each filter in 𝜗. QUEST
+
+
+
+
+                                                                            4561
+supports a broad range of filters. (1) QUEST supports queries that                  documents into segments, encodes each segment into an embed-
+are conjunctions or disjunctions of any number of filters. As an                    ding, and loads the embeddings into a high dimensional vector
+example, in Figure 1, the query 𝑄 seeks to find NBA players who are                 index such as PQ [18] or HNSW [33]. When a query comes, QUEST
+over the age of 35 and have made more than 12 All-Star appearances.                 encodes the name of the relevant attributes and their corresponding
+The expression 𝜗 is a conjunction of these two filters (𝑒.𝑔., 𝜗 : 𝑎𝑔𝑒 >             text descriptions into an embedding. It then uses the vector index
+35 AND 𝑎𝑙𝑙 − 𝑠𝑡𝑎𝑟𝑠 > 12). (2) Any single filter 𝜃 𝑗 for 𝑎𝑖 ∈ 𝐴 can be an            to retrieve the segments with embeddings similar to the query
+equality filter (𝑒.𝑔., 𝜃 𝑗 : 𝑎𝑖 ="Kevin Durant"), an open range filter              embedding. Then QUEST only extracts tuples from these segments.
+(𝑒.𝑔., 𝜃 𝑗 : 𝑎𝑖 > 27 ) or a close range filter (𝑒.𝑔., 𝜃 𝑗 : 25 ≤ 𝑎𝑖 ≤ 30).             QUEST optimizes the two key steps of this basic RAG style strat-
+QUEST also supports join operations. We use G = {T , E} to denote                   egy, namely the indexing and the retrieval.
+the join graph, where nodes (T ) denote the set of tables and edges                 Two-level Index. In addition to indexing documents at the seg-
+(E) represent the join relations.                                                   ment level, QUEST constructs a document-level index to filter the
+                                                                                    documents irrelevant to the to-be-extracted attributes. The segment-
+2.2    Overall Framework                                                            level index will only be used to retrieve the relevant segments from
+                                                                                    the remaining documents, as shown in Figure 1. QUEST produces
+Inspired by the principle of relational databases, QUEST first indexes
+                                                                                    this document-level index by first extracting the key sentences from
+the documents and conducts query optimization once receiving a
+                                                                                    each document, encoding these sentences into an embedding 𝑒 (𝑑𝑖 )
+query. However, different from traditional databases, which mini-
+                                                                                    to represent the document, and then indexing these embeddings.
+mize query execution time, QUEST targets reducing LLM costs while
+                                                                                    Next, QUEST segments each document, encodes each segment into
+ensuring analysis quality. We thus propose several innovative de-
+                                                                                    an embedding 𝑒 (𝑠𝑖 ), and builds the segment-level index.
+signs to achieve these objectives by (1) minimizing the cost of the
+                                                                                    Evidence-Augmented Segment Retrieval. Although QUEST lets
+attribute extraction via index and (2) minimizing the frequency of
+                                                                                    users explain attributes, embeddings from attribute names and
+calling the extraction via query optimization.
+                                                                                    descriptions often lack information to find all relevant segments. For
+    Given a document collection D = {𝑑 1, 𝑑 2, · · · , 𝑑𝑛 }, QUEST first
+                                                                                    example, when QUEST extracts the age attribute, simply embedding
+builds a two-level index over all documents. Then, once the user
+                                                                                    age alongside its description “Player’s age.” to search relevant
+selects a subset of documents, specifies some attributes in these
+                                                                                    segments may miss the segments such as “Wardell Stephen Curry II
+documents, and composes a query on these attributes, QUEST will
+                                                                                    (born March 14, 1988) is an American professional basketball player
+first sample some documents, extract the attribute values from them
+                                                                                    and point guard ...”. This mismatch occurs because the segment
+and collect some statistics used by the query optimizer, which aims
+                                                                                    does not explicitly mention “age”, but instead contains a birthdate
+to minimize the LLM costs of extracting attributes from documents.
+                                                                                    and unrelated details like “point guard”. Therefore, its embedding
+However, fundamentally different from traditional databases, QUEST
+                                                                                    is not necessarily similar to that of the query.
+optimizer does not produce a query plan before query execution.
+                                                                                       Rather than relying on users to provide such hints, which in
+Instead, it uses these statistics and the LLM costs calculated during
+                                                                                    fact is equivalent to a tedious prompt engineering process, QUEST
+query execution to produce optimized plans on the fly. Moreover,
+                                                                                    automatically collects such valuable information during sampling,
+given a query, it produces query plans at a document by document
+                                                                                    serving as evidence to augment segment retrieval. Specifically, when
+basis instead of presuming a uniform plan for all documents. This is
+                                                                                    using LLMs to extract an attribute from document samples, QUEST
+because the attribute extraction cost could vary significantly from
+                                                                                    records the segments where a corresponding attribute value is ex-
+document to document. To quickly produce these plans, QUEST
+                                                                                    tracted from the sampled documents. Then QUEST encodes these
+features novel optimization strategies, which, although lightweight,
+                                                                                    segments into representative embeddings and uses each as evidence
+guarantee to produce optimal plans. The query execution engine
+                                                                                    to retrieve the segments relevant to this attribute from the rele-
+uses index-based data extraction and other analytical operations
+                                                                                    vant documents. Finally, it merges all these segments, eliminates
+such as join to execute query plans efficiently.
+                                                                                    duplicates, and inputs them into the LLM for extraction.
+    QUEST’s key components include: a two-level index-based strat-
+egy to minimize the cost of extracting attributes from the documents
+– the most fundamental operation in QUEST; and (2) a query opti-                    2.4    Query Optimization
+mizer that revisits the classical query optimization principles in
+                                                                                    We revisit the classical query optimization principles in relational
+relational databases, such as filter ordering, predicate pushdown,
+                                                                                    databases, such as filter ordering, predicate pushdown, and join
+and join ordering, to avoid unnecessary extraction operations.
+                                                                                    ordering, to avoid unnecessary attribute extraction operations.
+                                                                                    Filter Ordering. In QUEST, the LLM cost of extracting different at-
+2.3    Index-based Attribute Extraction                                             tributes from a document collection could vary significantly because
+The key idea is to use an index to quickly and accurately identify                  the QUEST index tends to discover various numbers of relevant text
+the text segments that potentially contain the target attributes and                segments with respect to different attributes. Similarly, the extrac-
+only feed these relevant segments to LLMs for extraction. Moreover,                 tion cost varies significantly document by document, even when
+we leverage the common patterns shown in the sample segments                        extracting the same attribute. This variant cost observation guides
+that have the target attributes to improve the extraction quality.                  us to propose a new strategy to order filters when multiple filters
+The details are presented in Sec. 4.1.                                              exist in one query.
+   At a high level, the index-based tuple extraction resembles Re-                     First, unlike traditional databases, which simply order the filters
+trieval Augmented Generation (RAG). That is, QUEST divides all                      based on their selectivities, QUEST orders the filters based on a cost
+
+
+
+
+                                                                             4562
+

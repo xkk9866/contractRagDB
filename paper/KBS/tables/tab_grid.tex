@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{What enlarging the plan space does to a certificate. The space grows from the hand-drawn ladder (the diagonal of the grid, $|\mathcal{P}|=4$) to the full access-path $\times$ generator grid (36 plans on HybridQA, 24 on CRAG). Costs are mCNY per query; both spaces use the same randomised construction, the same calibration split and the same $\delta=0.1$. \emph{offline} is the cheapest mixture that meets the level on the whole population and can only fall as plans are added, which it does everywhere. The certified cost does not inherit that monotonicity: relative to its own offline optimum the certificate gets \emph{worse} on the HybridQA grid (1.14$\times$ to 1.46$\times$) and \emph{better} on the CRAG grid (2.02$\times$ to 1.41$\times$). Nor does feasibility move in one direction: at $\alpha=0.62$ on CRAG the grid certifies a policy and the ladder certifies nothing, although a mixture costing 0.650 exists in the ladder; at $\alpha=0.30$ on HybridQA neither space certifies anything although both admit a feasible mixture. Which way the multiplicity cost and the cheaper plans net out is a property of the task, not something an operator can predict before paying to build the space. \emph{n.f.}: no mixture meets the level; \emph{n.c.}: nothing certifies.}
+\label{tab:grid}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+ & & \multicolumn{3}{c}{ladder ($|\mathcal{P}|=4$)} & \multicolumn{3}{c}{grid} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Task & $\alpha$ & offline & cert. & ratio & offline & cert. & ratio \\
+\midrule
+HybridQA & 0.20 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
+ & 0.25 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
+ & 0.30 & 4.165 & \emph{n.c.} & -- & 1.922 & \emph{n.c.} & -- \\
+ & 0.34 & 1.526 & 1.735 & 1.14 & 1.409 & 2.057 & 1.46 \\
+ & 0.40 & 0.944 & 1.297 & 1.37 & 0.641 & 1.464 & 2.29 \\
+\midrule
+CRAG & 0.35 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
+ & 0.45 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
+ & 0.55 & \emph{n.f.} & \emph{n.c.} & -- & 0.803 & \emph{n.c.} & -- \\
+ & 0.62 & 0.650 & \emph{n.c.} & -- & 0.275 & 0.405 & 1.47 \\
+ & 0.70 & 0.170 & 0.344 & 2.02 & 0.170 & 0.239 & 1.41 \\
+\bottomrule
+\end{tabular}
+\end{table}

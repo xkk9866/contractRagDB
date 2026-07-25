@@ -1,0 +1,94 @@
+\section{Introduction}
+\label{sec:intro}
+
+\input{fig_example}
+
+Retrieval-augmented generation (RAG) is becoming a data management
+workload. A production service may access relational tables, sparse and
+dense text indexes, vector stores, and remote structured APIs, then apply
+fusion, reranking, verification, and generation. The same information need
+therefore admits many physical plans. Unlike relational plans, however,
+these plans are rarely equivalent: reducing retrieval depth, omitting a
+reranker, or using a smaller generator can change the answer. Optimizing
+only latency or price is not enough; an optimizer must also determine how
+much answer risk the application will accept.
+
+\begin{example}
+\label{ex:finance}
+A financial assistant joins current figures from an API, tables in company
+filings, and analyst commentary from a text index. Its operator requires
+that no more than 10\% of answers are incorrect, 10\% contain an
+unsupported or stale claim, and 5\% exceed 10 seconds. Many plans appear to
+meet these limits on a development set. The operational question is which
+plan is cheapest while the service-level limits still hold.
+\end{example}
+
+Recent systems expose semantic operators and optimize their physical
+implementations~\cite{liu2025palimpzest,patel2024lotus,
+shankar2024docetl,russo2025abacus,chai2025quest}. They establish a useful
+database abstraction for LLM-based processing, but their feasibility
+decisions are based on estimated quality, cost, or latency. An adaptive
+router has the same problem: after tuning on a finite sample, the cheapest
+apparently feasible configuration is often the one favored by estimation
+noise. Conformal RAG methods control the risk of a fixed
+pipeline~\cite{li2024traq,kang2024crag}, but do not search a physical-plan
+space or optimize cost. The missing component is a plan-selection procedure
+whose guarantee remains valid \emph{after} the optimizer has compared many
+candidates.
+
+We introduce \emph{evidence contracts}, a declarative interface between an
+application and a retrieval-augmented execution engine. A contract specifies
+bounded losses---for example, answer error, citation omission, stale
+evidence, or latency-budget exceedance---and an admissible rate for each.
+\system minimizes metered execution cost subject to these constraints.
+The design connects four familiar database concerns:
+
+\textbf{Plan space.} A typed operator algebra represents access to
+heterogeneous evidence sources. Cost-reducing, non-equivalent rewrites form
+a plan lattice. \emph{Risk vouchers} estimate how often each rewrite harms
+an answer and guide enumeration, much as selectivity and cost estimates
+guide a classical optimizer.
+
+\textbf{Adaptive physical policies.} Static plans are lifted into
+per-query policies: progressive ladders that escalate when current evidence
+is insufficient, direct routers, and group-conditional policies. A
+cardinality-driven rule chooses between table-first and text-first access
+for table--text joins.
+
+\textbf{Certification.} Candidates are ordered using a training split and
+tested once on an independent calibration split. A fixed-sequence
+Hoeffding--Bentkus procedure certifies the cheapest policy in the passing
+prefix. Its failure probability is bounded by $\delta$ regardless of the
+number or quality of candidates; estimation errors affect cost, not
+contract validity.
+
+\textbf{Runtime control.} An anytime-valid restart-mixture monitor checks
+audited violations after deployment. When workload mix, indexes, or
+external sources drift, the monitor triggers safe fallback and
+recertification on post-change data.
+
+We evaluate \system on HybridQA (tables and text), CRAG (web and structured
+APIs), and ALCE-ASQA/QAMPARI (long-form and list answers with citation
+constraints). All plans use real token- or GPU-time-metered executions.
+Across 1000 repeated calibration draws, we evaluate the selected policy on
+the exact risk of the pooled finite population rather than on one noisy
+test split. \system stays within the $\delta=0.1$ deployment-failure budget
+at all thirteen tested contract settings, with a worst observed rate of
+0.8\%. Point-estimate tuning, Bayesian optimization, routing, and Abacus
+reach 64\%. At representative contracts, \system costs
+$6.9\times$ less than the strongest fixed plan on HybridQA,
+$20\times$ less on CRAG, and $15\times$ less on QAMPARI. It also detects
+an injected CRAG workload shift after a median of 78 queries and certifies
+nearly $10^5$ policies in at most 8.5 seconds.
+
+The paper makes three contributions:
+\begin{itemize}
+  \item a declarative contract and physical-plan model for
+  retrieval-augmented data services (\S\ref{sec:contracts});
+  \item a query optimizer that combines non-equivalent rewrites,
+  selectivity-based risk estimates, adaptive policies, and statistically
+  valid certification (\S\ref{sec:optimizer}); and
+  \item progressive execution and drift-aware recertification, evaluated
+  end to end on four heterogeneous benchmarks
+  (\S\ref{sec:runtime}--\S\ref{sec:experiments}).
+\end{itemize}

@@ -1,127 +1,161 @@
 \section{Preliminaries and problem formulation}
 \label{sec:prelim}
 
-This section formalizes hybrid RAG pipelines as plans over a knowledge
-operator algebra, introduces evidence contracts, and defines the
-certified deployment problem.
+We model hybrid RAG pipelines as plans over a small operator algebra,
+state what a quality contract obliges a service to do, and then
+distinguish two ways of discharging that obligation -- by inference,
+which is what the literature does, and by accounting, which is what we
+propose.
 
 \subsection{Hybrid RAG plans over heterogeneous knowledge sources}
 \label{sec:algebra}
 
 Let $\mathcal{S}$ be a set of evidence sources: relational tables, text
 corpora with sparse and dense indexes, and remote structured knowledge
-APIs. A \emph{plan} $P$ is a directed acyclic graph built from typed
+APIs. A \emph{plan} $p$ is a directed acyclic graph built from typed
 operators
 \[
 \textsf{Retrieve}_{s,k} \mid \textsf{Fuse} \mid \textsf{Rerank}_m
-\mid \textsf{Filter}_\phi \mid \textsf{Generate}_g \mid
-\textsf{Repair},
+\mid \textsf{Filter}_\phi \mid \textsf{Generate}_g ,
 \]
 where $\textsf{Retrieve}_{s,k}$ fetches $k$ evidence units from source
-$s$ (SQL row selection, BM25, dense approximate nearest neighbor, or
-API calls), $\textsf{Fuse}$ merges rankings (e.g., reciprocal-rank
-fusion), $\textsf{Rerank}_m$ re-scores with a cross-encoder $m$,
-$\textsf{Filter}_\phi$ drops evidence failing a predicate $\phi$ (e.g.,
-an entailment or freshness test), $\textsf{Generate}_g$ produces the
-answer with LLM $g$, and $\textsf{Repair}$ post-edits an answer using
-verification feedback. Executing $P$ on a query $q$ yields an answer,
-an evidence set $E$ with a citation map, and a realized execution
-vector (cost, latency, evidence ages, \dots) metered at run time. Two
-syntactically different RAG plans are almost never output-equivalent;
-the notion of equivalence must be statistical, which motivates the
-formulation below.
+$s$ (SQL row selection, BM25, dense approximate nearest neighbour, or
+API calls), $\textsf{Fuse}$ merges rankings, $\textsf{Rerank}_m$
+re-scores with a cross-encoder $m$, $\textsf{Filter}_\phi$ drops
+evidence failing a predicate $\phi$, and $\textsf{Generate}_g$ produces
+the answer with generator $g$. Executing $p$ on a query $q$ yields an
+answer, an evidence set with a citation map, and a realised cost
+metered at run time.
+
+The plan space is the Cartesian product of an \emph{access path} -- the
+retrieval-side configuration, which is shared across generators once
+materialised -- and a \emph{generator}, which may be a hosted commercial
+model or a locally served open-weight one. Systems in the literature
+almost universally restrict attention to a diagonal of this product, an
+escalation ladder in which retrieval depth and generator tier increase
+together. Section~\ref{sec:results} shows the diagonal misses the plans
+a strict contract needs, and also that enlarging the space is not by
+itself an improvement, because it aggravates the multiplicity problem
+that the incumbent certification machinery has.
 
 \subsection{Evidence contracts}
 
 \begin{definition}[Evidence contract]
 \label{def:contract}
-Let $\mathcal{D}$ be a query distribution. An \emph{evidence contract}
-is a tuple $C = \langle (\ell_j, \alpha_j)_{j=1}^{d}, \delta \rangle$
-where each $\ell_j : (\pi, q) \mapsto [0,1]$ is a bounded violation
-loss --- for example,
-$\ell_{\mathrm{qual}} = \mathbf{1}[\mathrm{quality}(\pi(q)) < \tau_q]$,
-$\ell_{\mathrm{cite}} =
-\mathbf{1}[\mathrm{citation\ recall}(\pi(q)) < \tau_c]$,
-$\ell_{\mathrm{fresh}} =
-\mathbf{1}[\max_{e \in E(q)} \mathrm{age}(e) > \Delta_f]$,
-$\ell_{\mathrm{lat}} = \mathbf{1}[\mathrm{latency}(\pi(q)) > B_\ell]$
---- $\alpha_j \in (0,1)$ are admissible violation rates, and
-$\delta \in (0,1)$ bounds the probability that the deployed policy
-fails to satisfy the contract at all.
+An \emph{evidence contract} is a pair $\langle \ell, \alpha\rangle$
+where $\ell : (a, q) \mapsto [0,1]$ is a bounded, auditable violation
+loss and $\alpha \in (0,1)$ is the admissible violation rate. Examples
+of $\ell$ are
+$\mathbf{1}[\mathrm{quality}(\cdot) < \tau_q]$,
+$\mathbf{1}[\mathrm{citation\ recall}(\cdot) < \tau_c]$,
+$\mathbf{1}[\max_{e} \mathrm{age}(e) > \Delta_f]$, and
+$\mathbf{1}[\mathrm{latency}(\cdot) > B_\ell]$.
 \end{definition}
 
-As a running example, consider a financial-services assistant whose
-compliance office imposes requirements on the \emph{service}, not on
-any single answer: at most 10\% of answers may be incorrect, at most
-10\% may contain a claim without an entailed citation, at most 10\%
-may cite evidence older than 72 hours, and at most 5\% may exceed a
-10-second latency budget --- all at minimal LLM spend. These requirements instantiate
-Definition~\ref{def:contract} directly, with four losses,
-$\alpha = (.10, .10, .10, .05)$, and $\delta = 0.1$: with 90\%
-confidence over the calibration draw, the deployed pipeline violates
-none of the four rate limits.
+A financial-services assistant is the running example: at most $10\%$ of
+answers incorrect, at most $10\%$ carrying an unsupported claim, at
+minimal spend. The requirement is on the \emph{service}, over a stream
+of queries, not on any single answer -- which is what makes it a rate
+and what will let us enforce it by bookkeeping.
 
-A \emph{policy} $\pi$ maps a query to an execution schedule over plans,
-possibly running several plans adaptively
-(Section~\ref{sec:families}). Its risks are
-$R_j(\pi) = \E_{q\sim\mathcal{D}}[\ell_j(\pi, q)]$ and its cost is
-$\mathrm{cost}(\pi) = \E_{q\sim\mathcal{D}}[c(\pi, q)]$ with $c$ the
-metered monetary cost. The optimization problem is
+\subsection{The action space, and the action the literature omits}
+\label{sec:actions}
+
+The executor's action set is
+$\mathcal{A} = \mathcal{P} \cup \{\bot\}$, where $\mathcal{P}$ is the
+plan space and $\bot$ is the decision to \emph{decline}: return
+"insufficient evidence", route the query to a human, or degrade to a
+document list. Declining produces no answer and therefore no incorrect
+answer, so
+\begin{equation}
+\label{eq:abstain}
+\ell(\bot, q) = 0 \quad\text{for every } q ,
+\qquad c(\bot, q) = c_\bot ,
+\end{equation}
+where $c_\bot$ prices the handoff. We treat $c_\bot$ as a parameter of
+the deployment rather than fixing it, and sweep it, because its value is
+an operational fact about the service and not something a paper can
+assert: a consumer search box degrades cheaply, a clinical decision
+support system does not.
+
+Omitting $\bot$ is the single modelling decision that makes strict
+contracts unreachable. With $\mathcal{P}$ alone the attainable risk is
+bounded below by $\min_p r_p$, so a contract stricter than the best
+available pipeline is infeasible by construction rather than by
+statistics -- and $\min_p r_p$ is $0.59$ on CRAG and QAMPARI, $0.27$ on
+HybridQA and $0.12$ on ASQA, so the $10\%$ contract of our running
+example is unexpressible on all four.
+Abstention is standard in selective prediction
+\citep{geifman2017selective,angelopoulos2021gentle} and in conformal
+methods, but it is treated there as a property of a single predictor;
+here it is an \emph{action} the optimizer costs and schedules alongside
+the plans, which is what makes the risk--cost frontier continuous.
+
+\subsection{Two ways to discharge the obligation}
+
+Let $R(\pi) = \E_{q}[\ell(\pi,q)]$ and
+$\mathrm{cost}(\pi) = \E_{q}[c(\pi,q)]$. The design goal is
 \begin{equation}
 \label{eq:problem}
-\min_{\pi \in \Pi} \ \mathrm{cost}(\pi)
-\quad \text{s.t.} \quad R_j(\pi) \le \alpha_j \ \ \forall j ,
+\min_{\pi} \ \mathrm{cost}(\pi)
+\quad \text{s.t.} \quad R(\pi) \le \alpha ,
 \end{equation}
-where $\Pi$ is a policy space induced by the plan algebra. The
-distribution $\mathcal{D}$ is unknown; the optimizer sees $n$
-independent calibration queries with realized losses. Contract
-satisfaction can therefore only ever be established statistically.
+with $\mathcal{D}$ unknown. Since $R$ cannot be computed, the
+obligation must be discharged some other way, and there are exactly two.
 
-\begin{definition}[$(C,\delta)$-certified deployment]
+\begin{definition}[Certified deployment]
 \label{def:certified}
-A data-dependent selection procedure $\mathcal{A}$ mapping a
-calibration sample $Z_{1:n}$ to a policy $\hat\pi$ is
-\emph{$(C,\delta)$-certified} if
-\[
-\Prob_{Z_{1:n}}\big( R_j(\hat\pi) \le \alpha_j \ \forall j \big)
-\ \ge\ 1-\delta.
-\]
+A procedure mapping a calibration sample $Z_{1:n}$ to a policy
+$\hat\pi$ is \emph{$(\alpha,\delta)$-certified} if
+$\Prob_{Z_{1:n}}( R(\hat\pi) \le \alpha ) \ge 1-\delta$,
+where the probability is over the calibration draw and the guarantee is
+about the population $\mathcal{D}$ that generated it.
 \end{definition}
 
-This is a qualitatively different guarantee from what existing RAG
-optimizers provide. Workload-level optimizers such as Abacus
-\citep{russo2025abacus} compare point estimates of plan quality against
-the constraint; adaptive routers \citep{jeong2024adaptiverag} provide
-no feasibility statement at all. Both can --- and, as we show in
-Section~\ref{sec:results}, do --- deploy policies whose true violation
-rate exceeds $\alpha$ in a large fraction of calibration draws.
-Conformal RAG methods \citep{li2024traq,kang2024crag} do control risk,
-but for a single fixed pipeline; they leave the cost-minimization
-dimension of~\eqref{eq:problem} untouched.
+\begin{definition}[Contract-enforcing execution]
+\label{def:enforcing}
+An executor is \emph{contract-enforcing} if the actions
+$a_1, a_2, \dots$ it emits on a query stream
+$q_1, q_2, \dots$ satisfy
+\[
+\textstyle\sum_{s \le t} \ell(a_s, q_s) \;\le\; \alpha t ,
+\quad \text{all } t \ge 1 ,
+\]
+for every query sequence, with no probability attached.
+\end{definition}
+
+The two are not stronger and weaker versions of one statement; they
+differ in what they are about. Definition~\ref{def:certified} concerns
+an unobservable population mean and is conditional on the deployment
+traffic being exchangeable with the calibration sample.
+Definition~\ref{def:enforcing} concerns the realised trajectory --
+the thing an auditor would actually measure -- and is conditional on
+nothing. It is also the property an operator asked to sign a
+service-level agreement needs, because an SLA is checked on the log,
+not on a hypothetical population.
+
+Existing RAG optimizers provide neither. Workload-level optimizers such
+as Abacus \citep{russo2025abacus} compare point estimates against the
+constraint; adaptive routers \citep{jeong2024adaptiverag} make no
+feasibility statement. Conformal RAG methods
+\citep{li2024traq,kang2024crag} achieve Definition~\ref{def:certified}
+for a single fixed pipeline, leaving the cost-minimisation dimension
+of~\eqref{eq:problem} untouched, and Learn-then-Test
+\citep{angelopoulos2021ltt} achieves it for a searched policy at a
+multiplicity price. This paper achieves
+Definition~\ref{def:enforcing}, and recovers the cost objective as a
+separate, purely statistical problem in which errors are paid for in
+money.
 
 \begin{rmk}[What the guarantee is about]
-A contract is always stated with respect to a loss functional the
-operator can audit: the guarantee of Definition~\ref{def:certified} is
-exact for whatever $\ell_j$ is plugged in --- token-F1 against gold
-answers, NLI-based citation entailment, an LLM judge following a
-benchmark's official protocol, evidence age, or wall-clock latency.
-The system enforces the declared predicate exactly and does not
-adjudicate whether the predicate captures the application's intent.
-If the operator upgrades the auditor --- for example, replacing the LLM
-judge with periodic human audits on the calibration sample --- every
-statement in this paper carries over unchanged, because the machinery
-only requires bounded, independent losses, never that the loss be
-machine-computed. What the certificate does \emph{not} promise is
-per-query correctness or robustness to a systematically biased
-auditor; Section~\ref{sec:discussion} discusses this limitation.
+A contract is stated with respect to a loss the operator can audit.
+Both definitions apply to whatever $\ell$ is declared -- token-F1
+against gold answers, NLI-based citation entailment, an LLM judge
+following a benchmark's official protocol, evidence age, wall-clock
+latency. Neither establishes that the declared predicate captures the
+application's intent, and neither promises per-query correctness. The
+deterministic guarantee additionally requires the loss to be observed,
+which costs money; Section~\ref{sec:labels} prices observing only part
+of it, and Section~\ref{sec:discussion} discusses a systematically
+biased auditor, which no accounting scheme can repair.
 \end{rmk}
-
-Two features of~\eqref{eq:problem} shape the framework design. First,
-the policy space $\Pi$ must be searched, not enumerated: it contains
-per-query adaptive policies, not just static plans. Second, the
-certificate must survive \emph{selection}: testing many candidates on
-the same calibration data and picking a passing one invalidates naive
-confidence intervals. \system\ is built around a fixed-sequence
-multiple-testing discipline that pays no union-bound penalty for
-searching an arbitrarily long candidate sequence
-(Section~\ref{sec:certification}).

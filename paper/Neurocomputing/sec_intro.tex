@@ -1,0 +1,127 @@
+\section{Introduction}
+\label{sec:intro}
+
+Retrieval-augmented generation (RAG) increasingly uses learned
+decisions inside inference. A model may decide whether to retrieve,
+which evidence to rerank, when to reformulate a query, and whether to
+escalate to a stronger generator
+\citep{jeong2024adaptiverag,asai2024selfrag,han2026airrag,
+zhai2025ragler,du2025iragkr,niu2026uarag}. These mechanisms improve the
+attainable accuracy--cost frontier. Yet their gates and confidence
+scores are learned from finite data and evaluated mainly by average
+task performance. They do not bound how often the policy selected for
+deployment will fail. They can also become unreliable when the query
+mix or external knowledge changes.
+
+We study this gap as a progressive inference problem. A RAG system has
+an ordered set of computation rungs, from a cheap retrieval path to a
+strong path with hybrid retrieval, reranking, verification, and a
+larger generator. Each rung emits observable signals about retrieval
+margin, support, citation coverage, freshness, and abstention. A learned
+sufficiency model uses these signals to decide whether to stop or
+acquire more evidence. The methodological question is how to retain
+this adaptive computation while controlling the population risk of the
+selected policy from finite calibration data.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.88\textwidth]{figures/fig_paradigm.png}
+\caption{Three deployment paradigms for RAG knowledge services.
+(a)~Point-estimate tuning deploys the cheapest configuration whose
+\emph{measured} risk clears the target --- an uncorrected
+multiple-testing procedure with no feasibility guarantee.
+(b)~Distribution-free risk control bounds the risk of a \emph{fixed}
+pipeline but neither searches a configuration space nor reduces cost,
+and is silent under drift. (c)~\system\ combines search,
+certification, and monitoring: an evidence contract is certified by a fixed-sequence
+test over a policy space ordered by risk vouchers, and an anytime-valid
+e-process monitor closes the loop after deployment.}
+\label{fig:paradigm}
+\end{figure*}
+
+Current learning and selection practice does not answer this question.
+Practitioners sample a development set, estimate each policy's quality,
+and deploy the cheapest policy whose \emph{estimate} clears the target,
+an approach we call point-estimate tuning
+(Figure~\ref{fig:paradigm}a), shared
+by workload-level pipeline optimizers \citep{russo2025abacus,
+liu2025palimpzest,patel2024lotus} and by adaptive RAG routers and LLM
+cascades \citep{jeong2024adaptiverag,chen2023frugalgpt,ong2024routellm}.
+This selection is an uncorrected multiple-testing procedure. It favors
+configurations whose measurement noise happens to be favorable, and the
+problem worsens as the candidate set grows. As we quantify in
+Section~\ref{sec:results}, state-of-practice optimizers deploy policies
+whose true violation rate exceeds the declared target in up to 64\% of
+calibration draws. Even a correctly tuned pipeline offers no protection after deployment,
+when workload mix shifts, indexes fall behind the world, and knowledge
+APIs degrade --- the knowledge drift problem that static evaluation
+cannot see.
+
+Distribution-free risk control addresses the statistical problem
+(Figure~\ref{fig:paradigm}b): conformal
+and Learn-then-Test methods \citep{angelopoulos2021ltt,
+angelopoulos2024crc} can bound the violation rate of a \emph{fixed}
+pipeline with finite-sample confidence, and recent work has applied
+them to RAG abstention and answer sets \citep{li2024traq,kang2024crag}.
+These methods treat the pipeline as given: they neither search a
+configuration space nor reduce cost, and they are silent about what
+happens when the calibrated distribution drifts. Conversely, the
+systems that do search --- routers, cascades, Bayesian optimization ---
+provide no feasibility statement. Search, certification, and
+post-deployment monitoring therefore need to be designed together so
+that cost optimization does not weaken the statistical guarantee.
+
+We propose \system, which learns and certifies progressive RAG policies
+(Figure~\ref{fig:paradigm}c). An \emph{evidence contract} states
+admissible violation rates for answer quality, citation completeness,
+evidence freshness, and latency, together with a confidence budget
+$\delta$. Learned scores determine when to stop and which policies are
+promising. A separate statistical layer determines whether the
+selected policy satisfies the contract.
+
+Three mechanisms support the method. First, empirical \emph{risk
+vouchers} summarize the observed effect of retrieval truncation,
+reranker removal, pre-filter pushdown, and generator downgrade. Their
+bounds compose along rewrite chains without assumptions on rewrite
+interactions. Vouchers order candidates but do not certify them.
+Second, the rewrite lattice induces progressive policies. Per-rung
+logistic models estimate whether the current answer is sufficient;
+threshold policies, utility routers, group-conditional variants, and
+human deferral determine the next action. A fixed-sequence
+Hoeffding--Bentkus test certifies the least-cost policy in the accepted
+prefix. Its validity is independent of the number of policies and of
+the accuracy of the learned scores. Third, a restart-mixture e-process
+monitors audited losses, detects drift with a delay bound independent
+of the change time, localizes the change, and triggers recertification.
+A geometric error schedule preserves validity across repeated epochs.
+
+This work provides finite-sample guarantees for learned progressive RAG
+over heterogeneous knowledge sources. Its main contributions are:
+\begin{itemize}
+\item We formulate progressive evidence acquisition as a learned
+adaptive-computation problem under a multi-loss evidence contract
+(Section~\ref{sec:prelim}).
+\item We combine per-rung sufficiency learning, composable risk
+vouchers, and a fixed-sequence selection algorithm. We prove
+distribution-free contract validity for any score quality and give
+conditions for cost consistency (Section~\ref{sec:method}).
+\item We develop a restart-mixture drift detector whose delay bound
+does not depend on the change time. It has constant-time updates,
+remains valid with sampled audits, and provides a lifetime guarantee
+across repeated recertification
+(Section~\ref{sec:monitor}).
+\item We evaluate the mechanism on four public benchmarks, four LLM
+families, and two serving backends. The study includes score and policy
+ablations, calibration scaling, dense candidate grids, audit rates,
+strict and joint contracts, and controlled drift
+(Sections~\ref{sec:setup}--\ref{sec:results}).
+\end{itemize}
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:prelim} formalizes evidence contracts and the
+certified deployment problem. Section~\ref{sec:method} presents the
+\system\ framework. Sections~\ref{sec:setup} and~\ref{sec:results}
+report the experimental setup and results. Section~\ref{sec:discussion}
+discusses implications, limitations, and threats to validity, and
+Section~\ref{sec:conclusion} concludes.

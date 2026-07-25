@@ -1,103 +1,95 @@
 \section{Related work}
 \label{sec:related}
 
-\system\ sits at the intersection of retrieval-augmented generation,
-adaptive LLM inference, distribution-free risk control, and runtime
-monitoring of knowledge systems. We review each line and position our
-work against it.
+\paragraph{Distribution-free risk control}
+Conformal prediction \citep{vovk2005algorithmic,angelopoulos2021gentle}
+and its risk-controlling extensions -- RCPS \citep{bates2021rcps},
+Learn-then-Test \citep{angelopoulos2021ltt}, conformal risk control
+\citep{angelopoulos2024conformalrisk} -- turn a calibration sample into
+a finite-sample guarantee on a population risk, and are the statistical
+foundation of certified RAG. Applications to retrieval pipelines include
+TRAQ \citep{li2024traq}, C-RAG \citep{kang2024crag} and conformal
+factuality \citep{mohri2024factuality}; recent work extends the machinery
+to hallucination filtering \citep{cherian2024llmuncertainty}, and there
+is work relaxing exchangeability itself by reweighting the calibration
+sample \citep{barber2023beyond}. All of this yields
+Definition~\ref{def:certified}: a bound on an unobservable population
+mean, valid with probability $1-\delta$ under exchangeability or a
+quantified departure from it.
+Our contribution is orthogonal to how tight such a bound can be made. We
+argue that for a rate contract over a served stream the population mean
+is the wrong target, because the quantity an operator is held to is the
+realised rate on the log, and that quantity can be controlled exactly.
 
-\subsection{Retrieval-augmented generation and knowledge-enhanced LLMs}
-RAG grounds LLM outputs in retrieved evidence to mitigate hallucination
-and knowledge staleness \citep{lewis2020rag,gao2024ragsurvey,
-yang2025integrating}. A rich line of work
-improves the knowledge acquisition process itself: hybrid retrieval
-over tables and text \citep{chen2020hybridqa}, self-reflective
-retrieval decisions \citep{asai2024selfrag}, active and corrective
-retrieval during generation
-\citep{jiang2023flare,yan2024corrective}, evidence compression
-\citep{xu2024recomp}, cost-conscious QA system design under resource
-constraints \citep{budur2024openqa}, calibration between parametric
-and retrieved knowledge \citep{deng2026collaborative}, and benchmark
-suites that
-stress heterogeneous and time-sensitive knowledge sources
-\citep{yang2024cragbench,stelmakh2022asqa,amouyal2022qampari,
-gao2023alce,chen2024rgb}. Automated evaluation frameworks quantify RAG
-quality post hoc \citep{es2024ragas,saadfalcon2024ares,ru2024ragchecker},
-typically via LLM judges \citep{zheng2023judging}, but do not constrain
-the deployed system's behavior. Declarative pipeline frameworks --- Palimpzest
-\citep{liu2025palimpzest}, LOTUS \citep{patel2024lotus}, DocETL
-\citep{shankar2024docetl}, DSPy \citep{khattab2023dspy}, and the
-Abacus optimizer \citep{russo2025abacus} --- compile semantic operator
-pipelines and search spaces of models, prompts, and operator
-implementations against validation estimates. These systems optimize
-average quality or cost but compare point estimates to constraints;
-none provides a finite-sample statement about the deployed pipeline's
-true violation rate. In contrast, \system\ retains the pipeline search
-perspective but replaces estimate-feasibility with statistical
-certification, and static pipelines with certified adaptive policies.
+\paragraph{Anytime-valid inference}
+E-values, test martingales and confidence sequences
+\citep{howard2021timeuniform,ramdas2023gametheoretic,waudbysmith2024betting}
+give bounds that hold at all stopping times, and are the natural tool
+for monitoring a deployed model; e-detectors \citep{shin2024edetectors}
+extend them to changepoint detection, and our own earlier design used a
+restart-mixture e-process to trigger recertification. These methods
+weaken the fixed-sample assumption but keep the probabilistic form, and
+they still require the observations to be independent of the past given
+the model. The ledger needs neither: its guarantee is an accounting
+identity, so an anytime bound is not something it achieves at a
+confidence level but something it satisfies by construction. We use a
+confidence sequence in this paper only to report diagnostics.
 
-\subsection{Adaptive inference: LLM routing and cascades}
-Cost-aware inference systems route queries to the cheapest adequate
-model or cascade through model tiers: FrugalGPT \citep{chen2023frugalgpt},
-RouteLLM \citep{ong2024routellm}, Hybrid-LLM \citep{ding2024hybridllm},
-AutoMix \citep{aggarwal2024automix}, and Adaptive-RAG's
-complexity-based
-routing \citep{jeong2024adaptiverag}, with RouterBench
-\citep{hu2024routerbench} standardizing their evaluation. Confident
-adaptive computation
-\citep{schuster2022calm} and conformal cascades \citep{fisch2021admission}
-calibrate early exits for a single model or a cascade with shared
-scores. These methods reduce cost effectively, but their selection
-rules are tuned empirically, so the realized violation rate is whatever
-it happens to be --- our experiments measure 16--64\% contract
-violations across calibration draws for representative members of this
-family. Unlike prior routing work, \system\ subsumes routing as one
-candidate family within a certified policy space and supplies the
-missing feasibility guarantee; unlike single-model early exits, it
-calibrates heterogeneous multi-source pipelines under
-multi-dimensional contracts.
+\paragraph{Selective prediction and abstention}
+Rejecting inputs rather than predicting on them is classical
+\citep{chow1970optimum,geifman2017selective,elyaniv2010foundations} and
+has been revisited for language models, where conformal factuality
+filters remove unsupported claims rather than whole answers
+\citep{mohri2024factuality}. That literature asks a predictor to abstain to
+raise its accuracy on what remains, and characterises the resulting
+risk--coverage curve. We use abstention differently: not as a property of
+one model but as an \emph{action} in an optimizer's space, priced
+alongside the plans and scheduled by a cost objective. This is what makes
+the risk--cost frontier continuous (Proposition~\ref{prop:feasible}) and
+what makes contracts below the risk floor attainable. The connection to
+selective prediction is that our decline rate at a strict contract is
+exactly the coverage that literature would report; the difference is that
+we choose it to minimise total cost, rather than sweeping it.
 
-\subsection{Distribution-free risk control for language models}
-Conformal prediction and risk control give finite-sample guarantees
-without distributional assumptions \citep{angelopoulos2024crc}.
-Learn-then-Test \citep{angelopoulos2021ltt} casts hyperparameter
-selection as multiple testing with Hoeffding--Bentkus p-values
-\citep{bentkus2004hoeffding}; TRAQ \citep{li2024traq} builds conformal
-sets over retrieved passages and answers; C-RAG \citep{kang2024crag}
-certifies generation risk for a given pipeline; conformal language
-modeling and conformal factuality calibrate stopping and abstention
-rules on fixed models
-\citep{quach2024conformallm,mohri2024factuality}, with recent
-extensions to conditional validity and alignment filtering
-\citep{cherian2024validity,gui2024conformalalign}; semantic-entropy
-methods detect hallucinations without gold labels
-\citep{farquhar2024semantic}. A complementary line stress-tests LLM
-reliability offline, e.g., by logic-grounded metamorphic testing
-\citep{zhou2026lgmt}; such audits expose defects but issue no
-quantitative guarantee about a deployed configuration. These works
-establish
-that RAG risk \emph{can} be controlled distribution-free, but they
-treat the pipeline as given: no plan search, no cost objective, no
-adaptive escalation, and no drift handling. \system\ employs the same
-statistical machinery but embeds it inside an optimizer, where the
-tested objects are adaptive policies over a rewrite lattice and the
-objective is monetary cost; the certification discipline is chosen
-precisely so that its validity survives unlimited search.
+\paragraph{Online resource allocation and bandits with knapsacks}
+Serving a stream under a consumable budget is the subject of bandits with
+knapsacks \citep{badanidiyuru2018bwk,agrawal2014bwk} and online packing
+\citep{devanur2019adwords}, where an optimistic LP over arms subject to
+budget constraints achieves $O(\sqrt{T})$ regret. Algorithm~\ref{alg:ledger}
+is recognisably in that family, and Theorem~\ref{thm:regret} adapts the
+standard analysis. What is different is the role of the budget. In
+knapsack problems the budget is a resource whose exhaustion ends the
+episode, and the guarantee is about regret; here the budget \emph{is} the
+contract, exhaustion means declining rather than stopping, and the
+guarantee we care about is the pathwise feasibility that the gate
+enforces regardless of what the LP does. To our knowledge the observation
+that a quality contract can be enforced this way -- and therefore removed
+from the statistical problem entirely -- has not been made.
 
-\subsection{Runtime monitoring and drift adaptation in knowledge systems}
-Deployed knowledge systems drift: workload mix shifts, indexes fall
-behind the world, and external APIs degrade. Anytime-valid inference
---- test supermartingales and e-processes
-\citep{ville1939etude,shafer2021testing,ramdas2023savi,grunwald2024safe}
---- provides
-sequential tests with always-valid error control, and e-detectors
-\citep{shin2024edetectors} extend them to changepoint detection.
-Database systems faced an analogous problem in mid-query
-re-optimization \citep{kabra1998efficient,markl2004robust}, re-planning
-when runtime observations diverge from optimizer estimates. \system\
-transplants this discipline to knowledge services: a restart-mixture
-e-detector with a proven change-time-independent delay bound watches
-audited violations, an $O(1)$ recursion localizes the changepoint, and
-a certified recalibration loop restores the contract on the post-change
-distribution. To our knowledge, no prior RAG or LLM-cascade system
-closes this loop with statistical guarantees at every stage.
+\paragraph{Cost-aware LLM and RAG pipelines}
+Cascades and routers reduce spend by sending easy queries to cheap models
+\citep{chen2023frugalgpt,ding2024hybridllm,hu2024routerbench,
+jeong2024adaptiverag}; workload-level optimizers such
+as Abacus \citep{russo2025abacus} choose configurations under a quality
+constraint using point estimates; systems work on RAG serving optimises
+latency and throughput by caching intermediate state
+\citep{jin2024ragcache}.
+These give no feasibility statement, and our experiments confirm that
+point-estimate selection violates its constraint on a large fraction of
+draws. Conversely, the certified line of work above fixes the pipeline
+and does not optimise cost. This paper's setting -- minimise cost subject
+to a contract that must hold on the realised stream -- requires both, and
+the ledger is what lets the two be designed separately.
+
+\paragraph{Query optimization}
+The separation we propose is standard in databases: cardinality estimates
+choose plans, are wrong by orders of magnitude \citep{leis2015good}, and
+correctness is the executor's responsibility rather than the estimator's;
+adaptive and robust query processing revises decisions mid-execution
+\citep{avnur2000eddies,babu2005proactive,markl2004robust}. Bringing that
+discipline to RAG requires deciding what plays the role of the executor's
+correctness invariant, and the answer here is the ledger. The plan-grid
+experiment of Section~\ref{sec:res:grid} makes the analogy concrete in the
+other direction too: under certification-by-inference, enlarging the
+search space can degrade the chosen plan, which is a failure mode no
+database optimizer would tolerate.

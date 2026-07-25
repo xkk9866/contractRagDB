@@ -1,0 +1,410 @@
+{
+ "track": "asqa",
+ "delta": 0.1,
+ "horizon": 8000,
+ "n_pop": 798,
+ "n_candidates": 69,
+ "audit_unit_cost": 0.010958206453634085,
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "results": {
+  "0.2": {
+   "alpha": 0.2,
+   "pop_best_det": 0.001072943984962406,
+   "pop_lp_opt": 0.0010963745821585197,
+   "methods": {
+    "static_ncal250": {
+     "mean_cost": 0.006762369896467733,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 54.112805863408525,
+      "mean_cost": 0.006764100732926066,
+      "serve_mean_cost": 0.0066288070000000004,
+      "cal_cost": 2.7395516134085214,
+      "pop_risk": 0.15162907268170425,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       8
+      ],
+      "plan_w": [
+       1.0
+      ]
+     }
+    },
+    "static_ncal500": {
+     "mean_cost": 0.007064183580956296,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 62.70153467681704,
+      "mean_cost": 0.00783769183460213,
+      "serve_mean_cost": 0.007629657526666666,
+      "cal_cost": 5.479103226817043,
+      "pop_risk": 0.125,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       55,
+       6
+      ],
+      "plan_w": [
+       0.25,
+       0.75
+      ]
+     }
+    },
+    "static_ncal1000": {
+     "mean_cost": 0.00693205375826676,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 56.26629019738408,
+      "mean_cost": 0.00703328627467301,
+      "serve_mean_cost": 0.006472583391964285,
+      "cal_cost": 10.958206453634086,
+      "pop_risk": 0.16055764411027568,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       8,
+       9
+      ],
+      "plan_w": [
+       0.625,
+       0.375
+      ]
+     }
+    },
+    "anytime_a02": {
+     "mean_cost": 0.009153216966235927,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 73.25183089386005,
+      "mean_cost": 0.009156478861732506,
+      "deploy_cost": 71.56426710000041,
+      "audit_cost": 1.687563793859644,
+      "audits": 154,
+      "switches": 0,
+      "final_plan": 2,
+      "final_pop_risk": 0.11528822055137844,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.023498564014624055,
+     "switches": 0.3333333333333333
+    },
+    "anytime_a05": {
+     "mean_cost": 0.00854336790184583,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 66.28940628145412,
+      "mean_cost": 0.008286175785181765,
+      "deploy_cost": 61.90612370000047,
+      "audit_cost": 4.383282581453654,
+      "audits": 400,
+      "switches": 12,
+      "final_plan": 6,
+      "final_pop_risk": 0.12656641604010024,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.06255557011972754,
+     "switches": 6.333333333333333
+    },
+    "anytime_a10": {
+     "mean_cost": 0.008421284272650416,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 67.84753490651681,
+      "mean_cost": 0.008480941863314601,
+      "deploy_cost": 58.75222355000054,
+      "audit_cost": 9.095311356516277,
+      "audits": 830,
+      "switches": 17,
+      "final_plan": 6,
+      "final_pop_risk": 0.12656641604010024,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.13164236874807642,
+     "switches": 12.0
+    }
+   }
+  },
+  "0.25": {
+   "alpha": 0.25,
+   "pop_best_det": 0.0009675125939849624,
+   "pop_lp_opt": 0.0009052130204241948,
+   "methods": {
+    "static_ncal250": {
+     "mean_cost": 0.005952455030842731,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 49.006527150908525,
+      "mean_cost": 0.006125815893863565,
+      "serve_mean_cost": 0.005969932327419355,
+      "cal_cost": 2.7395516134085214,
+      "pop_risk": 0.18342731829573933,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       9,
+       10
+      ],
+      "plan_w": [
+       0.625,
+       0.375
+      ]
+     }
+    },
+    "static_ncal500": {
+     "mean_cost": 0.004766720419497964,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 51.88761532681704,
+      "mean_cost": 0.0064859519158521305,
+      "serve_mean_cost": 0.006187801613333333,
+      "cal_cost": 5.479103226817043,
+      "pop_risk": 0.17543859649122806,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       9
+      ],
+      "plan_w": [
+       1.0
+      ]
+     }
+    },
+    "static_ncal1000": {
+     "mean_cost": 0.0035628073311834273,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 49.99095594113408,
+      "mean_cost": 0.0062488694926417605,
+      "serve_mean_cost": 0.005576107069642857,
+      "cal_cost": 10.958206453634086,
+      "pop_risk": 0.19877819548872178,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       10,
+       11
+      ],
+      "plan_w": [
+       0.875,
+       0.125
+      ]
+     }
+    },
+    "anytime_a02": {
+     "mean_cost": 0.008818475772485939,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 70.22442909386007,
+      "mean_cost": 0.008778053636732508,
+      "deploy_cost": 68.53686530000043,
+      "audit_cost": 1.687563793859644,
+      "audits": 154,
+      "switches": 14,
+      "final_plan": 6,
+      "final_pop_risk": 0.12656641604010024,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.024420640122421265,
+     "switches": 7.0
+    },
+    "anytime_a05": {
+     "mean_cost": 0.007807046926845788,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 60.53196548145392,
+      "mean_cost": 0.007566495685181741,
+      "deploy_cost": 56.14868290000027,
+      "audit_cost": 4.383282581453654,
+      "audits": 400,
+      "switches": 5,
+      "final_plan": 9,
+      "final_pop_risk": 0.17543859649122806,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.06842435292322721,
+     "switches": 9.0
+    },
+    "anytime_a10": {
+     "mean_cost": 0.005625935660150399,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 48.10660585651648,
+      "mean_cost": 0.00601332573206456,
+      "deploy_cost": 39.011294500000204,
+      "audit_cost": 9.095311356516277,
+      "audits": 830,
+      "switches": 14,
+      "final_plan": 58,
+      "final_pop_risk": 0.19172932330827067,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.19739830054455942,
+     "switches": 16.0
+    }
+   }
+  },
+  "0.3": {
+   "alpha": 0.3,
+   "pop_best_det": 0.0009675125939849624,
+   "pop_lp_opt": 0.0007895966025137471,
+   "methods": {
+    "static_ncal250": {
+     "mean_cost": 0.0012324667225093987,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 9.62251228840852,
+      "mean_cost": 0.001202814036051065,
+      "serve_mean_cost": 0.0008881239580645161,
+      "cal_cost": 2.7395516134085214,
+      "pop_risk": 0.2545426065162907,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       62,
+       63
+      ],
+      "plan_w": [
+       0.625,
+       0.375
+      ]
+     }
+    },
+    "static_ncal500": {
+     "mean_cost": 0.001524034931737547,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 12.328199564317043,
+      "mean_cost": 0.0015410249455396303,
+      "serve_mean_cost": 0.0009132128449999999,
+      "cal_cost": 5.479103226817043,
+      "pop_risk": 0.24404761904761907,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       62,
+       63
+      ],
+      "plan_w": [
+       0.75,
+       0.25
+      ]
+     }
+    },
+    "static_ncal1000": {
+     "mean_cost": 0.0021398237887355104,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 17.204761897384085,
+      "mean_cost": 0.0021505952371730108,
+      "serve_mean_cost": 0.0008923650633928572,
+      "cal_cost": 10.958206453634086,
+      "pop_risk": 0.2545426065162907,
+      "violates": false,
+      "anytime_viol_frac": 0.0,
+      "certified": true,
+      "plan": [
+       62,
+       63
+      ],
+      "plan_w": [
+       0.625,
+       0.375
+      ]
+     }
+    },
+    "anytime_a02": {
+     "mean_cost": 0.0077044367141526305,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 61.705365793860146,
+      "mean_cost": 0.007713170724232519,
+      "deploy_cost": 60.0178020000005,
+      "audit_cost": 1.687563793859644,
+      "audits": 154,
+      "switches": 10,
+      "final_plan": 56,
+      "final_pop_risk": 0.18796992481203006,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.027899911574423522,
+     "switches": 12.0
+    },
+    "anytime_a05": {
+     "mean_cost": 0.0047934524122624405,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 34.9263672314535,
+      "mean_cost": 0.004365795903931687,
+      "deploy_cost": 30.54308464999984,
+      "audit_cost": 4.383282581453654,
+      "audits": 400,
+      "switches": 22,
+      "final_plan": 60,
+      "final_pop_risk": 0.20050125313283207,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.11217491304443845,
+     "switches": 21.0
+    },
+    "anytime_a10": {
+     "mean_cost": 0.0034687433518170285,
+     "anytime_viol_frac": 0.0,
+     "viol_prob": 0.0,
+     "detail": {
+      "total_cost": 26.755651806516216,
+      "mean_cost": 0.003344456475814527,
+      "deploy_cost": 17.66034044999994,
+      "audit_cost": 9.095311356516277,
+      "audits": 830,
+      "switches": 14,
+      "final_plan": 62,
+      "final_pop_risk": 0.22305764411027568,
+      "violates": false,
+      "anytime_viol_frac": 0.0
+     },
+     "audit_frac_of_cost": 0.3224557808963168,
+     "switches": 23.0
+    }
+   }
+  }
+ }
+}

@@ -4,167 +4,152 @@
 \subsection{Research questions}
 \label{sec:rqs}
 
-The evaluation is organized around six research questions:
 \begin{itemize}
-\item \textbf{RQ1 (reliability)}: Which deployment methods actually
-keep their contract --- verified directly on the \emph{exact risk over
-a fixed finite population} across repeated calibration draws and
-across contract levels --- and does the guarantee extend to
-identifiable query slices?
-\item \textbf{RQ2 (cost-efficiency)}: At what cost does the certified
-policy meet the contract, relative to fixed pipelines, uncertified
-tuners, and hindsight oracles --- including joint multi-dimensional
-contracts and strict low-$\alpha$ regimes with certified deferral?
-\item \textbf{RQ3 (risk vouchers)}: Do vouchers achieve their nominal
-coverage over repeated calibration draws, how loose is assumption-free
-composition versus direct certification, and does selectivity
-conditioning expose real heterogeneity?
-\item \textbf{RQ4 (knowledge drift)}: Are workload and index-staleness
-drifts detected, how fast, under full and subsampled auditing, with
-what lifetime guarantee across repeated alarms --- and what does the
-auditing itself cost?
-\item \textbf{RQ5 (generalization)}: Do the guarantees and the savings
-survive a change of LLM family, model developer, serving backend, and
-cost metric --- including a locally served open-weight family metered
-in GPU-seconds?
-\item \textbf{RQ6 (planning and scalability)}: Does cardinality-driven
-knowledge-source selection beat fixed acquisition orders, and how does
-certification scale to $10^5$-candidate plan spaces?
+\item \textbf{RQ1 (does the contract hold?)} Over served streams, does
+the realised violation rate stay below $\alpha$ at \emph{every} prefix,
+for the ledger and for a one-shot certifier, and what happens to each
+when the stream is not exchangeable with the calibration prefix?
+\item \textbf{RQ2 (what does it cost?)} How much does each method spend
+per query -- serving, declining and auditing -- relative to an offline
+optimum that already knows every plan's risk?
+\item \textbf{RQ3 (which ingredient matters?)} Declining, randomisation
+and the ledger are three separable changes. What does each contribute,
+and in particular, how much of the gain is explained by declining alone?
+\item \textbf{RQ4 (is it efficient, and how fast?)} Does the cost gap to
+the offline optimum decay at the $O(T^{-1/2})$ rate of
+Theorem~\ref{thm:regret}, and how sensitive is the controller to its one
+constant $\kappa$?
+\item \textbf{RQ5 (what do labels cost?)} Auditing every served query is
+what makes the guarantee deterministic. What is the price of auditing
+less, under each of the two accounting rules?
+\item \textbf{RQ6 (does the plan space help?)} Unbundling access path
+from generator gives a $36$-plan grid on HybridQA and a $24$-plan grid
+on CRAG. Does a larger space help a static certifier, does it hurt it,
+and can an operator tell which in advance?
 \end{itemize}
 
 \subsection{Datasets and contracts}
 \label{sec:datasets}
 
-We evaluate on four heterogeneous benchmarks with fully metered
-execution.
+Four heterogeneous benchmarks, all executions real and metered.
 (A) \textbf{HybridQA} \citep{chen2020hybridqa}: multi-hop QA over
 Wikipedia tables joined with entity passages; sources are a structured
 row-selection operator and sparse/dense passage indexes over 440K
-passages; quality loss $\mathbf{1}[\text{token-F1} < 0.5]$; splits
-train/cal/test $= 5000/3000/3466$ (test is the entire official
-development release).
+passages; loss $\mathbf{1}[\text{token-F1} < 0.5]$; history/stream
+$= 5000/6466$.
 (B) \textbf{CRAG} \citep{yang2024cragbench}: web QA with the official
-mock knowledge-graph API (five domains, dynamism labels
-static/slow/fast/real-time); evidence chunks carry crawl ages; answers
-are graded by an LLM judge with the gold answer following CRAG's
-protocol; loss is correctness ($\mathbf{1}[\text{not correct}]$) or
-hallucination ($\mathbf{1}[\text{answered and wrong}]$); splits
-$700/1000/1006$ covering the full public development pool.
+mock knowledge-graph API over five domains; answers graded by an LLM
+judge against the gold answer following CRAG's protocol; loss
+$\mathbf{1}[\text{not correct}]$; history/stream $= 700/2006$.
 (C) \textbf{ASQA} \citep{stelmakh2022asqa} under the official ALCE
 evaluation \citep{gao2023alce}: long-form answers with citations over a
-pooled GTR corpus (89K passages), citation recall scored by the
-official TRUE-NLI entailment model \citep{honovich2022true}; loss
-$\mathbf{1}[\text{citation recall} < 50]$; splits $150/350/448$
-covering the full release.
-(D) \textbf{QAMPARI} \citep{amouyal2022qampari} under the same ALCE
-protocol: list answers over an 86K-passage corpus; loss
-$\mathbf{1}[\text{citation recall} < 50]$; splits $150/350/500$.
-QAMPARI is the adversarial regime for citation contracts --- even the
-strongest plan violates on 61\% of queries --- so it probes
-certification exactly where point estimates are noisiest.
+pooled GTR corpus, citation recall scored by the official TRUE-NLI
+entailment model \citep{honovich2022true}; loss
+$\mathbf{1}[\text{citation recall} < 50]$; history/stream $= 150/798$.
+(D) \textbf{QAMPARI} \citep{amouyal2022qampari} under the same protocol:
+list answers over an 86K-passage corpus; same loss; history/stream
+$= 150/850$.
 
-These scales reflect the operating regime of a deployed knowledge
-service that recalibrates periodically on a few hundred to a few
-thousand audited queries: at
-$n_{\mathrm{cal}} \in \{350, 1000, 3000\}$ and $\delta = 0.1$, the
-Hoeffding--Bentkus certificate half-width at mid-range $\alpha$ is
-roughly $0.075/0.04/0.025$ --- tight enough that certificates
-discriminate among ladder rungs rather than collapsing to the strongest
-plan. For ASQA, the smallest track, no single-split number is
-load-bearing: the RQ1 protocol resamples 1000 calibration/test
-partitions from the pooled 798 queries.
+The four span the range that matters for this paper. The risk floor
+$\min_p r_p$ is $0.12$ on ASQA, $0.27$ on HybridQA and $0.59$ on both
+CRAG and QAMPARI, so contract levels are chosen per task to straddle
+that floor: levels below it are unattainable without declining and are
+marked as such throughout. Stream lengths differ by a factor of eight,
+which is what lets us separate the asymptotic behaviour of the
+controller from its transient.
 
-\subsection{Pipelines, ladders, and cost metering}
+\subsection{Plans, the plan grid, and cost metering}
 \label{sec:ladders}
 
-Each benchmark has a four-rung cost-ascending ladder generated by the
-rewrites of Section~\ref{sec:rewrites}: from sparse-only retrieval with
-a flash-tier model up to hybrid reciprocal-rank-fusion retrieval,
-cross-encoder reranking, NLI verification, knowledge-graph-API evidence
-(CRAG), citation repair (ASQA, QAMPARI), and a max-tier model. The
-physical layer uses DuckDB for structured sources, BM25 for sparse
-retrieval, BGE embeddings with FAISS for dense retrieval, a
-bge-reranker-v2-m3 cross-encoder, and DeBERTa-based NLI verification;
-local models run on two RTX~4090 GPUs. All LLM executions are real API
-calls with exact token metering; reported cost is LLM spend in
-milli-CNY per query. A query stopping at rung $j$ is charged rungs
-$0..j$ cumulatively for escalation policies and only rung $j$ for jump
-policies. All LLM and API calls flow through a thread-safe cache keyed
-by (model, messages, decoding parameters), making every experiment
-reproducible and token-exact. RQ5 additionally swaps the generator
-column of the HybridQA ladder across four model families from four
-\emph{model developers} --- Alibaba's Qwen (flash/plus/max),
-DeepSeek (v4-flash/v3.2/v4-pro), and Zhipu's GLM (4.7/5/5.2), plus
-Google's open-weight Gemma~3 (1b/4b/12b/27b) --- served through two
-\emph{serving backends}: the three commercial families are hosted on
-one API platform (DashScope) and token-metered at each developer's
-list prices, while Gemma~3 is served locally by Ollama and metered in
-measured GPU-seconds priced at an RTX-4090 rental rate. We keep the
-two notions distinct throughout: the experiment varies the model
-family (and with it the price structure), not the number of API
-platforms. All families run over shared materialized retrieval
-(Section~\ref{sec:planner}), so hosted and local plans share one cost
-currency.
+The base plan space per benchmark is a four-rung cost-ascending ladder:
+from sparse-only retrieval with a flash-tier generator up to hybrid
+reciprocal-rank-fusion retrieval, cross-encoder reranking, NLI
+verification, knowledge-graph-API evidence (CRAG), citation repair
+(ASQA, QAMPARI) and a max-tier generator. Adding the per-query routing
+and mixture candidates of Section~\ref{sec:optimise} gives $69$
+candidate policies, of which the Pareto frontier on historical data
+retains $10$--$15$; both methods are given the same frontier, so the
+comparison is not about screening.
 
-\subsection{Baselines}
-\label{sec:baselines}
+\paragraph{The plan grid (RQ6)}
+The ladder is a hand-drawn diagonal through a larger space: retrieval
+strength and generator tier rise together, so it never contains a plan
+that retrieves deeply and generates cheaply. We therefore also executed
+the full Cartesian product of access paths and generators on two
+benchmarks. On HybridQA the product is four access paths $\times$ nine
+generators: six hosted, spanning three model developers and three price
+tiers (Qwen flash/plus/max, DeepSeek v4-flash/v3.2, GLM~4.7), and three
+open-weight models served locally (Gemma~3 4b, Gemma~3 12b,
+Llama~3.1~8B), giving $36$ physical plans, Pareto pruned to $8$ on the
+training split. On CRAG the six hosted generators give $24$ plans,
+pruned to $5$, with answers labelled by the same judge as the CRAG
+ladder so that the grid and the ladder are scored identically. Each
+access path's retrieval view is materialised once and shared by every
+generator, so retrieval operators are paid once, which is the RAG
+analogue of a materialised common subexpression; only generation is
+metered per plan. Reporting a second grid matters because the effect of
+enlarging the space turns out to have a task-dependent sign
+(\S\ref{sec:res:grid}), which a single benchmark would have hidden.
 
-We compare against representative members of every deployment paradigm,
-all consuming identical execution matrices so comparisons are exact.
-\emph{Fixed plans}: each rung as a static pipeline. \emph{Complexity
-router}: Adaptive-RAG \citep{jeong2024adaptiverag} adapted to our
-ladders --- a classifier trained to predict the cheapest correct rung.
-\emph{Utility router}: per-query
-$\arg\max_j \hat{s}_j - \lambda \bar c_j$ with $\lambda$ tuned to the
-constraint on tuning data
-\citep{ding2024hybridllm,hu2024routerbench}. \emph{BO-tuned}:
-Optuna \citep{akiba2019optuna} tree-structured Parzen estimation over
-escalation thresholds, minimizing cost subject to empirical risk
-$\le \alpha$ on tuning data. \emph{Abacus} \citep{russo2025abacus}:
-workload-level constrained selection with UCB sampling, choosing the
-cheapest rung whose estimated risk clears $\alpha$.
-\emph{Empirical-no-cert}: our own ladder with the cheapest thresholds
-whose empirical calibration risk is $\le\alpha$ --- i.e., \system\
-minus the statistical test (ablation). We report two hindsight
-skylines with different targets: the \emph{zero-loss oracle} picks the
-per-query cheapest rung that incurs no loss (a stricter objective than
-any contract, hence not cost-comparable to contract-feasible methods),
-and the \emph{matched oracle} is the cheapest per-query rung
-assignment whose \emph{test-set} mean loss is $\le \alpha$ --- the
-hindsight optimum of the same constrained problem \system\ solves, and
-the fair lower bound for its cost.
+\paragraph{Metering}
+The physical layer uses DuckDB \citep{raasveldt2019duckdb} for
+structured sources, BM25 \citep{robertson2009bm25} for sparse
+retrieval, BGE embeddings \citep{xiao2023bge} with FAISS
+\citep{johnson2019faiss} for dense retrieval, reciprocal-rank fusion
+\citep{cormack2009rrf}, a bge-reranker-v2-m3 cross-encoder and
+DeBERTa-based NLI verification; local generators run on two RTX~4090
+GPUs. Hosted calls are token-metered at each developer's list prices;
+local calls are metered in GPU-seconds at an RTX-4090 rental rate, so
+hosted and local plans share one currency. All costs are milli-CNY
+(mCNY) per query. Every LLM and API call passes through a thread-safe
+cache keyed by (model, messages, decoding parameters), so every table
+regenerates from the artifact with no further calls.
 
-\subsection{Evaluation protocol}
+\paragraph{The price of declining}
+$c_\bot$ is a property of the deployment, not of the method, so we sweep
+it at $\{0.5, 1, 2\}\times$ the cost of the most expensive plan in the
+space. All tables report the middle setting unless stated; the sweep is
+in Section~\ref{sec:res:cost}. Pricing a decline at the strongest plan's
+cost is the conservative reading: it says a human handoff costs about
+what the best pipeline costs, so the optimiser gets no free lunch from
+declining.
+
+\subsection{Protocol and baselines}
 \label{sec:protocol}
 
-For reliability (RQ1) we verify the theory's actual claim --- a bound
-on the probability that the deployed policy's \emph{true} risk exceeds
-$\alpha$ --- directly, without the binomial noise of a small held-out
-sample. We treat the full pooled execution matrix as a fixed finite
-population, repeat 1000 times: draw a random calibration subset, let
-every method select and tune on it (scorers and routers use the fixed
-train split), and evaluate the selected policy's \emph{exact} risk on
-the entire population. We report
-$\Pr(\text{population risk} > \alpha)$ --- the exact finite-population
-analogue of the $\delta$-guarantee, with $\delta = 0.1$ throughout ---
-alongside the conventional held-out estimate; at 1000 draws the
-two-sided 95\% interval on a reported rate of $0.05$ is $\pm 0.014$.
-Because calibration sets are drawn \emph{without replacement} from the
-pooled matrix while the certificate's p-value is derived for i.i.d.\
-draws, Appendix~\ref{app:finitepop} proves the formal bridge: the
-hypergeometric
-test is exact for this protocol, the shipped p-value is dominated by it
-at every configuration used here (so it stays valid, merely
-conservative), and re-certifying every draw with the exact
-finite-population p-value leaves all conclusions unchanged while
-certifying cheaper policies.
-Throughout the paper we keep three quantities distinct: (i)
-\emph{certification} is an event on the calibration draw; (ii) the
-guarantee it purchases is on the \emph{population} risk, with failure
-probability $\le \delta$ over draws; (iii) the \emph{test-split
-empirical risk} of a single draw is a noisy estimate of (ii) and may
-exceed $\alpha$ without any guarantee being violated. Tables that show
-a single draw are labelled accordingly. Cost-efficiency (RQ2) fixes
-representative contract levels per benchmark and reports realized test
-risk and mean cost. The remaining protocols are described with their
-results in Section~\ref{sec:results}.
+\paragraph{The stream}
+The pooled calibration and test executions form a finite population; one
+\emph{draw} is an ordering of it. Both systems serve the same stream and
+are charged for everything they consume. This is the point where the
+usual comparison is unfair to no one but the reader: a one-shot
+certifier looks cheap only if the queries it burns on calibration are
+free, and they are not -- they are real queries, served without a
+certificate, by whatever plan the history liked. We therefore charge the
+certifier's calibration prefix at the historically safest plan and
+charge its labels, exactly as we charge the ledger's.
+
+\paragraph{Baselines}
+\emph{LTT, no decline} is fixed-sequence Learn-then-Test
+\citep{angelopoulos2021ltt} with Hoeffding--Bentkus $p$-values over the
+$69$ candidates, $n_{\mathrm{cal}} = 500$, $\delta = 0.1$ -- the
+incumbent formulation and the method of our own earlier design.
+\emph{LTT + decline} is the same procedure with $\bot$ added to the
+candidate space, including mixtures of a plan with $\bot$ on a
+$9$-point grid; this is the baseline that isolates our contribution from
+the mere availability of declining. \emph{Ledger, deterministic plan} is
+Algorithm~\ref{alg:ledger} restricted to single plans, which can reach
+only frontier vertices. \emph{Offline action LP} solves \eqref{eq:alp}
+on the population risks and costs: it knows what no deployed system
+knows and buys no labels, so it is a lower bound rather than a
+competitor, and it is what "$\times$ oracle" means throughout.
+
+\paragraph{Reported quantities}
+For each configuration we run $20$--$30$ independent streams and report
+the mean per-query cost (serving $+$ declines $+$ audit), the realised
+risk over the whole stream, the decline rate, the \emph{worst prefix
+rate} $\max_{t \ge 200} V_t/t$, and the \emph{breach} fraction -- the
+share of streams whose worst prefix rate exceeded $\alpha$. The worst
+prefix rate is the quantity Definition~\ref{def:enforcing} controls and
+that Definition~\ref{def:certified} says nothing about; the first $200$
+arrivals are excluded because no method can control a rate over a
+handful of queries, and the exclusion is applied identically to both.

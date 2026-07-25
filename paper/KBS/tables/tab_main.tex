@@ -1,0 +1,38 @@
+\begin{table*}[t]
+\centering
+\caption{Cost of ownership and contract adherence over a served stream. \textsc{LTT} is one-shot certification, $+\bot$ the same certifier handed the decline action, \textsc{Ldg} the ledger. All three see the same plan space, the same decline price and the same stream, and all are charged for calibration, service, declines and labels. \emph{worst rate} is $\max_{t\ge 200} V_t/t$, the quantity an anytime contract controls; \emph{breach} is the fraction of the 30 streams in which it exceeded $\alpha$. Levels marked $\dagger$ lie below the risk of every plan in the space, where certification without declines is infeasible by construction and \textsc{LTT} falls back to the historically safest plan, which is why its numbers repeat down such a block. The \textsc{Ldg} breach column is identically zero because Theorem~\ref{thm:gate} makes it so, not because 30 streams happened to be kind; \textsc{LTT} breaches on all of them below the floor for the same structural reason. \textsc{LTT} never declines by definition, so that column is omitted. Costs in mCNY per query.}
+\label{tab:main}
+\footnotesize
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{llrrrrrrrrrrrrrr}
+\toprule
+Task & $\alpha$ & \multicolumn{3}{c}{cost} & \multicolumn{3}{c}{risk} & \multicolumn{2}{c}{decline\%} & \multicolumn{3}{c}{worst rate} & \multicolumn{3}{c}{breach} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-10}\cmidrule(lr){11-13}\cmidrule(lr){14-16}
+ & & LTT & +$\bot$ & Ldg & LTT & +$\bot$ & Ldg & +$\bot$ & Ldg & LTT & +$\bot$ & Ldg & LTT & +$\bot$ & Ldg \\
+\midrule
+HybridQA & 0.15$^\dagger$ & 7.25 & 7.15 & 4.60 & 0.268 & 0.093 & 0.143 & 60 & 58 & 0.291 & 0.093 & 0.149 & 1.00 & 0.00 & 0.00 \\
+ & 0.20$^\dagger$ & 7.25 & 7.12 & 3.70 & 0.268 & 0.131 & 0.193 & 47 & 44 & 0.291 & 0.131 & 0.199 & 1.00 & 0.00 & 0.00 \\
+ & 0.25$^\dagger$ & 7.25 & 7.07 & 2.79 & 0.268 & 0.179 & 0.242 & 30 & 30 & 0.291 & 0.179 & 0.247 & 1.00 & 0.00 & 0.00 \\
+ & 0.30 & 7.11 & 6.97 & 1.90 & 0.273 & 0.202 & 0.291 & 22 & 15 & 0.292 & 0.203 & 0.297 & 0.33 & 0.00 & 0.00 \\
+ & 0.34 & 5.02 & 4.97 & 1.19 & 0.291 & 0.261 & 0.330 & 5 & 5 & 0.308 & 0.261 & 0.337 & 0.00 & 0.00 & 0.00 \\
+\addlinespace[2pt]
+CRAG & 0.35$^\dagger$ & 0.83 & 0.83 & 0.58 & 0.591 & 0.128 & 0.334 & 53 & 50 & 0.618 & 0.129 & 0.344 & 1.00 & 0.00 & 0.00 \\
+ & 0.45$^\dagger$ & 0.83 & 0.83 & 0.51 & 0.591 & 0.135 & 0.432 & 52 & 35 & 0.619 & 0.135 & 0.442 & 1.00 & 0.00 & 0.00 \\
+ & 0.55$^\dagger$ & 0.83 & 0.83 & 0.45 & 0.591 & 0.140 & 0.534 & 51 & 19 & 0.610 & 0.141 & 0.543 & 1.00 & 0.00 & 0.00 \\
+ & 0.62 & 0.78 & 0.79 & 0.41 & 0.592 & 0.317 & 0.600 & 22 & 9 & 0.623 & 0.317 & 0.607 & 0.43 & 0.00 & 0.00 \\
+ & 0.70 & 0.41 & 0.41 & 0.35 & 0.635 & 0.489 & 0.674 & 0 & 1 & 0.641 & 0.489 & 0.680 & 0.00 & 0.00 & 0.00 \\
+\addlinespace[2pt]
+ASQA & 0.10$^\dagger$ & 7.81 & 7.87 & 5.08 & 0.120 & 0.015 & 0.083 & 25 & 59 & 0.136 & 0.016 & 0.089 & 1.00 & 0.00 & 0.00 \\
+ & 0.15 & 7.79 & 7.87 & 3.77 & 0.121 & 0.035 & 0.129 & 10 & 38 & 0.136 & 0.035 & 0.138 & 0.07 & 0.00 & 0.00 \\
+ & 0.20 & 7.34 & 7.38 & 2.32 & 0.136 & 0.062 & 0.174 & 0 & 16 & 0.141 & 0.063 & 0.184 & 0.00 & 0.00 & 0.00 \\
+ & 0.25 & 6.73 & 6.78 & 1.44 & 0.151 & 0.074 & 0.219 & 0 & 2 & 0.154 & 0.074 & 0.229 & 0.00 & 0.00 & 0.00 \\
+ & 0.30 & 5.29 & 5.32 & 1.24 & 0.172 & 0.098 & 0.271 & 0 & 1 & 0.173 & 0.099 & 0.278 & 0.00 & 0.00 & 0.00 \\
+\addlinespace[2pt]
+QAMPARI & 0.35$^\dagger$ & 7.35 & 7.37 & 4.09 & 0.591 & 0.077 & 0.329 & 28 & 52 & 0.611 & 0.077 & 0.340 & 1.00 & 0.00 & 0.00 \\
+ & 0.45$^\dagger$ & 7.35 & 7.37 & 3.15 & 0.591 & 0.073 & 0.427 & 29 & 37 & 0.609 & 0.073 & 0.441 & 1.00 & 0.00 & 0.00 \\
+ & 0.55$^\dagger$ & 7.35 & 7.37 & 2.24 & 0.591 & 0.090 & 0.521 & 26 & 24 & 0.618 & 0.090 & 0.533 & 1.00 & 0.00 & 0.00 \\
+ & 0.60 & 7.35 & 7.38 & 1.74 & 0.591 & 0.131 & 0.573 & 19 & 16 & 0.614 & 0.131 & 0.583 & 0.70 & 0.00 & 0.00 \\
+ & 0.66 & 6.88 & 6.89 & 1.19 & 0.598 & 0.219 & 0.632 & 5 & 7 & 0.616 & 0.219 & 0.643 & 0.00 & 0.00 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}

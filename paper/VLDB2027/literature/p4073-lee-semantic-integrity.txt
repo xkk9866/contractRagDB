@@ -1,0 +1,208 @@
+        Semantic Integrity Constraints: Declarative Guardrails for
+                AI-Augmented Data Processing Systems
+        Alexander W. Lee                                Justin Chan                                  Michael Fu                          Nicolas Kim
+         Brown University                            Brown University                           Brown University                      Brown University
+    alexander_w_lee@brown.edu                       juchan@brown.edu                          michael_fu@brown.edu                 nicolas_kim@brown.edu
+
+                                Akshay Mehta                             Deepti Raghavan                           Uğur Çetintemel
+                             Brown University                              Brown University                       Brown University
+                         akshay_mehta@brown.edu                           deeptir@brown.edu                   ugur_cetintemel@brown.edu
+
+ABSTRACT                                                                                      process data, their use of LLMs lead to potential reliability issues
+AI-augmented data processing systems (DPSs) integrate large lan-                              that manifest into phenomena like hallucinations. These reliability
+guage models (LLMs) into query pipelines, allowing powerful se-                               issues hinder the adoption of AI-augmented DPSs in high-stakes
+mantic operations on structured and unstructured data. However,                               sectors, such as healthcare, law, and finance. Without guardrails, it
+the reliability (a.k.a. trust) of these systems is fundamentally chal-                        will be difficult to adopt these systems fully.
+lenged by the potential for LLMs to produce errors, limiting their                               LLM assertions have actively been explored for offline evalua-
+adoption in critical domains. To help address this reliability bottle-                        tions [4, 25, 50, 51, 57, 66] and runtime guardrails [3, 16, 34, 35, 45,
+neck, we introduce semantic integrity constraints (SICs)—a declara-                           53]. These assertions invoke custom code, ML classifiers, or LLM
+tive abstraction for specifying and enforcing correctness conditions                          judges to check an LLM’s output with respect to various criteria. A
+over LLM outputs in semantic queries. SICs generalize traditional                             related technique is constrained decoding, where constraints are ap-
+database integrity constraints to semantic settings, supporting com-                          plied during the LLM’s generation to ensure that the output adheres
+mon types of constraints, such as grounding, soundness, and exclu-                            to a specified structure [9, 17, 21, 29, 30, 41, 64, 67]. While these
+sion, with both reactive and proactive enforcement strategies.                                approaches have proven their utility in enhancing LLM reliability,
+   We argue that SICs provide a foundation for building reliable and                          they are imperative and fragmented, limiting their usability.
+auditable AI-augmented data systems. Specifically, we present a sys-                             To address these limitations, we propose semantic integrity con-
+tem design for integrating SICs into query planning and runtime ex-                           straints (SICs) as a declarative, unified abstraction that extends tradi-
+ecution and discuss its realization in AI-augmented DPSs. To guide                            tional database integrity constraints to support AI-augmented DPSs.
+and evaluate our vision, we outline several design goals—covering                             Unlike traditional integrity constraints that prevent invalid modi-
+criteria around expressiveness, runtime semantics, integration, per-                          fications to the database, SICs protect against erroneous outputs
+formance, and enterprise-scale applicability—and discuss how our                              from semantic operators. Similar to their traditional counterparts,
+framework addresses each, along with open research challenges.                                SICs make defining constraints for predominant use cases easy
+                                                                                              and more advanced cases possible, aligning with recent work that
+PVLDB Reference Format:                                                                       argues for specifications on LLM-based system components [54].
+Alexander W. Lee, Justin Chan, Michael Fu, Nicolas Kim, Akshay Mehta,                            This paper presents our vision for SICs and sketches a general
+Deepti Raghavan, and Uğur Çetintemel. Semantic Integrity Constraints:                         framework for integrating them into AI-augmented DPSs. To eval-
+Declarative Guardrails for AI-Augmented Data Processing Systems.                              uate the feasibility and impact of this vision, we define a set of
+PVLDB, 18(11): 4073 - 4080, 2025.
+                                                                                              design goals and success criteria: (1) expressiveness, to capture a
+doi:10.14778/3749646.3749677
+                                                                                              broad range of common constraint types; (2) executable semantics,
+                                                                                              with well-defined runtime behavior; (3) system integration, via seam-
+1    INTRODUCTION                                                                             less support within data flow and query processing pipelines; (4)
+Large language models (LLMs) have transformed the field of data                               performance-aware enforcement, balancing reliability and cost; and
+management in the last couple of years, extending traditional sys-                            (5) enterprise-scale applicability, including observability, constraint
+tems with semantic processing capabilities over structured and                                reuse, conflict detection, and auditability. These criteria, outlined
+unstructured data. In particular, several projects have integrated se-                        in Table 1, were defined through our partnership with the Rhode
+mantic operators into database and data flow systems by augmenting                            Island Hospital. They guide our design and are reflected in the
+traditional operators with LLMs [2, 6, 14, 32, 36, 38, 44, 47, 49, 58, 60].                   structure of the paper. Section 2 outlines the proposed system ar-
+We broadly refer to these systems as AI-augmented data processing                             chitecture. Section 3 introduces the SIC interface and categorizes
+systems (DPSs). While AI-augmented DPSs introduce novel ways to                               SICs across key enforcement classes aligned with real-world LLM
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                   use cases. Section 4 explores enforcement strategies, spanning log-
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of           ical and physical planning, and outlines cost-aware mechanisms.
+this license. For any use beyond those covered by this license, obtain permission by          Section 5 discusses observability components. Finally, Section 6
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights
+licensed to the VLDB Endowment.                                                               presents open challenges in large-scale constraint management.
+Proceedings of the VLDB Endowment, Vol. 18, No. 11 ISSN 2150-8097.
+doi:10.14778/3749646.3749677
+
+
+
+
+                                                                                       4073
+                                                    Table 1: Success criteria and design goals for SICs
+
+     Success Criterion                Description
+     Expressiveness                   SICs support a range of constraint types—including domain, grounding, and soundness—through a declarative interface (Section 3)
+     Executable Semantics             Each constraint has precise execution semantics—including what is checked, when it is enforced, and what actions are taken on
+                                      failure—ensuring semantically consistent system behavior and predictable outcomes for users (Section 4)
+     System Integration               SICs integrate with query interfaces, optimizers, and execution engines in AI-augmented DPSs (Section 2)
+     Performance Awareness            Enforcement strategy is selected based on cost and reliability across reactive and proactive methods (Section 4.2)
+     Enterprise-Scale Applicability   SICs support observability, reuse, and auditability across workflows, with mechanisms for conflict detection and policy-driven
+                                      enforcement at organizational scale (Sections 5 and 6)
+
+
+
+2   SYSTEM ARCHITECTURE                                                                    3.1      Interface
+We begin with an overview of the system architecture (Figure 1)                            To provide a unified interface for queries and SICs, users declare
+for supporting SICs and defer a more detailed discussion of the                            constraints in the query language. We present a relational inter-
+core components to later sections. First, the user expresses their                         face that extends pipe SQL syntax [52] with semantic operators
+semantic query along with SICs via the query interface (Section 3.1).                      (e.g., map, aggregate, filter, join, top-𝑘) and SICs; however, SICs are
+This interface forwards the query’s text to the query parser, which                        compatible with any declarative AI-augmented DPS.
+produces a corresponding logical query plan. Next, the logical opti-                           Declaring Constraints. SICs specify predicates either on gen-
+mizer (Section 4.1) applies logical rewrite rules to the initial plan,                     erated tuple attributes from semantic operators or on the semantic
+yielding an optimized logical plan. This plan is then passed to the                        operators themselves. We make this distinction because while some
+physical optimizer (Section 4.2), which considers different physical                       operators (e.g., map, aggregate) generate attributes, other opera-
+implementations of the plan and selects the optimal one. The re-                           tors (e.g., filter, join, top-𝑘) do not; yet, constraints should still be
+sulting optimized physical plan is then executed by the execution                          defined in either case. The syntax for declaring a constraint on an
+engine. To enable performance monitoring, an observability stack                           attribute involves a SQL expression starting with ASSERT, followed
+is integrated with the execution engine (Section 5). Finally, the                          by a predicate involving the attribute’s name, the type of constraint
+constraint store recommends and analyzes SICs (Section 6).                                 (Section 3.2), and any necessary parameters. A constraint on an
+                                                                                           operator is similar. Users can also combine constraints via logical
+3   CONSTRAINT SPECIFICATION                                                               connectives (e.g., ASSERT <pred1> AND <pred2>).
+We suggest defining SICs declaratively, allowing users to focus on                             Retry Thresholds. Users can define a retry threshold for each
+constraint logic while the optimizer determines the best execution                         constraint. When a constraint associated with the operator (either
+method. We outline the main components of our proposed interface                           on the operator or on an attribute generated by the operator) is
+and detail classes of constraints relevant to semantic data process-                       violated, the DPS retries the operator until the output satisfies
+ing. Additional surveys should be conducted to ensure usability.                           the constraint or the retry threshold is reached. To specify a retry
+                                                                                           threshold, users write RETRY <threshold> after the constraint.
+                                                                                               Failure Modes. Failure modes (CONTINUE, IGNORE, or ABORT) are
+ Listing 1: Semantic query with pipe SQL syntax and SICs.                                  also associated with constraints and specify what the DPS should do
+ 1FROM ehr_table
+ 2| > SET dob = p ' canonicalize { dob } into YYYY - MM - DD '
+                                                                                           when a failing output reaches the retry threshold. With CONTINUE,
+ 3| > ASSERT REGEXP_CONTAINS ( dob ,                                                       the DPS continues processing the query, allowing errors to prop-
+        r '^\ d {4} -(0[1 -9]|1[0 -2]) -(0[1 -9]|[12]\ d |3[01]) $ ')                      agate downstream. IGNORE specifies that the DPS should ignore
+ 4| > EXTEND DATE_PART ( ' year ', AGE ( CURRENT_DATE ,
+        dob :: DATE ) ) AS age_yrs                                                         invalid tuples in the processing (including dependent tuples, such
+ 5| > EXTEND EXTRACTIVE p ' extract the patient ' 's                                       as those that would be in the same aggregation window). Lastly,
+        admission physical exam from the { ehr } ' AS                                      ABORT cancels the entire query. To specify a failure mode, the user
+        phys_exam STRING
+ 6| > EXTEND EXTRACTIVE p ' extract the patient ' 's                                       writes <mode> ON FAIL after the retry threshold.
+        admission lab results from the { ehr } ' AS lab_res                                    End-To-End Example. Listing 1 shows an example semantic
+        STRING
+ 7| > EXTEND EXTRACTIVE p ' extract the patient ' 's medical
+                                                                                           query with various SICs. The query is declared over the ehr_table
+        history from the { ehr } ' AS med_hist STRING                                      (line 1), a relation of electronic health records (EHRs). Each tuple in
+ 8| > EXTEND ABSTRACTIVE p ' summarize { med_hist } ' AS                                   the relation corresponds to a patient, and we assume that it contains
+        med_hist_sum STRING
+ 9| > WHERE p ' the patient is likely to have sepsis based                                 attributes for the patient’s ehr and dob. The query first canonical-
+        on their { age_yrs } , { phys_exam } , { lab_res } , and                           izes the dob attribute’s value into YYYY-MM-DD (line 2) because the
+        { med_hist } ' AS sepsis_filter                                                    value could have been in another format. The expression involves
+10| > ASSERT phys_exam GROUNDED AND lab_res GROUNDED
+11| > ASSERT med_hist_sum GROUNDED AND                                                     a string prefixed with the letter “p”, which defines a prompt string.
+        LENGTH ( med_hist_sum ) < 1000                                                     Prompt strings can specify natural language functions or predicates
+12| > ASSERT med_hist_sum EXCLUDES p ' test results '
+13      RETRY 1 CONTINUE ON FAIL
+                                                                                           over attributes and are evaluated using LLMs. Line 4 computes the
+14| > ASSERT sepsis_filter SOUND                                                           patient’s age using standard SQL functions. Lines 5-7 extract the
+                                                                                           patient’s physical exam, lab results, and medical history from the
+
+
+
+
+                                                                                   4074
+     Query                                                                Logical                                     Physical                                    Execution
+                                    Query Parser
+   Interface                                                             Optimizer                                    Optimizer                                    Engine
+
+
+
+
+               FROM ehr_table                      Logical plan        Rewrite rules       Optimized logical plan   Phys. impl.        Optimized physical plan
+               |> SET dob = …                                          Const. pushdown                              Const. decoding
+                                                                       Const. reordering                            Iter. refinement
+  Constraint   …                                                       …                                            …
+                                                                                                                                                                 Observability
+    Store      |> ASSERT …                                                                                                                                          Stack
+
+
+
+
+Figure 1: System architecture for SICs. Orange circles and turquoise diamonds represent semantic operators and SICs, respec-
+tively. Green squares indicate annotations that describe the physical implementation of each node.
+
+
+ehr, and line 8 summarizes the patient’s medical history. Lastly,                        Grounding Constraints. Semantic operators, such as maps
+the query filters tuples by selecting patients likely to have sepsis                 or aggregates, can extract data or summarize from their inputs.
+(line 9). Here, the AS keyword is also used to alias the filter operator             However, since LLMs can hallucinate, users want to ensure that
+so that it can be referenced later in the query (line 14).                           the generated data is grounded in source data. Grounding con-
+    The first constraint is declared on line 3, and the remaining con-               straints enforce such invariants. For example, line 10 ensures that
+straints are specified on line 10 and onward. If the summarization                   the extracted phys_exam and lab_res are exactly contained in the
+step for med_hist_sum (line 8) fails the constraint on line 12, the                  source EHR, while the first conjunct on line 11 asserts that the
+DPS retries the operator once and then CONTINUEs to propagate                        summarized med_hist_sum is factually consistent with the source
+the tuple even if it still fails the constraint again (line 13). Since no            EHR. In particular, the last grounding constraint implicitly defines a
+retry thresholds and failure modes are defined in the rest of the                    grounding constraint on med_hist, since med_hist_sum is derived
+query, we assume that some default setting is used. We explain                       from med_hist, which, in turn, is derived from ehr. Formally, if a
+each constraint in more detail in the next section.                                  grounding constraint is defined on an attribute, the DPS will recur-
+                                                                                     sively enforce grounding constraints on all ancestor attributes in
+                                                                                     its lineage. Thus, each constraint only needs to compare its opera-
+3.2     Constraint Classes
+                                                                                     tor’s input and output to ensure grounding in the source data. A
+We categorize SICs into different classes (Table 2) that are designed                grounding constraint is implemented in one of two ways, depend-
+to capture the predominant use cases for LLM constraints. We                         ing on whether the specified attribute is generated via an extractive
+motivate each constraint class using concrete examples from the                      (map) or abstractive (map or aggregate) operator. In the extractive
+EHR query (among others) and briefly outline their implementation.                   case, the constraint is implemented deterministically and ensures
+   Domain Constraints. In many queries, users want generated                         that the operator’s output is precisely contained in its input. In
+attributes to belong to a specified domain. This includes use cases                  the abstractive case, the constraint is implemented stochastically
+such as enforcing that a value conforms to a certain data type or                    (e.g., with an LLM or a fact-checking model [56]) and ensures that
+structure, belongs to a set of values, or is less than a certain length.             the operator’s summarized output is factually consistent with the
+For example, one may check whether the predicted prescription                        input. Users can annotate relevant operators with the EXTRACTIVE
+dose from a semantic map is within a range of possible values. We                    (lines 5-7) or ABSTRACTIVE (line 8) keywords to inform the DPS
+extend traditional domain constraints to semantic data processing.                   of their semantics; otherwise, the DPS infers these annotations by
+In Listing 1, line 3 and the second conjunct on line 11 specify domain               reasoning about the operator’s prompt string with an LLM.
+constraints, restricting the dob to the regex for YYYY-MM-DD and the                     Soundness Constraints. To check whether the reasoning of
+summary’s length to less than 1000 characters, respectively. Type                    an operator is logically sound, users can declare soundness con-
+declarations (e.g., STRING) of generated attributes implicitly define                straints. Although applicable to all operators, this constraint class
+domain constraints. This class of SICs comprises the majority of                     is particularly useful for operators that do not generate attributes,
+constraint use cases [34] and is enforced deterministically.                         such as filter, join, or top-𝑘. To enforce soundness constraints, the
+   Inclusion and Exclusion (IE) Constraints. Users sometimes                         DPS uses LLMs to check the operator’s reasoning, e.g., chain-of-
+expect that an attribute generated by an operator includes or ex-                    thought (CoT) [62]. As an example, line 14 declares a soundness
+cludes certain terms, content, topics, or abstract features such as                  constraint on the sepsis filter. Assume that the query earlier re-
+tones or styles. For example, given a semantic map that summarizes                   trieved relevant sepsis-related medical information (omitted for
+an EHR, users may want to exclude all the patient’s PII from the                     brevity). This retrieved information is considered to describe the
+summary while including the names of attending physicians. IE                        symptoms of sepsis and the diagnostic rationale. Under the hood,
+constraints address this class of predicates. Line 12 defines an exclu-              the DPS prompts the filter’s LLM to return its CoT in addition to a
+sion constraint on med_hist_sum, which excludes test results from                    boolean value that represents the selection result. The CoT first lists
+the medical history summary. When an IE constraint is defined                        the premises, i.e., the patient’s medical condition and the retrieved
+with a prompt string (as in the example), LLMs are used to check                     medical information relevant to sepsis. The premises are followed
+for a semantic match. Users can also specify IE constraints using                    by the reasoning steps that lead to the selection result. Then, the
+strings, regexes, or even a collection of them (e.g., a set of toxic                 input and output of the filter’s LLM are given to an LLM judge
+words to exclude from the output). In such cases, deterministic                      (or several of them) to ensure that the premises are grounded in
+methods are used to evaluate matches.
+
+
+
+
+                                                                            4075
+

@@ -1,0 +1,153 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+%%% do not modify the following VLDB block %%
+\usepackage{pvldb}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{multirow}
+\usepackage{graphicx}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+
+\newcommand{\system}{\textsc{ContractRAG}\xspace}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+%% The DOI and page range are assigned after acceptance.
+\renewcommand\vldbdoi{XX.XX/XXX.XX}
+\renewcommand\vldbpages{XXX-XXX}
+\renewcommand\vldbavailabilityurl{https://github.com/xkk9866/contractRagDB}
+
+\begin{document}
+
+\title{\system: Risk-Certified Query Optimization for
+Retrieval-Augmented Data Systems}
+
+\author{Kang Yao}
+\orcid{0009-0007-4747-4018}
+\authornote{Kang Yao and Shengjiang Zhang contributed equally to this work.}
+\affiliation{%
+  \institution{School of Biomedical Engineering (Suzhou), Division of
+  Life Sciences and Medicine, University of Science and Technology of China}
+  \city{Suzhou}
+  \country{China}}
+\affiliation{%
+  \institution{Suzhou Institute of Biomedical Engineering and Technology,
+  Chinese Academy of Sciences}
+  \city{Suzhou}
+  \country{China}}
+\email{yaokang@mail.ustc.edu.cn}
+
+\author{Shengjiang Zhang}
+\orcid{0009-0003-6744-743X}
+\authornotemark[1]
+\affiliation{%
+  \institution{School of Biomedical Engineering (Suzhou), Division of
+  Life Sciences and Medicine, University of Science and Technology of China}
+  \city{Suzhou}
+  \country{China}}
+\affiliation{%
+  \institution{Suzhou Institute of Biomedical Engineering and Technology,
+  Chinese Academy of Sciences}
+  \city{Suzhou}
+  \country{China}}
+\email{zhangshengjiang@mail.ustc.edu.cn}
+
+\author{Ronghao Pei}
+\affiliation{%
+  \institution{Hikvision Research Institute}
+  \city{Hangzhou}
+  \country{China}}
+\email{peironghao@hikvision.com}
+
+\author{Weiwei Fu}
+\orcid{0000-0001-7192-3118}
+\authornote{Weiwei Fu and Jinjiang Cui are co-corresponding authors.}
+\affiliation{%
+  \institution{Suzhou Institute of Biomedical Engineering and Technology,
+  Chinese Academy of Sciences}
+  \city{Suzhou}
+  \country{China}}
+\email{fuww@sibet.ac.cn}
+
+\author{Jinjiang Cui}
+\orcid{0009-0002-5159-9570}
+\authornotemark[2]
+\affiliation{%
+  \institution{Suzhou Institute of Biomedical Engineering and Technology,
+  Chinese Academy of Sciences}
+  \city{Suzhou}
+  \country{China}}
+\email{cuijj@sibet.ac.cn}
+
+\begin{abstract}
+Retrieval-augmented data services execute queries over tables, text
+collections, vector indexes, and structured APIs. A query can therefore
+admit many physical plans with very different costs, but these plans are
+not semantically equivalent: cheaper retrieval, reranking, and generation
+choices may change the answer. Existing optimizers select plans from
+estimated quality and cost, so their selected plan has no finite-sample
+guarantee of meeting an application's quality, citation, freshness, or
+latency target. We present \emph{evidence contracts}, a declarative
+interface that bounds service-level violation rates, and \system, a query
+optimizer that minimizes cost subject to such contracts. \system generates
+a plan lattice with cost-reducing rewrites, orders it using
+selectivity-aware risk vouchers, and constructs fixed, routed, and
+progressive-execution policies. A fixed-sequence statistical test then
+certifies the deployed policy without a multiplicity penalty from plan
+search. An anytime-valid monitor detects post-deployment drift and invokes
+recertification. Experiments on HybridQA, CRAG, ASQA, and QAMPARI use
+token-metered executions and exact finite-population risk over repeated
+calibration draws. \system is the only tested optimizer that stays within
+the prescribed $\delta=0.1$ failure budget at every contract level; its
+worst observed deployment-failure rate is 0.8\%, whereas point-estimate
+optimizers reach 64\%. At matched contracts, \system reduces cost by up to
+$20\times$ relative to the strongest fixed plan and certifies plan spaces
+containing nearly $10^5$ policies in seconds.
+\end{abstract}
+
+\keywords{query optimization, retrieval-augmented generation, semantic
+operators, risk control, adaptive execution}
+
+\maketitle
+
+%%% do not modify the following VLDB block %%
+\vldbtopmatter
+
+\hypersetup{
+  pdftitle={ContractRAG: Risk-Certified Query Optimization for
+  Retrieval-Augmented Data Systems},
+  pdfauthor={Kang Yao; Shengjiang Zhang; Ronghao Pei; Weiwei Fu;
+  Jinjiang Cui}
+}
+
+\input{sec_intro}
+\input{sec_contracts}
+\input{sec_optimizer}
+\input{sec_runtime}
+\input{sec_system}
+\input{sec_experiments}
+\input{sec_related}
+
+\section{Conclusion}
+\label{sec:conclusion}
+Retrieval-augmented data systems need an optimizer whose feasibility
+decision remains valid when physical plans can change the answer.
+Evidence contracts make the acceptable service-level risk explicit.
+\system separates search from certification: learned scores, cardinality
+estimates, and rewrite vouchers determine which policies are explored,
+whereas a fixed-sequence test alone authorizes deployment. Progressive
+execution and anytime-valid monitoring extend the same contract to
+runtime. The result is a practical path from point-estimate plan selection
+to risk-certified query optimization over heterogeneous evidence sources.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}

@@ -1,0 +1,124 @@
+\section{Introduction}
+\label{sec:intro}
+
+Large language models (LLMs) now support question answering over
+enterprise documents, regulatory and financial assistants, and
+clinical decision support
+\citep{lewis2020rag,gao2023alce,yang2024cragbench,aarab2025bank,
+yang2025integrating}. Because parametric
+knowledge is incomplete, can become stale, and may produce
+hallucinations, retrieval-augmented generation (RAG) grounds model
+outputs in external sources: relational tables, text corpora under
+sparse and dense indexes, vector stores, and structured knowledge APIs
+\citep{lewis2020rag,chen2020hybridqa}. A production RAG service is a
+decision system, not merely a retriever followed by a generator. It may
+combine several knowledge sources, rerankers, verifiers, and LLMs whose
+prices differ by two orders of magnitude. For each request, an operator
+must decide how much evidence to acquire and when an inexpensive answer
+is sufficient. That decision must respect limits on wrong,
+unsupported, stale, or late answers. Average development-set accuracy
+does not provide such an operational guarantee.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.88\textwidth]{figures/fig_paradigm.png}
+\caption{Three deployment paradigms for RAG knowledge services.
+(a)~Point-estimate tuning deploys the cheapest configuration whose
+\emph{measured} risk clears the target --- an uncorrected
+multiple-testing procedure with no feasibility guarantee.
+(b)~Distribution-free risk control bounds the risk of a \emph{fixed}
+pipeline but neither searches a configuration space nor reduces cost,
+and is silent under drift. (c)~\system\ combines search,
+certification, and monitoring: an evidence contract is certified by a fixed-sequence
+test over a policy space ordered by risk vouchers, and an anytime-valid
+e-process monitor closes the loop after deployment.}
+\label{fig:paradigm}
+\end{figure*}
+
+Current deployment practice does not support this decision.
+Practitioners sample a development set, estimate each configuration's
+quality, and choose the cheapest configuration whose \emph{estimate}
+clears the target, an approach we call point-estimate tuning
+(Figure~\ref{fig:paradigm}a), shared
+by workload-level pipeline optimizers \citep{russo2025abacus,
+liu2025palimpzest,patel2024lotus} and by adaptive RAG routers and LLM
+cascades \citep{jeong2024adaptiverag,chen2023frugalgpt,ong2024routellm}.
+This selection is an uncorrected multiple-testing procedure. It favors
+configurations whose measurement noise happens to be favorable, and the
+problem worsens as the candidate set grows. As we quantify in
+Section~\ref{sec:results}, state-of-practice optimizers deploy policies
+whose true violation rate exceeds the declared target in up to 64\% of
+calibration draws. Even a correctly tuned pipeline offers no protection after deployment,
+when workload mix shifts, indexes fall behind the world, and knowledge
+APIs degrade --- the knowledge drift problem that static evaluation
+cannot see.
+
+Distribution-free risk control addresses the statistical problem
+(Figure~\ref{fig:paradigm}b): conformal
+and Learn-then-Test methods \citep{angelopoulos2021ltt,
+angelopoulos2024crc} can bound the violation rate of a \emph{fixed}
+pipeline with finite-sample confidence, and recent work has applied
+them to RAG abstention and answer sets \citep{li2024traq,kang2024crag}.
+These methods treat the pipeline as given: they neither search a
+configuration space nor reduce cost, and they are silent about what
+happens when the calibrated distribution drifts. Conversely, the
+systems that do search --- routers, cascades, Bayesian optimization ---
+provide no feasibility statement. Search, certification, and
+post-deployment monitoring therefore need to be designed together so
+that cost optimization does not weaken the statistical guarantee.
+
+We propose \system, a risk-aware expert system for RAG operations
+(Figure~\ref{fig:paradigm}c). A domain expert states the operating
+requirements as an \emph{evidence contract}: admissible violation rates
+for answer quality, citation completeness, evidence freshness, and
+latency, together with a confidence budget $\delta$. \system translates
+these requirements into an auditable recommendation. It either returns
+a certified policy or reports that the current system cannot meet the
+contract. It never hides infeasibility behind a favorable point
+estimate.
+
+The system has three decision stages. First, it compiles a lattice of
+knowledge-access plans using retrieval truncation, reranker removal,
+pre-filter pushdown, and generator downgrade. Empirical
+\emph{risk vouchers} summarize how each rewrite has affected prior
+answers. The vouchers compose without independence assumptions and
+guide the search, but they do not authorize deployment. Second,
+\system turns the plans into progressive policies. Each policy starts
+cheaply and acquires stronger evidence while a learned sufficiency
+score remains low. The candidate family also includes utility routers,
+group-conditional variants, and human deferral. A fixed-sequence
+Hoeffding--Bentkus test certifies the least-cost policy in the accepted
+prefix. Third, an anytime-valid e-detector audits the running service.
+It detects drift, identifies the data that should be used for
+recalibration, and restarts the decision process. A geometric error
+schedule keeps this loop valid over repeated alarms.
+
+This work provides an end-to-end decision-support architecture for RAG
+over heterogeneous knowledge sources. Its main contributions are:
+\begin{itemize}
+\item We define evidence contracts as an operator-facing interface for
+quality, citation, freshness, latency, and confidence requirements
+(Section~\ref{sec:prelim}).
+\item We develop a policy-recommendation engine that combines a
+rewrite-generated plan lattice, composable vouchers, learned
+sufficiency scores, and fixed-sequence certification. It recommends a
+least-cost certified policy or declines deployment
+(Section~\ref{sec:method}).
+\item We close the operating loop with an anytime-valid drift monitor,
+sampled auditing, changepoint localization, safe-mode escalation, and
+repeated recertification under a lifetime error budget
+(Section~\ref{sec:monitor}).
+\item We evaluate the full system on four public benchmarks, four LLM
+families, and two serving backends. The study covers reliability,
+cost, strict and joint contracts, infeasibility, audit rates, and
+drift response (Sections~\ref{sec:setup}--\ref{sec:results}).
+\end{itemize}
+
+The remainder of this paper is organized as follows.
+Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:prelim} formalizes evidence contracts and the
+certified deployment problem. Section~\ref{sec:method} presents the
+\system\ framework. Sections~\ref{sec:setup} and~\ref{sec:results}
+report the experimental setup and results. Section~\ref{sec:discussion}
+discusses implications, limitations, and threats to validity, and
+Section~\ref{sec:conclusion} concludes.

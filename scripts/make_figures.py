@@ -20,8 +20,19 @@ import matplotlib.pyplot as plt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXP = os.path.join(ROOT, "experiments")
-FIG = os.path.join(ROOT, "paper", "figures")
-os.makedirs(FIG, exist_ok=True)
+FIG_DIRS = [
+    os.path.join(ROOT, "paper", "figures"),
+    os.path.join(ROOT, "paper", "KBS", "figures"),
+]
+for _d in FIG_DIRS:
+    os.makedirs(_d, exist_ok=True)
+# Back-compat alias used by older call sites in this file.
+FIG = FIG_DIRS[0]
+
+# Opaque label background so annotations stay readable over curves/shading.
+_LABEL_BBOX = dict(boxstyle="round,pad=0.22", fc="white", ec="none", alpha=1.0)
+_LEGEND_KW = dict(frameon=True, fancybox=False, framealpha=1.0,
+                  edgecolor="#d0d0d0", borderpad=0.35)
 
 plt.rcParams.update({
     "font.size": 9, "axes.titlesize": 9.5, "axes.labelsize": 9,
@@ -33,6 +44,14 @@ plt.rcParams.update({
     "axes.linewidth": 0.7, "xtick.major.width": 0.7,
     "ytick.major.width": 0.7, "savefig.transparent": False,
 })
+
+
+def savefig(fig, out):
+    """Write the same figure into every paper figure directory."""
+    for d in FIG_DIRS:
+        path = os.path.join(d, out)
+        fig.savefig(path, bbox_inches="tight")
+        print("wrote", path)
 
 TRACK_NAME = {"hybridqa": "HybridQA", "crag": "CRAG", "asqa": "ASQA",
               "qampari": "QAMPARI"}
@@ -116,7 +135,8 @@ def fig_cost_risk(track, contract, tau, alpha_key, out):
         ax.set_ylim(ylo, yhi)
     ax.annotate("contract violated", xy=(0.99, 0.975),
                 xycoords="axes fraction", ha="right", va="top",
-                fontsize=7, color="red", alpha=0.8)
+                fontsize=7, color="red", alpha=0.9, zorder=10,
+                bbox=_LABEL_BBOX)
     ax.set_xlabel("mean cost (mCNY / query)")
     ax.set_ylabel("realized violation rate")
     ax.set_title(f"{TRACK_NAME.get(track, track)} "
@@ -125,9 +145,8 @@ def fig_cost_risk(track, contract, tau, alpha_key, out):
     ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), frameon=False,
               ncol=1, fontsize=7, handletextpad=0.4)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_calibration(tracks_contracts, out):
@@ -153,11 +172,10 @@ def fig_calibration(tracks_contracts, out):
     ax.set_ylim(0, 1)
     ax.set_xlabel(r"contract level $\alpha$")
     ax.set_ylabel("realized violation rate")
-    ax.legend(frameon=False, fontsize=7.5, loc="upper left")
+    ax.legend(fontsize=7.5, loc="upper left", **_LEGEND_KW)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_violation_bars(specs, out):
@@ -187,11 +205,10 @@ def fig_violation_bars(specs, out):
     ax.set_xticks(xs + 0.4 - width / 2)
     ax.set_xticklabels([e[0] for e in entries])
     ax.set_ylabel(r"$\Pr(\mathrm{test\ risk} > \alpha)$")
-    ax.legend(frameon=False, ncol=2, fontsize=7)
+    ax.legend(ncol=2, fontsize=7, **_LEGEND_KW)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_drift(alpha, out):
@@ -218,16 +235,15 @@ def fig_drift(alpha, out):
                          fontsize=7)
     axes[0].set_xlabel("query index t")
     axes[0].set_ylabel("violation rate (window 100)")
-    axes[0].legend(frameon=False, fontsize=7)
+    axes[0].legend(fontsize=7, **_LEGEND_KW)
 
     delays = [d for d in r["alarm_delays"] if d is not None]
     axes[1].hist(delays, bins=15, color="#d62728", alpha=0.8)
     axes[1].set_xlabel("detection delay (queries after shift)")
     axes[1].set_ylabel("runs / 20 seeds")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def table_main(track, contract, tau, alpha_key, fname):
@@ -285,22 +301,26 @@ def fig_violation_sweep(specs, out):
                 ax.plot(xs, ys, marker=st["marker"], ms=4, lw=1.1,
                         color=st["color"], label=st["label"],
                         zorder=st.get("zorder", 3))
-        ax.axhline(0.1, color="red", ls=":", lw=1)
+        ax.axhline(0.1, color="red", ls=":", lw=1, zorder=2)
         ax.set_ylim(-0.03, 0.72)
         ax.set_title(TRACK_NAME.get(track, track), fontsize=9)
         ax.set_xlabel(r"contract level $\alpha$")
     axes[0].set_ylabel(r"$\Pr(\mathrm{population\ risk} > \alpha)$")
-    axes[0].annotate(r"budget $\delta$", xy=(0.02, 0.115),
-                     xycoords=("axes fraction", "data"), fontsize=7,
-                     color="red", alpha=0.9)
+    # Below the delta line on HybridQA left: only near-zero curves live there.
+    axes[0].annotate(
+        r"budget $\delta$", xy=(0.02, 0.1),
+        xycoords=("axes fraction", "data"), fontsize=7,
+        color="red", ha="left", va="top",
+        xytext=(0, -2), textcoords="offset points",
+        bbox=_LABEL_BBOX, zorder=10,
+    )
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, frameon=False, fontsize=7.5, ncol=6,
                loc="upper center", bbox_to_anchor=(0.5, 1.13),
                columnspacing=1.0, handletextpad=0.4)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_drift_file(name, out):
@@ -319,38 +339,56 @@ def fig_drift_file(name, out):
         roll = np.convolve(losses, np.ones(w) / w, mode="valid")
         n_all = len(losses)
         axes[0].plot(np.arange(len(roll)) + w, roll, lw=1.1, color=color,
-                     label=label)
+                     label=label, zorder=3)
     axes[0].axvspan(T1, n_all, color="k", alpha=0.05, zorder=0)
-    axes[0].axvline(T1, color="k", ls="--", lw=0.8)
-    axes[0].annotate("drift onset", (T1 + 25, 0.99), fontsize=7,
-                     color="k", va="top",
-                     xycoords=("data", "axes fraction"))
-    axes[0].axhline(r["alpha"], color="red", ls=":", lw=0.8)
-    axes[0].annotate(r"contract $\alpha$", xy=(0.02, r["alpha"]),
-                     xycoords=("axes fraction", "data"), fontsize=7,
-                     color="red", xytext=(0, 2), textcoords="offset points")
+    axes[0].axvline(T1, color="k", ls="--", lw=0.8, zorder=4)
+    # Keep labels outside the dense post-drift curves.
+    axes[0].annotate(
+        "drift onset", xy=(T1, 1.02), xycoords=("data", "axes fraction"),
+        xytext=(-4, 0), textcoords="offset points",
+        fontsize=7, color="k", ha="right", va="bottom",
+        bbox=_LABEL_BBOX, zorder=10, annotation_clip=False,
+    )
+    axes[0].axhline(r["alpha"], color="red", ls=":", lw=0.8, zorder=2)
+    # Post-drift curves sit well above alpha on the right — label stays readable.
+    axes[0].annotate(
+        r"contract $\alpha$", xy=(0.98, r["alpha"]),
+        xycoords=("axes fraction", "data"), fontsize=7, color="red",
+        xytext=(0, -8), textcoords="offset points", ha="right", va="top",
+        bbox=_LABEL_BBOX, zorder=10,
+    )
     at = runs["monitor"]["alarm_t"]
     if at is not None:
-        axes[0].axvline(at, color="#d62728", ls="-.", lw=0.8)
-        axes[0].annotate("alarm", (at + 20, r["alpha"] + 0.05),
-                         color="#d62728", fontsize=7)
+        axes[0].axvline(at, color="#d62728", ls="-.", lw=0.8, zorder=4)
+        axes[0].annotate(
+            "alarm", xy=(at, 1.02), xycoords=("data", "axes fraction"),
+            xytext=(4, 0), textcoords="offset points",
+            color="#d62728", fontsize=7, ha="left", va="bottom",
+            bbox=_LABEL_BBOX, zorder=10, annotation_clip=False,
+        )
     axes[0].set_xlabel("query index $t$")
     axes[0].set_ylabel("violation rate (rolling 150)")
-    axes[0].legend(frameon=False, fontsize=7)
+    axes[0].legend(
+        fontsize=7, loc="lower left", bbox_to_anchor=(0.0, 1.08),
+        ncol=3, borderaxespad=0.0, **_LEGEND_KW,
+    )
     delays = [d for d in r["alarm_delays"] if d is not None]
     axes[1].hist(delays, bins=12, color="#d62728", alpha=0.85)
     if delays:
         med = float(np.median(delays))
         axes[1].axvline(med, color="k", ls="--", lw=0.8)
-        axes[1].annotate(f"median {med:.0f}", (med, 0.95), fontsize=7,
-                         xycoords=("data", "axes fraction"), va="top",
-                         xytext=(3, 0), textcoords="offset points")
+        axes[1].annotate(
+            f"median {med:.0f}", (med, 0.95), fontsize=7,
+            xycoords=("data", "axes fraction"), va="top",
+            xytext=(3, 0), textcoords="offset points",
+            bbox=_LABEL_BBOX, zorder=10,
+        )
     axes[1].set_xlabel("detection delay after drift onset")
     axes[1].set_ylabel("runs (of 20)")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    fig.subplots_adjust(top=0.88)
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_stale(name, out):
@@ -369,40 +407,56 @@ def fig_stale(name, out):
         roll = np.convolve(losses, np.ones(w) / w, mode="valid")
         n_all = len(losses)
         axes[0].plot(np.arange(len(roll)) + w, roll, lw=1.1, color=color,
-                     label=label)
+                     label=label, zorder=3)
     axes[0].axvspan(T1, n_all, color="k", alpha=0.05, zorder=0)
-    axes[0].axvline(T1, color="k", ls="--", lw=0.8)
-    axes[0].annotate("index falls\n1 week behind", (0.98, 0.03),
-                     fontsize=7, color="k", ha="right", va="bottom",
-                     xycoords="axes fraction")
-    axes[0].axhline(r["alpha"], color="red", ls=":", lw=0.8)
-    axes[0].annotate(r"contract $\alpha$", xy=(0.02, r["alpha"]),
-                     xycoords=("axes fraction", "data"), fontsize=7,
-                     color="red", xytext=(0, -9), textcoords="offset points")
+    axes[0].axvline(T1, color="k", ls="--", lw=0.8, zorder=4)
+    # Gap between the high static curve (~0.9+) and the recovered band (~0.75).
+    axes[0].annotate(
+        "index falls\n1 week behind", xy=(0.78, 0.825),
+        xycoords=("axes fraction", "data"),
+        fontsize=7, color="k", ha="center", va="center",
+        bbox=_LABEL_BBOX, zorder=10,
+    )
+    axes[0].axhline(r["alpha"], color="red", ls=":", lw=0.8, zorder=2)
+    axes[0].annotate(
+        r"contract $\alpha$", xy=(0.02, r["alpha"]),
+        xycoords=("axes fraction", "data"), fontsize=7, color="red",
+        xytext=(0, -10), textcoords="offset points", va="top",
+        bbox=_LABEL_BBOX, zorder=10,
+    )
     at = runs["monitor"]["alarm_t"]
     if at is not None:
-        axes[0].axvline(at, color="#d62728", ls="-.", lw=0.8)
-        axes[0].annotate("alarm", (at + 30, 0.97), color="#d62728",
-                         fontsize=7, xycoords=("data", "axes fraction"),
-                         va="top")
+        axes[0].axvline(at, color="#d62728", ls="-.", lw=0.8, zorder=4)
+        axes[0].annotate(
+            "alarm", xy=(at, 1.02), xycoords=("data", "axes fraction"),
+            xytext=(4, 0), textcoords="offset points",
+            color="#d62728", fontsize=7, ha="left", va="bottom",
+            bbox=_LABEL_BBOX, zorder=10, annotation_clip=False,
+        )
     axes[0].set_xlabel("query index $t$")
     axes[0].set_ylabel("joint violation (rolling 150)")
     axes[0].set_ylim(top=1.0)
-    axes[0].legend(frameon=False, fontsize=7, loc="upper left")
+    axes[0].legend(
+        fontsize=7, loc="lower left", bbox_to_anchor=(0.0, 1.08),
+        ncol=3, borderaxespad=0.0, **_LEGEND_KW,
+    )
     delays = [d for d in r["alarm_delays"] if d is not None]
     axes[1].hist(delays, bins=12, color="#d62728", alpha=0.85)
     if delays:
         med = float(np.median(delays))
         axes[1].axvline(med, color="k", ls="--", lw=0.8)
-        axes[1].annotate(f"median {med:.0f}", (med, 0.95), fontsize=7,
-                         xycoords=("data", "axes fraction"), va="top",
-                         xytext=(3, 0), textcoords="offset points")
+        axes[1].annotate(
+            f"median {med:.0f}", (med, 0.95), fontsize=7,
+            xycoords=("data", "axes fraction"), va="top",
+            xytext=(3, 0), textcoords="offset points",
+            bbox=_LABEL_BBOX, zorder=10,
+        )
     axes[1].set_xlabel("detection delay after index lag onset")
     axes[1].set_ylabel("runs (of 20)")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    fig.subplots_adjust(top=0.88)
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_drift2(name, out):
@@ -428,7 +482,7 @@ def fig_drift2(name, out):
     axes[0].set_ylabel("detection delay (queries)")
     axes[0].set_yscale("log")
     axes[0].set_title(r"delay $\leq$ bound, scales as $1/g^\ast$ (Prop. 4)")
-    axes[0].legend(frameon=False, fontsize=6.5)
+    axes[0].legend(fontsize=6.5, loc="upper right", **_LEGEND_KW)
     rho = [d["rho"] for d in curve]
     cp = [d["cp_err_median"] for d in curve]
     axes[1].bar([str(x) for x in rho], cp, color="#1f77b4", width=0.55)
@@ -436,9 +490,8 @@ def fig_drift2(name, out):
     axes[1].set_ylabel(r"median $|\hat\tau - \tau|$")
     axes[1].set_title("changepoint localization")
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 def fig_families(out):
@@ -474,11 +527,13 @@ def fig_families(out):
         ax.set_title(label[fam], fontsize=8.5)
         ax.set_xlabel("cost (mCNY/query, log)")
     np.atleast_1d(axes)[0].set_ylabel("violation rate")
-    np.atleast_1d(axes)[0].legend(frameon=False, fontsize=6.5, loc="lower left")
+    handles, labels = np.atleast_1d(axes)[0].get_legend_handles_labels()
+    fig.legend(handles, labels, frameon=False, fontsize=7, ncol=4,
+               loc="upper center", bbox_to_anchor=(0.5, 1.14),
+               columnspacing=1.2, handletextpad=0.4)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIG, out), bbox_inches="tight")
+    savefig(fig, out)
     plt.close(fig)
-    print("wrote", out)
 
 
 if __name__ == "__main__":

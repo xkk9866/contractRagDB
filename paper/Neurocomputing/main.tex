@@ -1,0 +1,206 @@
+%% Neurocomputing submission
+%% Built on the Elsevier CAS double-column template (cas-dc), unmodified.
+\documentclass[a4paper,fleqn]{cas-dc}
+
+% If the frontmatter runs over more than one page
+% use the longmktitle option.
+%\documentclass[a4paper,fleqn,longmktitle]{cas-dc}
+
+\usepackage[numbers,sort&compress]{natbib}
+%\usepackage[authoryear,longnamesfirst]{natbib}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%%%Author macros
+\def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
+%%%
+
+% Theorem-like environments (interface provided by the template)
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newdefinition{rmk}{Remark}
+
+\newcommand{\system}{\textsc{ContractRAG}\xspace}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{Certification of learned progressive RAG policies}
+
+% Short author
+\shortauthors{Yao et~al.}
+
+% Main title of the paper
+\title[mode = title]{Distribution-free certification of learned
+progressive policies for retrieval-augmented generation under
+knowledge drift}
+
+\author[1,2]{Kang Yao}[orcid=0009-0007-4747-4018]
+\fnmark[1]
+\ead{yaokang@mail.ustc.edu.cn}
+\credit{Conceptualization, Methodology, Software, Formal analysis,
+Data curation, Visualization, Writing -- original draft}
+
+\author[1,2]{Shengjiang Zhang}[orcid=0009-0003-6744-743X]
+\fnmark[1]
+\ead{zhangshengjiang@mail.ustc.edu.cn}
+\credit{Methodology, Software, Validation, Investigation, Data curation,
+Writing -- original draft, Writing -- review \& editing}
+
+\author[3]{Ronghao Pei}
+\ead{peironghao@hikvision.com}
+\credit{Software, Resources, Investigation, Validation,
+Writing -- review \& editing}
+
+\author[2]{Weiwei Fu}[orcid=0000-0001-7192-3118]
+\cormark[1]
+\ead{fuww@sibet.ac.cn}
+\credit{Supervision, Funding acquisition, Resources,
+Project administration, Writing -- review \& editing}
+
+\author[2]{Jinjiang Cui}[orcid=0009-0002-5159-9570]
+\cormark[1]
+\ead{cuijj@sibet.ac.cn}
+\credit{Conceptualization, Supervision, Funding acquisition,
+Project administration, Writing -- review \& editing}
+
+\affiliation[1]{organization={School of Biomedical Engineering
+(Suzhou), Division of Life Sciences and Medicine, University of Science
+and Technology of China},
+            addressline={166 Ren'ai Road, Suzhou Industrial Park},
+            city={Suzhou},
+            postcode={215123},
+            country={China}}
+
+\affiliation[2]{organization={Suzhou Institute of Biomedical Engineering
+and Technology, Chinese Academy of Sciences},
+            addressline={No. 88 Keling Road, Suzhou New District},
+            city={Suzhou},
+            postcode={215163},
+            country={China}}
+
+\affiliation[3]{organization={Hikvision Research Institute},
+            city={Hangzhou},
+            country={China}}
+
+\fntext[1]{Kang Yao and Shengjiang Zhang contributed equally to this work.}
+\cortext[1]{Weiwei Fu and Jinjiang Cui are co-corresponding authors.}
+
+\begin{abstract}
+Dynamic retrieval-augmented generation (RAG) learns when a language
+model should retrieve, rerank, or escalate to a stronger generator.
+These policies can improve the accuracy--cost trade-off, but their
+scores do not bound population risk and may become unreliable after
+knowledge drift. We introduce \system, a learning-and-certification
+method for progressive RAG inference. Candidate policies use learned
+sufficiency scores over retrieval and generation signals to stop at the
+cheapest adequate rung. Risk vouchers summarize the observed effect of
+plan rewrites and order a large policy family. Soundness comes from a
+separate distribution-free fixed-sequence test: with probability at
+least $1-\delta$, every loss in the selected evidence contract meets
+its target, regardless of candidate count or score quality. We also
+prove a cost-consistency result and give a restart-mixture e-process
+whose drift-detection delay is independent of the change time. A
+geometric schedule preserves validity through repeated
+recertification. Experiments on HybridQA, CRAG, ASQA, and QAMPARI cover
+four model families, two serving backends, and ablations of scoring,
+policy families, calibration size, candidate density, audit rate, and
+drift. Across 1000 calibration draws, selected policies violate their
+contracts in at most 0.8\% of draws under a 10\% error budget, whereas
+empirical and Bayesian selection reach 64\%. The policies reduce model
+cost by up to 20$\times$ (10--18$\times$ with audits). The method is
+orthogonal to the underlying retriever or reranker and provides a
+general certification layer for learned adaptive RAG.
+\end{abstract}
+
+% Research highlights
+\begin{highlights}
+\item Learned sufficiency scores control progressive evidence acquisition
+\item Certification is distribution-free and independent of score quality
+\item Risk vouchers order large policy families without changing validity
+\item Drift detection has a change-time-independent delay bound
+\item Four benchmarks verify risk, cost, and mechanism ablations
+\end{highlights}
+
+% Keywords
+\begin{keywords}
+Retrieval-augmented generation \sep Adaptive computation \sep
+Distribution-free risk control \sep Uncertainty estimation \sep
+Drift detection \sep Large language models
+\end{keywords}
+
+\maketitle
+
+\input{sec_intro}
+\input{sec_related}
+\input{sec_prelim}
+\input{sec_method}
+\input{sec_setup}
+\input{sec_results}
+\input{sec_discussion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+This work develops a certification layer for learned progressive RAG
+policies. Sufficiency scores adapt computation to each query, and risk
+vouchers organize candidate policies, but neither is trusted as a
+certificate. A distribution-free fixed-sequence test controls the
+selected policy's loss even when those learned components are
+miscalibrated. The cost-consistency result explains when a well-ordered
+family recovers the least-cost feasible policy. The restart-mixture
+e-process then extends the method to non-stationary knowledge sources
+with a delay bound independent of when the change occurs.
+
+Experiments on four public benchmarks and four model families verify
+the certificate against exact population risk and probe the
+learning and selection mechanisms through score, family,
+calibration-size, dense-grid, audit-rate, and drift studies. Contract
+violations occurred in at most 0.8\% of 1000 draws under a 10\% budget,
+compared with up to 64\% for uncertified selection. Cost fell by up to
+20$\times$, or 10--18$\times$ after audits. ContractRAG supplies a
+reusable certification layer for progressive policies constructed from
+retrieval-learning methods. This modular design keeps the guarantee
+reusable as retrievers,
+rerankers, and generators improve.
+
+%% Declarations
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to
+influence the work reported in this paper.
+
+\section*{Data availability}
+All code, execution matrices, calibration artifacts, and the
+token-exact LLM-call cache are publicly available at
+\url{https://github.com/xkk9866/contractRagDB}; every number in the
+paper regenerates from the artifact without further LLM calls.
+
+% To print the credit authorship contribution details
+\printcredits
+
+%% Loading bibliography style file
+\bibliographystyle{elsarticle-num-names}
+
+% Loading bibliography database
+\bibliography{refs}
+
+% Flush all deferred floats before the class's AtEndDocument hook
+% records \lastpage, so the "Page X of Y" footer counts float pages.
+% After \clearpage the page counter already points at the (empty) next
+% page, so step it back to make \lastpage equal the last shipped page.
+\clearpage
+\addtocounter{page}{-1}
+
+\end{document}

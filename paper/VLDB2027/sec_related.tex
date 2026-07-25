@@ -1,0 +1,54 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{AI-augmented data systems.}
+Palimpzest, DocETL, LOTUS, Abacus, and QUEST expose semantic operators or
+document-processing pipelines and optimize models, prompts, operator
+order, and access paths~\cite{liu2025palimpzest,shankar2024docetl,
+patel2024lotus,russo2025abacus,chai2025quest}. KEN develops adaptive model
+cascades in an execution engine for unstructured DBMSs
+\cite{kossmann2026ken}; LEGO-GraphRAG decomposes GraphRAG into a modular
+design space~\cite{cao2025lego}. This literature motivates treating
+retrieval and generation as physical operators. \system addresses a
+different optimizer decision: whether the selected policy satisfies a
+service-level risk constraint after plan search.
+
+LOTUS provides accuracy guarantees for implementations of individual
+semantic operators~\cite{patel2024lotus}. Semantic integrity constraints
+propose declarative correctness conditions and proactive or reactive
+enforcement for AI-augmented pipelines~\cite{lee2025sic}. Evidence
+contracts are complementary in scope: they bound population violation
+rates for an end-to-end adaptive policy, and connect those constraints to
+physical-plan selection and online recertification.
+
+\textbf{Adaptive RAG and routing.}
+Adaptive-RAG, Self-RAG, corrective retrieval, and model routers change
+retrieval or model strength per query
+\cite{jeong2024adaptiverag,asai2024selfrag,yan2024corrective,
+chen2023frugalgpt,ong2024routellm,ding2024hybridllm}. They provide useful
+candidate policies for \system, but tune their dispatch rules empirically.
+Conformal cascades and calibrated early exits control fixed model or
+cascade decisions~\cite{fisch2021admission,schuster2022calm}. Our policy
+space instead combines heterogeneous sources, retrieval plans, reranking,
+verification, and generators under one end-to-end contract.
+
+\textbf{Distribution-free risk control.}
+TRAQ and C-RAG certify fixed RAG pipelines
+\cite{li2024traq,kang2024crag}; conformal language generation and
+factuality methods calibrate fixed decoding or abstention rules
+\cite{quach2024conformallm,mohri2024factuality}. \system uses
+Learn-then-Test and Hoeffding--Bentkus tests
+\cite{angelopoulos2021ltt,bentkus2004hoeffding}, but the tested object is a
+policy selected from a physical-plan space and the objective is execution
+cost.
+
+\textbf{Query optimization and online inference.}
+The plan lattice, access-path rule, and progressive execution follow the
+database lineage of cost-based optimization, Cascades, and mid-query
+reoptimization~\cite{selinger1979access,graefe1995cascades,
+kabra1998efficient,markl2004robust}. The difference is semantic:
+non-equivalent plans require statistical feasibility rather than an
+algebraic equivalence proof. After deployment, e-processes and e-detectors
+provide time-uniform false-alarm control
+\cite{ramdas2023savi,shin2024edetectors}. We use them to connect monitored
+contract violations to the optimizer's recertification loop.

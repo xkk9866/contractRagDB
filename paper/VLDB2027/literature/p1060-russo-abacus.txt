@@ -1,0 +1,208 @@
+Abacus: A Cost-Based Optimizer for Semantic Operator Systems
+                 Matthew Russo                                               Chunwei Liu                                      Sivaprasad Sudhir
+                     MIT                                                      MIT                                                     MIT
+              mdrusso@csail.mit.edu                                    chunwei@csail.mit.edu                                    siva@csail.mit.edu
+
+              Gerardo Vitagliano                                         Michael Cafarella                                        Tim Kraska
+                        MIT                                                    MIT                                                     MIT
+                  gerarvit@mit.edu                                      michjc@csail.mit.edu                                     kraska@mit.edu
+
+                                                                          Samuel Madden
+                                                                               MIT
+                                                                        madden@csail.mit.edu
+ABSTRACT                                                                                      1    INTRODUCTION
+LLMs enable an exciting new class of data processing applica-                                 Industry and academia are increasingly using large language models
+tions over large collections of unstructured documents. Several                               (LLMs) to solve problems which require semantic understanding.
+new programming frameworks have enabled developers to build                                   These problems range from unstructured document processing
+these applications by composing them out of semantic operators:                               [6, 12], to multi-modal question answering [4, 35, 42], to semantic
+a declarative set of AI-powered data transformations with natural                             search and ranking [36]. In order to achieve state-of-the-art perfor-
+language specifications. These include LLM-powered maps, filters,                             mance on these tasks, practitioners often decompose the problem
+joins, etc. used for document processing tasks such as information                            into modular subtasks within an AI program.
+extraction, summarization, and more. While systems of semantic                                   Recently, programming frameworks including Palimpzest [23],
+operators have achieved strong performance on benchmarks, they                                LOTUS [28], DocETL [33], and others [2, 19, 24, 30, 31] have pro-
+can be di"cult to optimize. An optimizer for this setting must de-                            posed building these LLM-based applications out of semantic oper-
+termine how to physically implement each semantic operator in                                 ators. Inspired by relational operators [11], semantic operators are
+a way that optimizes the system globally. Existing optimizers are                             AI-powered data transformations with natural language specifica-
+limited in the number of optimizations they can apply, and most                               tions. These include LLM-powered maps, filters, joins, aggregations,
+(if not all) cannot optimize system quality, cost, or latency subject                         etc. and are useful for unstructured data processing tasks such as
+to constraint(s) on the other dimensions. In this paper we present                            information extraction, summarization, ranking, and classification.
+Abacus, an extensible, cost-based optimizer which searches for the                               Developers can define a semantic operator system by writing
+best implementation of a semantic operator system given a (possi-                             a declarative AI program (e.g., in Palimpzest or a similar framework).
+bly constrained) optimization objective. Abacus estimates operator                            The program defines a logical plan, which an optimizer can compile
+performance by leveraging a minimal set of validation examples,                               into a physical plan. For example, Figure 1 illustrates a use case
+prior beliefs about operator performance, and/or an LLM judge.                                where a researcher wishes to search for papers relevant to their
+We evaluate Abacus on document processing workloads in the                                    interests. First, the program loads the papers and filters for ones
+biomedical and legal domains (BioDEX; CUAD) and multi-modal                                   related to data systems. Then, the program computes a summary of
+question answering (MMQA). We demonstrate that, on-average,                                   each paper’s main contributions. Finally, the papers are classified
+systems optimized by Abacus achieve 6.7%-39.4% better quality                                 as having high or low relevance to the author’s research interests.
+and are 10.8x cheaper and 3.4x faster than the next best system.                                 In order to execute this program, the optimizer must decide how
+                                                                                              to implement each semantic filter and map in terms of underlying
+PVLDB Reference Format:                                                                       physical operations (e.g., calls to LLMs). For example, given many
+Matthew Russo, Chunwei Liu, Sivaprasad Sudhir, Gerardo Vitagliano,                            LLMs of different sizes, the optimizer may simply need to choose
+Michael Cafarella, Tim Kraska, and Samuel Madden. Abacus: A Cost-Based
+                                                                                              which LLM to use for each operator. However, the optimizer may
+Optimizer for Semantic Operator Systems. PVLDB, 19(5): 1060 - 1073, 2026.
+                                                                                              also be allowed to choose from more complex techniques such as
+doi:10.14778/3796195.3796215
+                                                                                              using an LLM ensemble [38], reducing the input context before
+PVLDB Artifact Availability:                                                                  feeding it to an LLM [21], and more. With access to a handful of
+The source code, data, and/or other artifacts have been made available at                     models and hyperparameters, a few techniques can provide an
+https://github.com/mitdbg/palimpzest.                                                         optimizer with thousands of physical implementation alternatives
+                                                                                              that trade-off operator quality, dollar cost, and latency (Section 4.1).
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                      Goal. The optimizer’s goal is to compile a semantic operator
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of
+this license. For any use beyond those covered by this license, obtain permission by          program to a physical plan which is (near-)optimal for the devel-
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights          oper’s objective with respect to system quality, cost, and latency.
+licensed to the VLDB Endowment.
+Proceedings of the VLDB Endowment, Vol. 19, No. 5 ISSN 2150-8097.
+                                                                                              For example, in the center and right-hand side of Figure 1, we show
+doi:10.14778/3796195.3796215                                                                  two physical plans for two different optimization objectives. The
+
+
+
+
+                                                                                       1060
+        Workload      Research Papers                Filter by Research Area            Summarize Contributions                      Classify Relevance
+
+                                                                                                                                                        High
+
+                                                                                     Paper 1                   Paper K
+                                                                                                                                                        Low
+                                                                                   Contributions             Contributions
+
+                                                                               Maximize Quality                        MaxQuality@Cost<$1
+                             Optimization Objective
+
+                        Input       Val.                LLM                            Scan                                          Scan
+                                            Priors
+                        Data        Data               Judge
+           ds = pz.Dataset(research_papers)                                     Filter with GPT-4o                           Filter with Llama3.1-8B
+           ds = ds.filter(“the paper is about data systems”)
+           ds = ds.map(“summarize the main contributions”)
+           ds = ds.map(“classify relevance to interests in …”)              Map with Mixture-of-Agents
+                                                                                                                             Map with GPT-4o-mini
+                                                                          [GPT-4o, LLama3.3-70B, Mixtral]
+
+
+                                                                            Map with Critic-and-Refine                   Map with Reduced-Context
+                                                                        [GPT-4o-mini, Llama3.1-8B, GPT-4o]             [GPT-4o, n=4, chunk_size=2000]
+               Scan        Filter          Map           Map
+                                                                    Acc: 0.90 || Cost: $10.0 || Latency: 400s    Acc: 0.80 || Cost: $0.75 || Latency: 300s
+
+
+Figure 1: An illustration of Abacus compiling a program for a literature search workload (Top) into two different physical plans
+for two different optimization objectives. (Left) the user implements the workload in a Palimpzest program and provides the
+input data they wish to process and (optionally) validation data, priors, and/or an LLM judge which Abacus may use to guide its
+optimization. The program is compiled to a logical plan, which Abacus seeks to implement with a (near-)optimal physical plan.
+(Center) given the unconstrained objective of maximizing quality, Abacus produces a physical plan which achieves high quality
+for this task. (Right) given the objective of maximizing quality subject to a constraint of $1 in execution cost, Abacus produces
+a plan which satisfies the constraint while only trading-off a modest decrease in quality.
+
+
+first plan is compiled with the goal of maximizing system output                        the Pareto frontier of physical operators as opposed to a single
+quality, while the second is compiled to maximize quality subject                       objective maximizing operator. To this end, Abacus modifies an
+to spending less than $1 on processing the entire workload. Here,                       upper-confidence bound (UCB) bandit algorithm to enable it to
+the cost-constrained plan uses lighter weight models and simpler                        search for the Pareto frontier of physical operators. The multi-
+strategies. Ideally, a cost-based optimizer can weigh the trade-offs                    armed bandit (MAB) algorithm can also leverage prior beliefs about
+of different physical operators to implement each plan optimally.                       operator performance to significantly accelerate its search.
+   Our Approach. In this paper we describe Abacus, a new cost-                             Second, similar to relational query optimization, the space of
+based optimizer implemented in Palimpzest [23]. While some ex-                          physical plans grows combinatorially with the number of opera-
+isting semantic programming frameworks have implemented op-                             tors in the system. However, while relational query optimizers can
+timizers, they typically only optimize for system quality, do not                       use precomputed statistics to estimate the performance of plans
+consider constraints on system cost or latency, and use a limited set                   at scale, Abacus’s sample-based approach quickly becomes too
+of rewrite-style or proxy-based optimizations [28, 33]. By contrast,                    expensive. To mitigate this issue, Abacus approximates plan per-
+Abacus is a general-purpose, cost-based optimizer that optimizes                        formance as a function of its individual operators’ performance.
+system output quality, dollar cost, or latency with respect to zero                     This decomposition allows Abacus to estimate the performance of
+or more constraints on the other dimensions. Abacus uses imple-                         a combinatorially large space of plans given a much smaller set of
+mentation and transformation rules to define a valid set of physical                    operator estimates. Third, the traditional dynamic programming al-
+plans, similar to a Cascades query optimizer [8]. However, the un-                      gorithm used in Cascades [8] is not designed to support constrained
+certain nature of semantic operator quality—combined with the lack                      optimization problems. To overcome this, Abacus implements a
+of principled models (e.g. cardinality estimators, histograms, etc.)                    new Pareto-Cascades algorithm which keeps track of the Pareto
+for estimating operator quality, cost, and latency—makes cost-based                     frontier of subplans throughout the optimization procedure.
+optimization challenging.                                                                  Performance. We have implemented Abacus as an optimizer in
+   To overcome this, Abacus applies three key ideas. First, Abacus                      Palimpzest and evaluate its ability to optimize systems for document
+models the search for useful operators as an infinite-armed bandit                      processing workloads in the biomedical and legal domains (BioDEX;
+problem [1, 39] and uses sampling to estimate physical operator                         CUAD) and multi-modal question answering (MMQA). Our results
+performance. Given the cost of invoking LLMs, Abacus must be                            show that Abacus identifies plans with 20.8%, 39.4%, and 6.7% better
+judicious in choosing which physical operators to sample and how                        quality, respectively, than similar plans optimized by DocETL and
+many samples to spend on each operator. This is especially di"cult                      LOTUS. Furthermore, plans optimized by Abacus are on-average
+in constrained optimization settings, where Abacus must discover
+
+
+
+
+                                                                                1061
+10.8x cheaper and 3.4x faster than plans optimized by the next best               Table 1: Semantic operators supported by Abacus. In our
+system (in terms of quality).                                                     implementation 𝐿 is a (valid) JSON dictionary, but in principle
+   We also show that, at a fixed sample budget, Abacus can use                    𝐿 can be any serializable object. The → symbol represents
+prior beliefs (i.e., a relative ranking of operators’ quality, cost, and          the union of output types. 𝑀 is an integer index, 𝑁 is a filter
+latency) to optimize plans to have up to 3.04x better quality than                predicate, 𝑂 is a vector database, and 𝑃 is an integer limit.
+without priors. We further demonstrate that Abacus satisfies con-                 Aggregate includes group-by operations.
+straints in a non-trivial manner and improves system performance
+as constraints are relaxed. Finally, we perform an ablation study                   Operator Name      Symbol     Definition
+to isolate the benefits of prior beliefs, Pareto-Cascades, and the
+                                                                                          Scan            𝜙       𝜙 (𝑀) → 𝐿
+MAB algorithms and show that each helps improve Abacus’s per-
+                                                                                          Map             𝑅       𝑅 (𝐿) → 𝐿 # → [𝐿 #, 𝐿 ##, . . . ]
+formance on two constrained optimization queries.
+                                                                                          Filter          𝑆       𝑆 (𝐿, 𝑁) → 𝐿 → ∅
+   In summary, we present Abacus — a cost-based optimizer for
+                                                                                           Join           ⊲⊳      ⊲⊳ (𝐿, 𝐿 # ) → 𝐿 ## → ∅
+semantic operator systems. Our main contributions are:
+                                                                                         Top-K            𝜌       𝜌 (𝐿, 𝑂 ) → 𝐿 #
+      • An extensible, cost-based optimizer which allows for new                         Project          𝑈       𝑈 (𝐿) → 𝐿 # ⊆ 𝐿
+        semantic operators and optimization rules without changes                       Aggregate         𝑉       𝑉 ([𝐿 #, 𝐿 ##, . . . ]) → R → 𝐿
+        to its host programming framework (Section 2).                                    Limit           𝜆       𝜆([𝐿 #, 𝐿 ##, . . . ], 𝑃) → [𝐿 #, . . . , 𝐿 𝐿 ]
+      • The implementation of algorithms which enable (1) e"cient
+        search over the space of semantic operator systems and (2)
+        constrained optimization of these systems (Section 3).
+                                                                                  of LLM ensembles, while the latter reduces the context to contain
+      • Quality improvements of up to 39.4% over competing state-
+                                                                                  only the most relevant portions of the input before feeding it into
+        of-the-art systems with cost and runtime savings of 10.8x
+                                                                                  an LLM. Each of these physical operators has multiple hyperpa-
+        and 3.4x relative to the next best system (Section 4).
+                                                                                  rameters (e.g. the models and temperature settings for Mixture-of-
+      • An investigation of Abacus’s algorithmic contributions
+                                                                                  Agents; the model, chunk size, and number of chunks for Reduced-
+        which shows that prior beliefs, Pareto-Cascades, and MAB
+                                                                                  Context) leading to a large space of physical operators.
+        sampling can improve optimization outcomes (Section 4).
+                                                                                  2.2    Abacus Optimizer
+2     SYSTEM OVERVIEW
+                                                                                  We illustrate Abacus’s end-to-end process for optimizing semantic
+In this section we present an overview of Abacus. First, we provide               operator systems, beginning with a high-level overview of its key
+a brief background on semantic operators and the programming                      steps which are shown in Figure 2.
+frameworks which optimize them. Then, we describe the end-to-end                      Inputs and Compilation. Abacus requires three inputs: an
+process by which Abacus optimizes semantic operator systems.                      AI program, an optimization objective, and an input dataset. The
+Finally, we motivate the need for two key algorithms to make                      AI program must be a pipeline or DAG of semantic operators sup-
+Abacus’s optimization tractable, which we discuss in Section 3.                   ported by Abacus. The optimization objective is a constrained or
+                                                                                  unconstrained objective with respect to system output quality, dol-
+2.1    Background: Semantic Operator Systems                                      lar cost, and/or latency. The input dataset is an unstructured dataset
+Background and terminology. Recent work has explored the                          of documents, images, songs, etc. which the physical implementa-
+use of semantic operators to implement data processing pipelines                  tion of the AI program will process. Optionally, users may guide
+over unstructured data. Semantic operators are a set of AI-powered                the optimization process by providing any combination of a small
+data transformations which mirror and extend relational operators                 validation dataset, prior beliefs about operator performance, and/or
+[11]. Unlike their relational counterparts, semantic operators are                an LLM to use as a judge. A typical validation dataset contains
+specified in natural language as opposed to a SQL expression or                   5-10 inputs with (possibly partial) labels. Prior beliefs are a simple
+a user-defined function. As a result, these operators’ physical im-               dictionary mapping operators to a three-tuple of their perceived
+plementations typically require the use of one or more foundation                 quality, cost, and latency on a [0,1] scale. Finally, Abacus can use
+models with semantic understanding.                                               an LLM as a judge to evaluate the quality of physical operators’
+   Semantic programming frameworks like Palimpzest [23], LOTUS                    outputs when labels are not present.
+[28], DocETL [33], and Aryn [2] enable users to compose semantic                      For example, in Figure 1, the AI program consists of a semantic
+operators into pipelines or directed acyclic graphs (DAGs). We refer              filter followed by two semantic maps. The figure shows two ob-
+to these computation graphs of semantic operators as semantic                     jectives: maximizing quality and maximizing quality subject to a
+operator systems. Each framework implements an evolving and                       constraint on cost. The input dataset is a set of research papers,
+growing set of semantic operators, thus we highlight the operators                and the validation dataset (not shown) could be a handful of addi-
+currently supported by Abacus in Table 1.                                         tional research papers whose relevance has been labeled. Finally,
+   Each semantic operator corresponds to a logical operator which                 given these inputs, Abacus compiles the program into a logical plan
+may be implemented by a variety of physical operators. For exam-                  where each semantic operator corresponds to a logical operator.
+ple, two of the semantic map operators in Figure 1 are implemented                    Creation of Search Space. Once the user’s program has been
+with a Mixture-of-Agents [38] architecture and a Reduced-Context                  compiled to a logical plan, Abacus uses its rules to enumerate a
+generation (Section 4.1). The former is a layered computation graph               space of valid physical operators for each logical operator. This
+
+
+
+
+                                                                           1062
+

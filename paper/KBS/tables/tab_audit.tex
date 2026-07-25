@@ -1,0 +1,25 @@
+\begin{table*}[t]
+\centering
+\caption{Price of labelling only part of the traffic. \textsc{worst-case} charges an unlabelled arrival a full violation, which keeps $V_t\le\alpha t$ exactly; \textsc{ipw} rescales the labelled ones, which is unbiased but bounds the ledger only in probability. The columns price a guarantee that holds against one that usually holds. Per task: serving cost including declines, audit cost (both mCNY per query) and the fraction of streams whose worst prefix rate exceeded $\alpha$, at the $\alpha$ in the header.}
+\label{tab:audit}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrrrrrrr}
+\toprule
+ & & \multicolumn{3}{c}{HybridQA ($\alpha$=0.25)} & \multicolumn{3}{c}{CRAG ($\alpha$=0.55)} & \multicolumn{3}{c}{ASQA ($\alpha$=0.2)} & \multicolumn{3}{c}{QAMPARI ($\alpha$=0.55)} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}\cmidrule(lr){12-14}
+Mode & rate & cost & audit & breach & cost & audit & breach & cost & audit & breach & cost & audit & breach \\
+\midrule
+\textsc{worst-case} & 1.00 & 2.802 & 0.122 & 0.00 & 0.451 & 0.138 & 0.00 & 2.306 & 0.241 & 0.00 & 2.190 & 0.169 & 0.00 \\
+ & 0.50 & 4.861 & 0.033 & 0.00 & 0.450 & 0.056 & 0.00 & 5.524 & 0.047 & 0.00 & 2.878 & 0.071 & 0.00 \\
+ & 0.25 & 5.341 & 0.013 & 0.00 & 0.463 & 0.025 & 0.00 & 6.052 & 0.017 & 0.00 & 3.242 & 0.032 & 0.00 \\
+ & 0.10 & 5.520 & 0.005 & 0.00 & 0.459 & 0.010 & 0.00 & 6.256 & 0.006 & 0.00 & 3.432 & 0.012 & 0.00 \\
+\addlinespace[2pt]
+\textsc{ipw} & 1.00 & 2.802 & 0.122 & 0.00 & 0.451 & 0.138 & 0.00 & 2.306 & 0.241 & 0.00 & 2.190 & 0.169 & 0.00 \\
+ & 0.50 & 2.729 & 0.063 & 0.70 & 0.385 & 0.068 & 0.30 & 2.301 & 0.118 & 0.05 & 2.117 & 0.085 & 0.20 \\
+ & 0.25 & 2.781 & 0.030 & 0.55 & 0.358 & 0.033 & 0.15 & 2.222 & 0.060 & 0.10 & 2.190 & 0.041 & 0.20 \\
+ & 0.10 & 2.743 & 0.012 & 0.45 & 0.344 & 0.013 & 0.30 & 2.613 & 0.022 & 0.00 & 2.228 & 0.017 & 0.05 \\
+\addlinespace[2pt]
+\bottomrule
+\end{tabular}
+\end{table*}

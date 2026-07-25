@@ -1,0 +1,119 @@
+\section{Related work}
+\label{sec:related}
+
+Relevant work spans retrieval-augmented generation, adaptive LLM
+inference, distribution-free risk control, and runtime monitoring.
+
+\subsection{Retrieval-augmented generation and knowledge-enhanced LLMs}
+RAG grounds LLM outputs in retrieved evidence to mitigate hallucination
+and knowledge staleness \citep{lewis2020rag,gao2024ragsurvey,
+yang2025integrating}. Recent methods focus on learnable retrieval
+mechanisms. AIR-RAG uses adaptive iterative feedback to improve ranking
+and document refinement \citep{han2026airrag}. RAG-LER trains a
+confidence-weighted reranker from language-model supervision
+\citep{zhai2025ragler}. IRAGKR combines retrieval gating, query
+expansion, and fine-grained knowledge compression
+\citep{du2025iragkr}. Cue RAG introduces a cue-memory representation
+and dynamic cutoff mechanism \citep{fu2025cuerag}, while UA-RAG triggers
+retrieval from complementary internal uncertainty signals
+\citep{niu2026uarag}. These models improve the frontier from which a
+policy can choose. \system turns such frontiers into certifiable
+progressive policies by controlling deployment risk across their
+candidate actions. Learned retrievers and rerankers can therefore serve
+as components of the certified execution family.
+
+Prior work also improves the acquisition process
+through hybrid retrieval
+over tables and text \citep{chen2020hybridqa}, self-reflective
+retrieval decisions \citep{asai2024selfrag}, active and corrective
+retrieval during generation
+\citep{jiang2023flare,yan2024corrective}, evidence compression
+\citep{xu2024recomp}, cost-conscious QA system design under resource
+constraints \citep{budur2024openqa}, calibration between parametric
+and retrieved knowledge \citep{deng2026collaborative}, and benchmark
+suites that
+stress heterogeneous and time-sensitive knowledge sources
+\citep{yang2024cragbench,stelmakh2022asqa,amouyal2022qampari,
+gao2023alce,chen2024rgb}. Automated evaluation frameworks measure RAG
+quality after execution
+\citep{es2024ragas,saadfalcon2024ares,ru2024ragchecker,tang2024minicheck}, typically via
+LLM judges \citep{zheng2023judging}, but do not constrain deployed
+behavior. Declarative pipeline frameworks, including Palimpzest
+\citep{liu2025palimpzest}, LOTUS \citep{patel2024lotus}, DocETL
+\citep{shankar2024docetl}, DSPy \citep{khattab2023dspy}, and the
+Abacus optimizer \citep{russo2025abacus}, compile semantic operator
+pipelines and search spaces of models, prompts, and operator
+implementations against validation estimates. These systems optimize
+average quality or cost but compare point estimates to constraints;
+none bounds the deployed pipeline's true violation rate with
+finite-sample confidence. ALTO \citep{santhanam2024alto} addresses
+network orchestration for compound AI pipelines but does not certify
+output risk. \system\ keeps learned adaptive computation but separates
+policy scoring from distribution-free certification.
+
+\subsection{Adaptive inference: LLM routing and cascades}
+Cost-aware inference systems route queries to the cheapest adequate
+model or cascade through model tiers: FrugalGPT \citep{chen2023frugalgpt},
+RouteLLM \citep{ong2024routellm}, Hybrid-LLM \citep{ding2024hybridllm},
+AutoMix \citep{aggarwal2024automix}, and Adaptive-RAG's
+complexity-based
+routing \citep{jeong2024adaptiverag}, with RouterBench
+\citep{hu2024routerbench} standardizing their evaluation. Confident
+adaptive computation
+\citep{schuster2022calm} and conformal cascades \citep{fisch2021admission}
+calibrate early exits for a single model or a cascade with shared
+scores. These methods reduce cost effectively, but their selection
+rules are tuned empirically, so the realized violation rate is whatever
+it happens to be --- our experiments measure 16--64\% contract
+violations across calibration draws for representative members of this
+family. Unlike prior routing work, \system\ subsumes routing as one
+candidate family within a certified policy space and supplies the
+missing feasibility guarantee; unlike single-model early exits, it
+calibrates heterogeneous multi-source pipelines under
+multi-dimensional contracts.
+
+\subsection{Distribution-free risk control for language models}
+Conformal prediction and risk control give distribution-free,
+finite-sample guarantees
+\citep{vovk2005algorithmic,angelopoulos2024crc}.
+Learn-then-Test \citep{angelopoulos2021ltt} casts hyperparameter
+selection as multiple testing with Hoeffding--Bentkus p-values
+\citep{bentkus2004hoeffding}; TRAQ \citep{li2024traq} builds conformal
+sets over retrieved passages and answers; C-RAG \citep{kang2024crag}
+certifies generation risk for a given pipeline; conformal language
+modeling and conformal factuality calibrate stopping and abstention
+rules on fixed models
+\citep{quach2024conformallm,mohri2024factuality}, with recent
+extensions to conditional validity and alignment filtering
+\citep{cherian2024validity,gui2024conformalalign}; semantic-entropy
+methods detect hallucinations without gold labels
+\citep{farquhar2024semantic}. A complementary line stress-tests LLM
+reliability offline, e.g., by logic-grounded metamorphic testing
+\citep{zhou2026lgmt}; such audits expose defects but issue no
+quantitative guarantee about a deployed configuration. These results
+show that RAG risk can be controlled without distributional assumptions,
+but they
+treat the pipeline as given: no plan search, no cost objective, no
+adaptive escalation, and no drift handling. \system\ applies these tests
+inside an optimizer. The tested objects are adaptive policies over a
+rewrite lattice, and the objective is monetary cost. The fixed-sequence
+procedure preserves validity as the candidate space grows.
+
+\subsection{Runtime monitoring and drift adaptation in knowledge systems}
+Deployed knowledge systems drift: workload mix shifts, indexes fall
+behind the world, and external APIs degrade. Anytime-valid inference
+--- test supermartingales and e-processes
+\citep{ville1939etude,shafer2021testing,ramdas2023savi,
+waudbysmith2024betting,grunwald2024safe}
+--- provides
+sequential tests with always-valid error control, and e-detectors
+\citep{shin2024edetectors} extend them to changepoint detection.
+Database systems faced an analogous problem in mid-query
+re-optimization \citep{kabra1998efficient,markl2004robust,deng2007spc}, re-planning
+when runtime observations diverge from optimizer estimates. \system\
+applies this approach to knowledge services: a restart-mixture
+e-detector with a proven change-time-independent delay bound watches
+audited violations, an $O(1)$ recursion localizes the changepoint, and
+a certified recalibration loop restores the contract on the post-change
+distribution. To our knowledge, no prior RAG or LLM-cascade system
+closes this loop with statistical guarantees at every stage.

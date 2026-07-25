@@ -1,0 +1,84 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,top=19mm,bottom=19mm,left=24mm,right=24mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4.5pt}
+
+\begin{document}
+\raggedright
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+25 July 2026
+
+Editorial Office\\
+\textit{Knowledge-Based Systems}
+
+\textbf{Re: Submission of ``Evidence contracts for certified knowledge
+acquisition in retrieval-augmented generation systems''}
+
+Dear Editor,
+
+On behalf of all authors, we submit the above manuscript for consideration in
+\textit{Knowledge-Based Systems}.
+
+The manuscript addresses a knowledge-representation problem that arises when
+retrieval-augmented generation systems move from evaluation to deployment:
+how should evidence obligations be represented, and how can a system reason
+soundly about whether an adaptive acquisition policy satisfies them? We
+introduce \emph{evidence contracts}, a machine-checkable representation that
+links answer quality, citation completeness, evidence freshness, and latency
+to admissible violation rates and a certification confidence. ContractRAG
+turns this representation into an auditable deployment decision.
+
+The method represents heterogeneous acquisition plans as a rewrite lattice.
+Risk vouchers encode empirical knowledge about the effects of plan rewrites
+and compose without independence assumptions. Learned sufficiency models use
+runtime evidence to choose when a query should acquire stronger knowledge,
+while a distribution-free fixed-sequence test is the sole source of
+certification. We prove finite-sample contract validity regardless of
+candidate count or score quality, characterize cost consistency, and extend
+the certificate through knowledge drift with an anytime-valid e-process and
+repeated recertification.
+
+The empirical study covers four heterogeneous knowledge-intensive benchmarks,
+four large language model families, and two serving backends. Across 1,000
+calibration draws, certified policies exceeded their contracts in at most
+0.8\% of draws under a 10\% error budget, whereas uncertified tuning methods
+reached 64\% in the same evaluation. The selected policies reduced model cost
+by up to 20$\times$ relative to the strongest fixed pipeline, or
+10--18$\times$ after audit costs were included. The released execution
+matrices and code reproduce the reported results without further model calls.
+
+This contribution fits the journal's emphasis on knowledge representation,
+reasoning, and systems that support accountable decisions. Its principal
+claim is not merely that a RAG pipeline becomes cheaper. It is that explicit
+knowledge obligations can be represented and used to derive a statistically
+sound deployment decision; the cost savings follow from that certified
+reasoning process.
+
+This manuscript is original, has not been published previously, and is not
+under consideration by another journal. All authors have read and approved the
+manuscript and agree with its submission to \textit{Knowledge-Based Systems}.
+The authors declare no competing interests.
+
+Thank you for considering our manuscript. We would be grateful for the
+opportunity to have it evaluated for publication in
+\textit{Knowledge-Based Systems}.
+
+Sincerely,
+
+\textbf{Weiwei Fu and Jinjiang Cui}\\
+Co-corresponding authors, on behalf of all authors\\
+Suzhou Institute of Biomedical Engineering and Technology\\
+Chinese Academy of Sciences, Suzhou, China\\
+Email: \href{mailto:fuww@sibet.ac.cn}{fuww@sibet.ac.cn};
+\href{mailto:cuijj@sibet.ac.cn}{cuijj@sibet.ac.cn}
+
+\end{document}

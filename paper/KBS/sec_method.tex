@@ -1,532 +1,291 @@
-\section{The \system\ framework}
+\section{Enforcing a contract by accounting}
 \label{sec:method}
 
-\subsection{Framework overview}
-\label{sec:overview}
+This section develops the mechanism. Section~\ref{sec:gate} states the
+ledger gate and proves that it makes the contract unbreakable;
+Section~\ref{sec:feasible} characterises what becomes attainable once
+declining is an action; Section~\ref{sec:optimise} gives the
+optimisation layer and its regret; Section~\ref{sec:labels} prices
+partial labelling; Section~\ref{sec:width} compares the concession this
+design makes with the one a calibration certificate makes.
 
-\begin{figure*}
-\centering
-\includegraphics[width=0.94\textwidth]{figures/fig_overview.png}
-\caption{Overview of the \system\ framework. An evidence contract
-(stage 1) declares the reliability targets; a rewrite layer (stage 2)
-generates a lattice of cost-decreasing plan variants annotated with
-risk vouchers (Section~\ref{sec:rewrites}); a policy layer (stage 3)
-lifts static plans into progressive knowledge-acquisition policies
-(Section~\ref{sec:families}); a certification layer (stage 4) walks the
-candidates in a train-data order and deploys the cheapest policy in
-the certified prefix of a distribution-free fixed-sequence risk test
-(Section~\ref{sec:certification}); the executor runs the certified
-policy while an anytime-valid e-process monitor (stage 5) defends the
-certificate against knowledge drift, re-entering certification on an
-alarm or at the end of a monitoring horizon with geometrically
-scheduled budgets (Section~\ref{sec:monitor}). Stages 2--3 use the
-training split only; calibration data is touched exactly once, in
-stage 4.}
-\label{fig:arch}
-\end{figure*}
+\subsection{The ledger gate}
+\label{sec:gate}
 
-Figure~\ref{fig:arch} shows the architecture. \system\ consists of four
-components. (i) A \emph{rewrite layer} generates a lattice of
-cost-decreasing plan variants, each annotated with an empirical
-\emph{risk voucher} that upper-bounds its probability of harming an
-answer. (ii) A \emph{policy layer} lifts static plans into per-query
-adaptive policies: escalation ladders, cost-utility routers, and
-group-conditional variants. (iii) A \emph{certification layer} walks
-the candidate policies in a data-independent order and outputs the
-cheapest member of the prefix certified by a distribution-free risk
-test. (iv) A
-\emph{monitoring layer} watches deployed violations with an
-anytime-valid e-detector and triggers certified recalibration on alarm.
-Only the certification layer touches calibration data, and it does so
-exactly once; the rewrite and policy layers use a disjoint training
-split. Vouchers and learned scores guide the search order --- like a
-cost model in a database optimizer, they may be wrong without
-compromising correctness, only optimality. This division of labor is
-the central design principle: \emph{machine learning decides how much
-the certified policy saves; statistics alone decides whether the
-contract holds.}
+Fix a contract level $\alpha \in (0,1)$ and write $\ell_t \in [0,1]$ for
+the violation loss incurred on the $t$-th arrival. Define the
+\emph{ledger}
+\begin{equation}
+\label{eq:ledger}
+B_t \;=\; \alpha t - V_t ,
+\qquad V_t \;=\; \sum_{s\le t} \ell_s ,
+\qquad B_0 = 0 ,
+\end{equation}
+the contract allowance earned but not yet spent. The controller is the
+following rule, and nothing else is needed for validity.
 
-\subsection{Cost-decreasing rewrites and risk vouchers}
-\label{sec:rewrites}
-
-\begin{figure}
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_rewrites.pdf}
-\caption{The rewrite lattice. Each edge is a cost-decreasing rewrite
-annotated with a risk voucher; a maximal chain of rewrites yields the
-cost-ascending ladder used by the policy layer.}
-\label{fig:rewrites}
-\end{figure}
-
-A rewrite rule $R : P \mapsto P'$ transforms a plan into a cheaper one
-(Figure~\ref{fig:rewrites}): retrieval truncation ($k \to k' < k$),
-reranker elision, source pre-filter pushdown (restricting a passage
-pool to rows selected by a structured predicate), generator downgrade
-($g \to g'$ with a cheaper model), and repair elision. Classical query
-optimizers require $P \equiv P'$; here equivalence fails, and we
-quantify the damage.
-
-\begin{definition}[Risk voucher]
-\label{def:voucher}
-For loss $\ell$ and rewrite $R$, let
-$\rho(R; P) = \Prob_{q}\big(\ell(R(P), q) > \ell(P, q)\big)$ be the
-\emph{harm probability}. An $(\hat\eps, \delta_r)$-\emph{voucher} for
-$R$ at $P$ is a Clopper--Pearson upper bound $\hat\eps$ on $\rho(R;P)$
-at confidence $1-\delta_r$, computed from training executions of $P$
-and $R(P)$ on the same queries.
+\begin{definition}[Ledger gate]
+\label{def:gate}
+At arrival $t$ the executor may run any plan $p \in \mathcal{P}$ if
+$B_{t-1} \ge 1 - \alpha$; otherwise it must take the decline action
+$\bot$, for which $\ell_t = 0$ by definition.
 \end{definition}
 
-\paragraph{Assumption-free composition along paths}
-The naive way to compose vouchers measures each rewrite against the
-base plan and sums the bounds; that requires a no-synergistic-harm
-(NSH) assumption --- that the chain harms no query unless some
-individual rewrite already does --- which real workloads violate
-(Section~\ref{sec:exp-rewrites}). \system\ instead vouchers the
-\emph{path}: for the chain
-$P_0 \xrightarrow{R_1} P_1 \xrightarrow{R_2} \cdots \xrightarrow{R_m}
-P_m$, each step voucher $\hat\eps_i^{\mathrm{step}}$ bounds the harm of
-$R_i$ against its actual predecessor $P_{i-1}$, not against $P_0$.
+\begin{theorem}[Pathwise contract satisfaction]
+\label{thm:gate}
+Under Definition~\ref{def:gate}, $B_t \ge 0$ and hence
+\begin{equation}
+\label{eq:pathwise}
+V_t \;\le\; \alpha t
+\qquad\text{for every } t \ge 1 ,
+\end{equation}
+on every sample path, for every query sequence, whatever plan the
+executor chooses when the gate is open.
+\end{theorem}
 
-\begin{proposition}[Telescoping path composition]
-\label{prop:composition}
-If $\ell(P_m, q) > \ell(P_0, q)$ then some consecutive step strictly
-increases the loss, so deterministically the event
-$\{q : \ell(P_m,q) > \ell(P_0,q)\}$ is contained in
-$\bigcup_{i} \{q : \ell(P_i,q) > \ell(P_{i-1},q)\}$.
-Hence if each step carries an
-$(\hat\eps_i^{\mathrm{step}}, \delta_r)$-voucher, then with probability
-at least $1 - m\delta_r$,
-$\rho(R_m \cdots R_1; P_0) \le \sum_{i=1}^m \hat\eps_i^{\mathrm{step}}$
---- with no behavioral assumption on rewrite interactions.
+\begin{pf}
+Induction on $t$. $B_0 = 0 \ge 0$. Suppose $B_{t-1}\ge 0$. If the gate
+is open then $B_{t-1} \ge 1-\alpha$, and since $\ell_t \le 1$,
+\[
+B_t = B_{t-1} + \alpha - \ell_t \;\ge\; (1-\alpha) + \alpha - 1 = 0 .
+\]
+If the gate is closed the executor declines, $\ell_t = 0$, and
+$B_t = B_{t-1} + \alpha \ge B_{t-1} \ge 0$. In both cases
+$B_t \ge 0$, which is~\eqref{eq:pathwise}.
+\end{pf}
+
+Three things are absent from this argument and their absence is the
+contribution. There is no probability: \eqref{eq:pathwise} is not an
+event of probability $1-\delta$ but an identity of the realised
+trajectory. There is no distributional assumption: the queries may be
+adversarial, adaptively chosen against the executor, or drawn from a
+distribution that changes at every step, and the bound is unaffected --
+so drift needs no detector, no restart schedule and no error budget,
+because there is no assumption for drift to falsify. And there is no
+dependence on $|\mathcal{P}|$: the executor may consider a hundred
+plans or a million, and pays nothing for having considered them, which
+is exactly the multiplicity price a calibration certificate cannot
+avoid.
+
+What Theorem~\ref{thm:gate} does not do is make the system useful. It
+would be satisfied by declining every query. The content of the design
+is that validity has been removed from the optimisation problem
+entirely, so the optimiser can be judged on cost alone -- and, being
+unable to cause a violation, can be far more aggressive than a
+certifier is allowed to be. The rest of this section is about cost.
+
+\begin{rmk}[Bounded losses]
+The gate uses $\ell_t \le 1$ to size the reserve $1-\alpha$. For a
+bounded loss $\ell_t \le L$ the same argument gives the gate
+$B_{t-1}\ge L-\alpha$; for an unbounded loss no deterministic reserve
+exists and the guarantee necessarily becomes probabilistic. Contract
+losses in this setting are indicators of an audit predicate
+(Section~\ref{sec:prelim}) and are bounded by construction.
+\end{rmk}
+
+\subsection{What declining makes attainable}
+\label{sec:feasible}
+
+Let $r_p = \E[\ell(p,q)]$ and $c_p = \E[c(p,q)]$ be the risk and cost of
+plan $p$ under the query distribution, and let the decline action have
+risk $0$ and cost $c_\bot$. A randomised policy is a distribution $w$
+over $\mathcal{P}\cup\{\bot\}$, and the offline problem is the linear
+program
+\begin{equation}
+\label{eq:alp}
+\mathrm{OPT}(\alpha) \;=\;
+\min_{w \in \Delta} \; \sum_a w_a c_a
+\quad\text{s.t.}\quad \sum_a w_a r_a \;\le\; \alpha .
+\end{equation}
+
+\begin{proposition}[Feasibility and its price]
+\label{prop:feasible}
+Without the decline action, \eqref{eq:alp} is feasible if and only if
+$\alpha \ge \min_p r_p$. With it, \eqref{eq:alp} is feasible for every
+$\alpha > 0$, and if $\alpha < \min_p r_p$ every feasible policy
+declines at least a fraction $1 - \alpha/\min_p r_p$ of arrivals.
+Moreover an optimal solution of \eqref{eq:alp} has at most two nonzero
+weights.
 \end{proposition}
 
-The inclusion is a tautology of the telescoping decomposition
-$\ell(P_m) - \ell(P_0) = \sum_i [\ell(P_i) - \ell(P_{i-1})]$; the only
-stochastic step is the $m$ Clopper--Pearson bounds
-(proof in \ref{app:proofs}). The price is that step vouchers are
-chain-specific, which matches how the optimizer explores anyway: it
-descends one path of the rewrite lattice at a time.
-\emph{Selectivity-conditioned vouchers} refine this further: the harm
-of a pre-filter pushdown concentrates on queries whose structured
-predicate is unselective (the restricted pool drops relevant
-evidence), so \system\ stratifies calibration queries by estimated
-pool selectivity $\sigma$ (Section~\ref{sec:planner}) and issues a
-per-stratum Clopper--Pearson bound with a Bonferroni correction across
-strata. The result is a voucher that is tight where the rewrite is
-safe and honest where it is not. Even so, \system\ never uses vouchers
-as deployment guarantees: they order the search space, while soundness
-comes exclusively from direct certification of the deployed policy.
+\begin{pf}
+The attainable risks of the plan-only simplex form the interval
+$[\min_p r_p, \max_p r_p]$, giving the first claim. Declining
+everything has risk $0$, so the feasible set is nonempty for any
+$\alpha>0$. If $\sum_a w_a r_a \le \alpha$ and $r_a \ge \min_p r_p$ for
+every $a \ne \bot$, then $(1-w_\bot)\min_p r_p \le \alpha$, i.e.\
+$w_\bot \ge 1 - \alpha/\min_p r_p$. The last claim is the standard
+basic-solution bound: \eqref{eq:alp} has two constraints, so a vertex
+has at most two nonzero coordinates.
+\end{pf}
 
-\subsection{Cardinality-driven knowledge-source selection}
-\label{sec:planner}
+Proposition~\ref{prop:feasible} is why declining cannot be dismissed as
+a degenerate escape. Below $\min_p r_p$ the contract is unattainable by
+any pipeline no matter how much is spent, so an optimizer that must
+answer every query has nothing to return; the honest response is to
+report how much traffic has to be routed elsewhere, and at what price.
+This is the regime in which strict contracts live -- $\min_p r_p$ is
+$0.59$ on two of our four tasks -- and it is invisible to the existing
+formulation. The two-nonzero-weight property matters
+operationally: the deployed policy is always "run plan $i$, or decline,
+with probability $w$", never an opaque dense mixture.
 
-Hybrid RAG queries \emph{join} a structured source with an unstructured
-one: on HybridQA-style workloads, the evidence must connect table rows
-(selected by a structured predicate) with linked passages. Two
-acquisition orders exist. \emph{Table-first} pushes the predicate down
---- select rows, then retrieve only from the selected rows' passage
-pool (small pool, cheap, but drops evidence linked from unselected
-rows); \emph{text-first} retrieves over the whole table's pool and
-joins back to rows (large pool, higher recall on vague predicates).
-Which order wins is decided by the predicate's \emph{selectivity}.
-\system\ estimates cardinalities before retrieval: the number of rows
-matching the predicate, and the pushdown and full pool sizes from the
-link table, giving a pool selectivity
-$\sigma = |T_{\mathrm{push}}| / |T_{\mathrm{full}}|$ per query. A cost
-model fit by least squares on measured executions and a recall model
-$r(\sigma)$ fit on the training split drive a classical selection rule:
-the cheapest acquisition path whose estimated recall clears the target;
-otherwise the highest-recall path. As with vouchers, cardinality
-estimates affect only cost, never the certificate. The same estimates
-index the selectivity-conditioned vouchers of
-Section~\ref{sec:rewrites}, so the planner and the risk layer share one
-selectivity abstraction.
+\subsection{The optimisation layer and its regret}
+\label{sec:optimise}
 
-\paragraph{Operator sharing and materialization}
-Retrieval operators are generator-independent, so \system\ materializes
-each (query, rung) retrieval result once and shares it across every
-generator family and every policy evaluated downstream. Certification
-itself never re-executes plans: all candidates are evaluated against
-the materialized execution matrix, which is what makes plan spaces of
-$10^5$ candidates tractable (Section~\ref{sec:exp-scale}).
-
-\subsection{Progressive knowledge-acquisition policies}
-\label{sec:families}
-
-From the rewrite lattice, \system\ materializes a \emph{cost-ascending
-ladder} $P_0 \prec P_1 \prec \dots \prec P_{L-1}$ --- a maximal chain,
-for example from sparse-only retrieval with a flash-tier model up to
-hybrid retrieval with reranking, verification, and a max-tier model.
-Each execution of rung $j$ on query $q$ emits a \emph{sufficiency
-score} $s_j(q) \in [0,1]$: a calibrated probability that stopping here
-satisfies the contract, predicted from runtime observables only ---
-retrieval margins, cross-encoder scores, NLI support of the drafted
-answer over its evidence, citation coverage, evidence ages, and
-abstention markers. Scores are fit on the training split by per-rung
-logistic models.
-
-Three candidate families lift the ladder into policies:
-\begin{itemize}
-\item \textbf{T-family (escalation)}: thresholds
-$\lambda = (\lambda_0, \dots, \lambda_{L-2})$; execute rungs upward and
-stop at the first $s_j(q) \ge \lambda_j$ (the final rung always
-answers). Thresholds are parameterized along a one-dimensional quantile
-path from most conservative to always-stop.
-\item \textbf{U-family (routing)}: jump directly to the rung
-maximizing $\hat{s}_j(q) - \lambda\, \bar{c}_j$ over $j$ --- a utility
-router
-sweeping $\lambda$ over a grid; it pays only the chosen rung's cost but
-forfeits the escalation fallback.
-\item \textbf{F-family (static)}: the $L$ fixed plans themselves.
-\item \textbf{D-family (selective escalation)}: any of the above with
-one more knob $\kappa$ --- if even the final rung's sufficiency score
-falls below $\kappa$, the query is \emph{deferred} to human review
-instead of answered. Deferral turns the contract into the pair
-$\Prob(\text{answered} \wedge \text{violating}) \le \alpha$ and
-$\Prob(\text{deferred}) \le \beta$; both losses are bounded, so the
-same certification machinery applies unchanged. This family is what
-makes strict contracts ($\alpha \le 0.2$) deployable on workloads
-where every always-answer plan is infeasible
-(Section~\ref{sec:exp-cost}).
-\end{itemize}
-Group-conditional variants (per query type or per dynamism class) apply
-any family within each group. For a grouping $G(q) \in \{1..m\}$ known
-at query time, \system\ certifies a threshold family per group on the
-group's calibration subsample, each at level $\delta/m$, yielding the
-stronger guarantee $R_j(\hat\pi \mid G = g) \le \alpha_j$ for all
-groups simultaneously with probability at least $1-\delta$. The
-candidate set $\mathcal{C} = \{\pi_1, \pi_2, \dots\}$ is finite but
-large; every candidate is fully specified by training data alone.
-
-The escalation family realizes, in statistical form, the database idea
-of progressive re-optimization
-\citep{kabra1998efficient,markl2004robust}: classical progressive
-execution compares runtime cardinalities against optimizer estimates
-and re-plans when they diverge; \system\ compares runtime sufficiency
-evidence against certified thresholds and escalates to a stronger plan
-when the current rung cannot demonstrate contract compliance. The
-critical difference is that the escalation rule itself carries the
-contract guarantee (Theorem~\ref{thm:validity}): the thresholds are not
-tuned heuristics but the output of risk-controlled selection, so ``how
-sure must rung $j$ be before answering'' is exactly as conservative as
-the contract demands, no more.
-
-\subsection{Certification by fixed-sequence testing}
-\label{sec:certification}
-
-For candidate $\pi$ and constraint $j$, the empirical risk on $n$
-calibration queries is $\hat R_j(\pi)$. We use the Hoeffding--Bentkus
-p-value \citep{bentkus2004hoeffding,angelopoulos2021ltt} for the null
-hypothesis $H_0^{(j)}(\pi) : R_j(\pi) > \alpha_j$:
-\[
-p^{(j)}_{\pi} = \min\Big( e^{-n\,h_1(\hat R_j \wedge \alpha_j,\,
-\alpha_j)},\
-e\,\Prob\big(\mathrm{Bin}(n, \alpha_j) \le \lceil n \hat R_j \rceil
-\big) \Big),
-\]
-with $h_1$ the Bernoulli Kullback--Leibler divergence. For
-multi-constraint contracts the null is a union $\bigcup_j H_0^{(j)}$,
-so by the intersection--union principle \citep{berger1982iut} the test
-``reject iff $p^{(j)}_\pi \le \delta$ for every $j$'' has size at most
-$\delta$ --- no Bonferroni splitting across constraints is needed.
-
-Candidates are ordered $\pi_{(1)}, \pi_{(2)}, \dots$ by training-split
-risk (safest first), ties broken by training cost --- an ordering fixed
-before calibration data is seen. \system\ walks the sequence, certifies
-each candidate whose composite test rejects, and stops at the first
-failure; among certified candidates it deploys the cheapest by
-calibration cost. Algorithm~\ref{alg:certify} summarizes the complete
-deployment cycle, including the post-deployment monitoring loop of
-Section~\ref{sec:monitor}. Two budget-accounting regimes must not be
-conflated. A \emph{single-epoch} deployment --- certify once, no
-monitoring loop --- may spend the whole budget on its one
-certification; this is the setting of Theorem~\ref{thm:validity} and
-of the certification experiments in Section~\ref{sec:results}.
-\emph{Lifetime} operation instead treats the initial certification as
-epoch 0's certification: Algorithm~\ref{alg:certify} runs every
-epoch's walk at level $\delta_k/2$ --- the initial one at
-$\delta_0/2 = \delta/4$, not $\delta$ --- so certifications and
-monitors over \emph{all} epochs sum to exactly
-$\sum_{k \ge 0} \delta_k = \delta$
-(Proposition~\ref{prop:lifetime}); no stage borrows error probability
-from the future.
+The risks $r_a$ are unknown, so the executor maintains an empirical mean
+$\hat r_a$ over the labelled arrivals it has served with $a$, a count
+$n_a$, and the mean observed cost $\hat c_a$. Costs and risks are
+observed on different schedules and conflating them is a modelling
+error: the price of a call is on the invoice when the call returns, so
+$\hat c_a$ advances on every execution, whereas whether the answer was
+acceptable requires an auditor and $\hat r_a$ advances only on labelled
+ones. Every $\texttt{resolve\_every}$ arrivals the executor solves
+\eqref{eq:alp} with $r_a$ replaced by
+\begin{equation}
+\label{eq:ucb}
+\tilde r_a \;=\; \hat r_a + \kappa \sqrt{1/(4 n_a)}
+\end{equation}
+and samples its action from the optimal $w$. Algorithm~\ref{alg:ledger}
+is the whole controller.
 
 \begin{algorithm}[t]
-\caption{Certified lifetime deployment of a RAG knowledge service}
-\label{alg:certify}
+\caption{Ledger-gated execution}
+\label{alg:ledger}
 \begin{algorithmic}[1]
-\REQUIRE contract $C = \{(\ell_j, \alpha_j)\}_{j \le d}$ with
-\emph{lifetime} budget $\delta$; train split $Z_{\mathrm{tr}}$;
-calibration split $Z_{1:n}$; plan lattice $\mathcal{P}$
-\STATE annotate each rewrite edge of $\mathcal{P}$ with a risk voucher
-$\hat\eps_r$ on $Z_{\mathrm{tr}}$; compose vouchers along chains by
-telescoping (Proposition~\ref{prop:composition})
-\STATE build candidate policies $\Pi$ (ladders, routers, deferral,
-group-conditional) on $Z_{\mathrm{tr}}$; fix the walk order
-$\pi_{(1)}, \pi_{(2)}, \dots$ by training risk, vouchers breaking ties
-\FOR{epochs $k = 0, 1, 2, \dots$ with budget
-$\delta_k = \delta/2^{k+1}$}
-  \STATE $Z^{(k)} \leftarrow$ epoch-$k$ calibration data ($Z_{1:n}$
-  for $k = 0$; the fresh post-change window for $k \ge 1$)
-  \STATE $\mathcal{S} \leftarrow \emptyset$ \COMMENT{certified prefix}
-  \FOR{$i = 1, 2, \dots, |\Pi|$}
-    \STATE compute $p^{(j)}_{\pi_{(i)}}$ on $Z^{(k)}$ for every
-    constraint $j$
-    \IF{$\max_j p^{(j)}_{\pi_{(i)}} \le \delta_k/2$}
-      \STATE $\mathcal{S} \leftarrow \mathcal{S} \cup \{\pi_{(i)}\}$
-    \ELSE
-      \STATE \textbf{break} \COMMENT{first failure stops the walk}
-    \ENDIF
-  \ENDFOR
-  \IF{$\mathcal{S} = \emptyset$}
-    \STATE report \emph{infeasible}; stay in flagged safe mode
-    \COMMENT{never silently deployed}
+\STATE $B \leftarrow 0$; $\hat r,\hat c$ from history; $n \leftarrow n_0$
+\FOR{each arriving query $q_t$}
+  \IF{$B \ge 1-\alpha$}
+     \STATE $w \leftarrow$ solve \eqref{eq:alp} with $\tilde r$ from
+            \eqref{eq:ucb} \quad(refreshed periodically)
+     \STATE draw action $a \sim w$
   \ELSE
-    \STATE deploy $\hat\pi_k \leftarrow \arg\min_{\pi \in \mathcal{S}}
-    \hat c(\pi)$
+     \STATE $a \leftarrow \bot$ \quad\COMMENT{gate closed}
   \ENDIF
-  \STATE run a fresh horizon-$T$ monitor $M_t$ of
-  Eq.~\eqref{eq:mixdetector} at level $\delta_k/2$ on audited
-  violations
-  \IF{$M_t \ge 2/\delta_k$ \textbf{or} horizon $T$ exhausted}
-    \STATE enter safe mode; collect a fresh post-change calibration
-    window; advance to epoch $k+1$
-  \ENDIF
+  \STATE execute $a$; pay $c_a$; observe loss $\ell_t$ if audited
+  \STATE $B \leftarrow B + \alpha - \ell_t$
+  \STATE update $\hat c_a$ always, $\hat r_a$ if audited
 \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
-\begin{theorem}[Contract validity]
-\label{thm:validity}
-Let $\hat\pi$ be the policy returned by the fixed-sequence procedure.
-Then $\Prob\big(R_j(\hat\pi) \le \alpha_j \ \forall j\big) \ge
-1-\delta$, i.e., \system\ is $(C,\delta)$-certified, for any number of
-candidates, any score quality, and any distribution $\mathcal{D}$.
+The margin $\kappa/\sqrt{4n_a}$ in~\eqref{eq:ucb} deserves comment
+because it resembles the object this paper argues against. Aiming the
+mixture exactly at $\alpha$ is a mistake the ledger makes visible:
+estimation error is two-sided, so a policy placed on $\alpha$ sits above
+it half the time, the ledger drifts down, the gate closes and the
+arrival is declined -- at $c_\bot$, the most expensive outcome
+available. Steering slightly below $\alpha$ gives the ledger positive
+drift and the gate stops firing. The margin is therefore a
+cost-versus-cost device, and it differs from a confidence width in the
+two ways that matter: it carries no part of the guarantee, so $\kappa$
+is an $O(1)$ constant rather than $\sqrt{\log(K/\delta)}$ over a
+candidate set, and its denominator is the number of arrivals served so
+far, which grows without bound, so it decays to zero over the
+deployment. Section~\ref{sec:width} quantifies both differences on our
+data, and the experiments sweep $\kappa$ over $[0,4]$: cost moves by
+$6$--$112\%$ across the sweep while the breach count stays at zero
+throughout, which is what "the constant trades cost against cost" means
+operationally.
+
+\begin{theorem}[Cost regret]
+\label{thm:regret}
+Assume the stream is i.i.d.\ with plan risks $r_a$ and costs bounded by
+$c_{\max}$, and let $\bar c_T$ be the mean serving cost of
+Algorithm~\ref{alg:ledger} over $T$ arrivals. Then
+\begin{equation}
+\label{eq:regret}
+\E[\bar c_T] - \mathrm{OPT}(\alpha)
+\;=\; O\!\left( c_{\max} \sqrt{\frac{P \log T}{T}} \right) ,
+\end{equation}
+where $P = |\mathcal{P}|$.
 \end{theorem}
 
-The proof (\ref{app:proofs}) rests on the walk stopping at the first
-non-rejection: an infeasible candidate can be certified only if the
-walk reaches it and its size-$\delta$ test falsely rejects. Two
-properties matter in practice. \emph{Selection-proofness}: the
-guarantee is unaffected by how many candidates precede the stopping
-point, so enriching $\Pi$ (new routers, new ladders) never costs
-statistical validity. \emph{Power}: if the training-risk order is
-aligned with the true order --- which we verify empirically --- the
-walk penetrates deep into the cheap region before stopping.
+\begin{pfsketch}
+The proof has two parts.
 
-Because the walk stops at its first failure, what the procedure
-returns is, by construction, \emph{the cheapest policy of the
-certified prefix} --- not necessarily the cheapest feasible policy of
-the whole family. The following proposition states when the two
-coincide and at what statistical price; when its ordering premise
-fails, validity (Theorem~\ref{thm:validity}) is untouched and only
-optimality degrades.
+\emph{Estimation.} Set $\kappa = \Theta(\sqrt{\log T})$. The
+bounds $\tilde r_a$ dominate every $r_a$ at every $t \le T$ with
+probability $1-O(T^{-1})$, by Hoeffding and a union bound over $P$ plans
+and $T$ steps; on that event the LP solved by the executor is a
+restriction of~\eqref{eq:alp}, so its value exceeds
+$\mathrm{OPT}(\alpha)$ by at most the sensitivity of the LP to
+tightening the constraint by $\max_a \kappa/\sqrt{4n_a}$. The value
+function of~\eqref{eq:alp} is piecewise linear and convex in $\alpha$
+with slope bounded by $c_{\max}/\min_{a\ne\bot} r_a$, giving a per-step
+excess $O(c_{\max}\kappa/\sqrt{n_{a_t}})$. Summing over $t$ and using
+$\sum_t n_{a_t}^{-1/2} = O(\sqrt{PT})$ yields the stated rate.
+\emph{Gate closures.} While the estimates are accurate the deployed
+mixture has risk at most $\alpha - \Omega(\kappa/\sqrt{n})$, so $B_t$ is
+a random walk with positive drift; the expected number of arrivals at
+which it is below the reserve $1-\alpha$ is $O(\sqrt{T})$ by the
+reflection principle, each costing at most $c_{\max}$. Both terms are
+$O(c_{\max}\sqrt{PT\log T})$ in total.
+\end{pfsketch}
 
-\begin{proposition}[Cost consistency]
-\label{prop:consistency}
-Let $M$ be the total number of candidates. Suppose along the walk
-order the true risks are non-decreasing up to the cheapest feasible
-candidate $\pi^\dagger$, which sits at position $K \le M$ with margin
-$R(\pi^\dagger) \le \alpha - \gamma$, $\gamma > 0$, and that per-query
-costs lie in $[0, C_{\max}]$. Then with probability at least
-$1 - 2\delta'$ the procedure certifies every candidate up to and
-including $\pi^\dagger$ once
-$n \gtrsim \gamma^{-2}\big(\log(1/\delta) \vee \log(K/\delta')\big)$,
-and the deployed policy $\hat\pi$ --- selected as cheapest by
-\emph{estimated} calibration cost among \emph{all} certified
-candidates, which may extend beyond position $K$ --- satisfies
-\[
-c(\hat\pi) \;\le\; c(\pi^\dagger)
-+ 2\,C_{\max}\sqrt{\tfrac{\log(2M/\delta')}{2n}},
-\]
-where $c(\cdot)$ is the true mean cost: the uniform cost-estimation
-error is controlled over the full candidate set --- since the certified
-set is not known in advance --- and vanishes at rate
-$O(\sqrt{\log M / n})$.
+Note what Theorem~\ref{thm:regret} is and is not. It is an efficiency
+statement and it does assume an i.i.d.\ stream; if that assumption
+fails the cost degrades and the experiments in
+Section~\ref{sec:results} measure by how much under four
+non-exchangeable orderings. Theorem~\ref{thm:gate} keeps holding
+throughout. Separating the two -- assumptions for efficiency,
+none for safety -- is the structural difference from a calibration
+certificate, where the same exchangeability assumption carries both.
+
+\subsection{Paying for labels}
+\label{sec:labels}
+
+Theorem~\ref{thm:gate} consumes $\ell_t$ for every served query, which
+in production means an auditor -- an LLM judge, or a human on sampled
+traffic. Suppose only a fraction $\rho$ of served arrivals is labelled.
+Two accounting rules are available and they differ in kind.
+
+\begin{proposition}[Partial labelling]
+\label{prop:labels}
+If unlabelled arrivals are charged $\ell_t = 1$ (\emph{worst-case}
+accounting), \eqref{eq:pathwise} continues to hold pathwise. If instead
+they are charged $0$ and labelled ones are charged $\ell_t/\rho$
+(\emph{inverse-probability} accounting), the ledger is an unbiased
+estimate of $\alpha t - V_t$ and $V_t \le \alpha t + O(\sqrt{t\log(1/\delta)/\rho})$
+holds with probability $1-\delta$ by Ville's inequality, but
+\eqref{eq:pathwise} does not hold pathwise.
 \end{proposition}
 
-The $\log K$ and $\log M$ terms are the price of certifying the
-$K$-prefix and estimating all $M$ costs simultaneously; both enter
-only logarithmically, so enriching the candidate set is statistically
-cheap. (Alternatively, restricting the cheapest-selection to the first
-$K$ walk positions, or estimating costs on an independent split,
-replaces $\log M$ by $\log K$ at no cost to validity.) Certification
-cost is negligible computationally: it re-uses the ladder executions
-already collected for calibration and needs no additional LLM calls
-beyond the $n \times L$ calibration matrix.
+The first rule keeps a guarantee and pays for it in declines: an
+unlabelled query consumes allowance as though it had failed, so the gate
+closes sooner. The second keeps the cost and gives up the guarantee. We
+report both, and the measured gap is not academic -- at $\rho = 0.25$,
+worst-case accounting never breaches while inverse-probability
+accounting breaches on $6\%$ (ASQA) to $59\%$ (HybridQA) of streams,
+at essentially the same cost (Section~\ref{sec:results}). Auditing is
+not free and this paper does not pretend otherwise; the audit bill is
+carried in every cost figure we report, and on the cheapest contracts it
+is the dominant term.
 
-\subsection{Anytime-valid drift monitoring and certified recalibration}
-\label{sec:monitor}
+\subsection{Two concessions compared}
+\label{sec:width}
 
-\begin{figure}
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_runtime.pdf}
-\caption{Certified progressive execution and the monitoring loop.
-Escalation thresholds carry the contract guarantee; the e-process
-monitor watches audited violations and, on alarm, drives safe-mode
-execution, changepoint-aware recalibration, and redeployment.}
-\label{fig:runtime}
-\end{figure}
+Both designs give up something to be safe. A fixed-sequence certifier
+concedes a confidence half-width
+$w_{\mathrm{stat}} = \sqrt{\log(2K/\delta)/(2n_{\mathrm{cal}})}$: it
+deploys a policy whose estimated risk is at most $\alpha -
+w_{\mathrm{stat}}$, and since the decision is never revisited, that
+slack is paid on every query for the life of the deployment. The ledger
+concedes the reserve $1-\alpha$ and the margin
+$\kappa/\sqrt{4n_a(t)}$. The reserve is a constant, so its per-query
+cost $ (1-\alpha)/t $ vanishes; the margin shrinks as the deployment
+serves traffic.
 
-Certificates are only as good as the exchangeability between
-calibration and deployment; deployed knowledge services drift ---
-workload mix shifts, indexes fall behind the world, APIs degrade.
-\system\ monitors deployed violation indicators $\ell_t \in [0,1]$ with
-a \emph{restart-mixture} e-detector
-\citep{shin2024edetectors,ramdas2023savi}
-(Figure~\ref{fig:runtime}). Fix a horizon $T$ and a finite bet grid
-$W \subset (0, 1/\alpha)$. For restart time $r$ and bet $w$, the wealth
-process is
-$E_t^{(r,w)} = \prod_{i=r}^{t} \big(1 + w\,(\ell_i - \alpha)\big)$
-(with $E_t^{(r,w)} = 1$ for $t < r$). Rather than taking a maximum over
-restarts --- which is not an e-process and cannot be scaled by Ville's
-inequality --- the detector statistic is the weighted mixture
-\begin{equation}
-\label{eq:mixdetector}
-M_t \;=\; \sum_{r=1}^{t}\sum_{w \in W}
-  \frac{1}{T\,|W|}\, E_t^{(r,w)} \;+\; \Big(1 - \frac{t}{T}\Big),
-\end{equation}
-where the trailing term is the prior mass of restarts not yet started.
-The mixture weights sum to one, so $M_t$ is itself a nonnegative
-supermartingale with $M_0 = 1$; an alarm fires when
-$M_t \ge 1/\delta$. A simple recursion maintains all started restarts
-of each bet jointly, so the update is $O(|W|) = O(1)$ per query in time
-and space, independent of $t$.
-
-\begin{proposition}[Anytime validity]
-\label{prop:eprocess}
-If the conditional risk stays within contract,
-$\E[\ell_t \mid \mathcal{F}_{t-1}] \le \alpha$ for all $t$, then for
-$M_t$ in~\eqref{eq:mixdetector},
-$\Prob(\exists t \le T : M_t \ge 1/\delta) \le \delta$.
-\end{proposition}
-
-Seeding a fresh restart at every step is what makes the mixture
-practical, and it recovers the ``forgetting'' that a single product
-e-process lacks: a plain product sinks exponentially during a long
-compliant prefix and goes numb, whereas in~\eqref{eq:mixdetector} a
-change at any time $\tau$ is caught by the restart component born at
-$\tau$, whose growth is unaffected by the compliant history before it.
-The detection delay therefore depends on the horizon but not on
-$\tau$.
-
-\begin{proposition}[Detection delay]
-\label{prop:delay}
-Suppose a persistent change at $\tau$ makes
-$\E[\ell_t \mid \mathcal{F}_{t-1}] \ge \alpha' > \alpha$ for all
-$t > \tau$, and let
-$g^\ast = \max_{w \in W}\, \E\big[\log(1 + w(\ell_t - \alpha))\big]$
-be the best post-change log-growth rate on the grid ($g^\ast > 0$
-whenever some $w \in W$ bets in the right direction, with
-$g^\ast = \Theta(\mathrm{KL}(\alpha' \Vert \alpha))$ for a grid that
-brackets the Kelly bet). Then for any $\delta' \in (0,1)$, with
-probability at least $1 - \delta'$ the monitor alarms by time
-$\tau + N$ with
-\[
-N \;=\; O\!\left(\frac{\log(1/\delta) + \log(T|W|) +
-\log(1/\delta')}{g^\ast}\right),
-\]
-a bound independent of the change time $\tau$ and of the length of the
-preceding compliant stretch.
-\end{proposition}
-
-\paragraph{Changepoint localization}
-Alongside the mixture, \system\ maintains one $O(1)$ CUSUM-style
-recursion: the log-wealth of a single restarted product that resets
-whenever it falls to zero; at alarm time, the start of its
-currently-growing run is the standard changepoint estimate $\hat\tau$.
-Validity comes exclusively from the mixture $M_t$; the recursion is a
-free diagnostic that tells the operator which prefix of audited losses
-still reflects the old regime --- exactly the window recalibration must
-exclude.
-
-\paragraph{Closed-loop certified recalibration}
-An alarm is a statistical statement (some prefix was out of contract),
-not a repaired policy. On alarm, \system\ (i) switches to \emph{safe
-mode} --- the strongest rung, optionally with deferral to human
-review. Safe mode is a best-effort fallback, not a certified policy:
-no plan can carry a certificate for a distribution that has not yet
-been sampled, and we flag it as such. (ii) It collects a recalibration
-window of audited post-alarm queries; (iii) re-runs the fixed-sequence
-walk of Section~\ref{sec:certification} on that window with the
-epoch's certification budget; and (iv) deploys the newly certified
-policy --- or, if the new distribution is infeasible for every
-candidate, reports non-certifiability and stays in flagged safe mode.
-The recalibration certificate is the \emph{only} post-drift guarantee,
-and it is with respect to the post-change distribution, requiring only
-that the post-alarm window be exchangeable with what follows --- drift
-before the alarm is irrelevant by construction. Between alarms no
-labels are wasted: the same audited losses double as the next
-calibration set.
-
-\paragraph{Lifetime validity across repeated alarms}
-
-\begin{figure}
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_lifetime.png}
-\caption{Lifetime operation as a sequence of finite monitoring epochs.
-An epoch ends either at an alarm (red star) or when its monitor
-exhausts the horizon $T$ (blue circle, scheduled restart); both events
-trigger recertification under the next geometric budget
-$\delta_k = \delta/2^{k+1}$, so validity holds simultaneously over
-arbitrarily many epochs (Proposition~\ref{prop:lifetime}).}
-\label{fig:lifetime}
-\end{figure}
-
-A deployment does not stop after one alarm, and re-using a fixed
-$\delta/2$ per epoch would let error probabilities accumulate without
-bound; moreover, each monitor in Eq.~\eqref{eq:mixdetector} is defined
-for a \emph{finite} horizon $T$, so unbounded operation must be built
-from finite blocks (Figure~\ref{fig:lifetime}). \system\ does both with one mechanism: the
-lifetime is divided into \emph{epochs}, where an epoch ends either at
-an alarm or when its monitor exhausts its horizon $T$ without alarming
---- a \emph{scheduled restart} that triggers the same recertification
-path as an alarm and re-uses the epoch's audited losses. Epoch
-$k \ge 0$ receives budget
-$\delta_k = \delta/2^{k+1}$, split evenly between its certification
-($\delta_k/2$) and its fresh horizon-$T$ monitor ($\delta_k/2$); the
-\emph{initial} certification is epoch 0's certification and therefore
-runs at level $\delta_0/2 = \delta/4$, not at the full $\delta$
-(Algorithm~\ref{alg:certify}). Since
-$\sum_{k \ge 0} \delta_k = \delta$, the union bound over every
-certification and every monitor holds over an
-\emph{unbounded} horizon while every monitor operates strictly inside
-the finite-$T$ regime where
-Propositions~\ref{prop:eprocess}--\ref{prop:delay} apply.
-
-\begin{proposition}[Lifetime validity]
-\label{prop:lifetime}
-Run the alarm--recalibrate loop for arbitrarily many epochs
-(alarm-triggered or horizon-triggered), giving
-epoch $k$'s certification budget $\delta_k/2$ and its monitor budget
-$\delta_k/2$ with $\delta_k = \delta/2^{k+1}$, the initial
-certification being epoch 0's (level $\delta/4$). Then with probability
-at least $1-\delta$, simultaneously over the whole deployment
-lifetime: every epoch's certified policy satisfies its contract on
-that epoch's distribution, and no compliant epoch raises a false
-alarm. By Proposition~\ref{prop:delay}, the $k$-th monitor's detection
-delay bound grows only additively, by $(k+2)\log 2 \,/\, g^\ast$
-relative to a fixed budget $\delta$.
-\end{proposition}
-
-The geometric schedule prices repeated adaptation honestly: each
-additional epoch costs one halving of the remaining budget, which
-enters delays and certificate widths logarithmically rather than
-exhausting them (proof in \ref{app:proofs}). An alternative is an
-infinite-horizon restart prior (weights $\propto 1/(r(r+1))$), which
-removes $T$ entirely but makes the delay bound inherit a $\log\tau$
-dependence on the change time; the block construction preserves
-change-time independence, which is why we adopt it.
-
-\paragraph{Monitoring from subsampled audits}
-The monitor consumes audited violation indicators, and auditing costs
-money (an LLM judge call, an NLI entailment check, or a human label).
-Full-traffic auditing is not required: if each deployed query is
-audited independently with probability $r$, the audited subsequence is
-itself an i.i.d.\ draw from the deployment distribution, so every
-guarantee in this section applies verbatim to the audited stream ---
-only the clock dilates, multiplying detection delays by $1/r$ in
-wall-clock queries. The audit rate is thus an explicit dial between
-monitoring cost and reaction time, and audit spend is part of the
-system's cost of ownership, which we meter and report in
-Section~\ref{sec:exp-drift}.
+The gap is large on real numbers. With $K = 69$ candidates,
+$\delta = 0.1$ and $n_{\mathrm{cal}} = 500$, $w_{\mathrm{stat}} =
+0.085$; the ledger's margin after a stream of $6\,466$ HybridQA queries
+concentrated on two or three plans is $\kappa/\sqrt{4n} = 0.011$ at
+$\kappa=1$ -- $7.9\times$ tighter, and $2.8$--$4.4\times$ tighter on the
+shorter streams -- and $0$ at $\kappa=0$, where validity is unchanged.
+On a contract at $\alpha = 0.20$ the certifier is therefore steering at
+$0.115$ while the ledger steers at $0.189$. It is not that the certifier
+is insufficiently clever; it is aiming at a different and much stricter
+target, and buying the plans that hit it. Table~\ref{tab:main} shows the
+consequence directly: the certified policies realise risks far below the
+contract they were given, which is wasted allowance paid for in
+expensive plans and unnecessary declines.

@@ -1,0 +1,76 @@
+\section{Evidence Contracts}
+\label{sec:contracts}
+
+\subsection{Plans and execution records}
+\label{sec:algebra}
+
+Let $\mathcal{S}$ contain relational tables, text collections with sparse
+and dense indexes, vector stores, and structured APIs. A physical plan
+$P$ is a DAG over the typed operators
+\[
+\textsf{Retrieve}_{s,k}\mid\textsf{Fuse}\mid\textsf{Rerank}_m\mid
+\textsf{Filter}_\phi\mid\textsf{Generate}_g\mid\textsf{Repair}.
+\]
+\textsf{Retrieve} implements SQL selection, BM25, dense ANN, or an API
+call; \textsf{Fuse} combines rankings; \textsf{Rerank} applies model $m$;
+\textsf{Filter} enforces an evidence predicate; \textsf{Generate} invokes
+generator $g$; and \textsf{Repair} revises an answer after verification.
+Executing $P$ on query $q$ returns an answer, an evidence set with citation
+links, and an execution record containing cost, latency, evidence age, and
+operator-level statistics.
+
+Two such plans need not return the same answer. We therefore optimize over
+a \emph{policy} $\pi$, which maps a query and intermediate execution records
+to a schedule of one or more plans. A static plan, a direct router, and a
+progressive ladder are all policies.
+
+\subsection{Contract and optimization problem}
+
+\begin{definition}[Evidence contract]
+\label{def:contract}
+For a query distribution $\mathcal{D}$, an evidence contract is
+$C=\langle(\ell_j,\alpha_j)_{j=1}^{k},\delta\rangle$. Each bounded loss
+$\ell_j(\pi,q)\in[0,1]$ records a violation, $\alpha_j$ is its admissible
+population rate, and $\delta$ is the probability budget for an erroneous
+deployment decision.
+\end{definition}
+
+Examples include
+\[
+\begin{split}
+\ell_{\mathrm{qual}}&=\mathbf{1}[\mathrm{quality}<\tau_q],\qquad
+\ell_{\mathrm{cite}}=\mathbf{1}[\mathrm{citationRecall}<\tau_c],\\
+\ell_{\mathrm{fresh}}&=\mathbf{1}[\max_{e\in E(q)}\mathrm{age}(e)>\Delta_f],
+\quad
+\ell_{\mathrm{lat}}=\mathbf{1}[\mathrm{latency}>B_\ell].
+\end{split}
+\]
+The risks and mean cost are
+$R_j(\pi)=\E_{q\sim\mathcal D}[\ell_j(\pi,q)]$ and
+$c(\pi)=\E_{q\sim\mathcal D}[c(\pi,q)]$. The optimizer solves
+\begin{equation}
+\label{eq:problem}
+\min_{\pi\in\Pi} c(\pi)
+\quad\text{s.t.}\quad R_j(\pi)\leq\alpha_j,\quad j=1,\ldots,k .
+\end{equation}
+Because $\mathcal D$ is unknown, the system receives a finite calibration
+sample. Its output is itself random.
+
+\begin{definition}[Certified deployment]
+\label{def:certified}
+A selection procedure returning $\hat\pi$ from calibration data is
+$(C,\delta)$-certified if
+\[
+\Prob\!\left(R_j(\hat\pi)\leq\alpha_j\ \text{for all }j\right)
+\geq 1-\delta ,
+\]
+where probability is over the calibration sample.
+\end{definition}
+
+The contract governs the audited service-level quantity, not individual
+answers. Its loss may use gold labels, a benchmark evaluator, evidence
+timestamps, measured latency, or human audits. The optimizer does not
+assume that a learned score is accurate; it requires only bounded
+calibration losses. This separation is important: learned estimates can
+improve the cost of the selected policy, but only direct testing may
+declare the policy feasible.

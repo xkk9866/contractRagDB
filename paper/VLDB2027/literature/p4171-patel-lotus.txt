@@ -1,0 +1,212 @@
+    Semantic Operators and Their Optimization: Enabling
+LLM-Based Data Processing with Accuracy Guarantees in LOTUS
+              Liana Patel                              Siddharth Jha                                Melissa Pan                         Harshit Gupta
+         Stanford University                            UC Berkeley                                 UC Berkeley                      Stanford University
+       lianapat@stanford.edu                        sidjha@berkeley.edu                       melissapan@berkeley.edu               gharshit@stanford.edu
+
+                                  Parth Asawa                             Carlos Guestrin                            Matei Zaharia
+                                 UC Berkeley                            Stanford University                           UC Berkeley
+                            pgasawa@berkeley.edu                       guestrin@stanford.edu                       matei@berkeley.edu
+
+ABSTRACT                                                                                      PVLDB Artifact Availability:
+The semantic capabilities of large language models (LLMs) have the                            The source code, data, and/or other artifacts have been made available at
+potential to enable rich analytics and reasoning over vast knowl-                             https://github.com/lotus-data/lotus.
+edge corpora. Unfortunately, existing systems either empirically
+optimize expensive LLM-powered operations with no performance
+guarantees, or limit their support to simple batched-inference prim-                          1    INTRODUCTION
+itives. We introduce semantic operators, the rst formalism with                              The powerful semantic capabilities of modern language models
+statistical accuracy guarantees for general-purpose AI-based op-                              (LLMs) create exciting opportunities for building AI-based ana-
+erations with natural language parameters (e.g., ltering, sorting,                           lytics systems that reason over vast knowledge corpora. Many
+joining or aggregating records using natural language criteria). Each                         applications require complex reasoning over large amounts of data,
+operator can be implemented by multiple AI algorithms, which com-                             including both unstructured and structured data. For example a re-
+pose individual model invocations to orchestrate the model over                               searcher reviewing recent ArXiv [2] preprints may want to quickly
+the data. Our programming model species the expected behav-                                  obtain a summary of relevant papers from the past week, or nd
+ior of each operator with a high-quality reference algorithm, and                             the papers that report the best performance for a particular task
+we develop an optimization framework that reduces cost, while                                 and dataset. Similarly, a medical professional may automatically
+providing accuracy guarantees for individual operators. Using this                            extract biomedical characteristics and candidate diagnoses from
+approach, we propose several novel optimizations to accelerate                                many patient reports [29]. Likewise, organizations wish to automat-
+semantic ltering, joining, group-by and top-k operations by up                               ically digest lengthy transcripts from internal meetings and chat
+to 1, 000⇥. We implement semantic operators in the LOTUS sys-                                 histories to validate hypotheses about their business [4].
+tem and demonstrate LOTUS’ eectiveness on real, bulk-semantic                                   Each of these tasks require a form of bulk semantic processing,
+processing applications, including fact-checking, biomedical multi-                           where the analytics system must process large amounts of data
+label classication, search, and topic analysis. We show that the                             and orchestrate models in complex patterns across a whole dataset.
+semantic operator model is expressive, capturing state-of-the-art                             Supporting the full generality of these applications with ecient,
+AI pipelines in a few operator calls, and making it easy to express                           easy-to-use analytics systems would have a transformative impact,
+new pipelines that match or exceed quality of recent LLM-based                                similar to what RDBMSes had for tabular data. This prospect, how-
+analytic systems by up to 170%, while oering accuracy guarantees.                            ever, raises two challenging questions: rst, how should developers
+Overall, LOTUS programs match or exceed the accuracy of state-of-                             express semantic queries, and secondly, how should we design the
+the-art AI pipelines for each task while running up to 3.6⇥ faster                            underlying data system to achieve high eciency and accuracy.
+than the highest-quality baselines. LOTUS is publicly available at                               Unfortunately, existing systems are insucient for bulk semantic
+https://github.com/lotus-data/lotus.                                                          processing, either limiting their expressiveness to simple batched
+                                                                                              inference primitives or providing no accuracy guarantees. First, sev-
+PVLDB Reference Format:                                                                       eral systems only support simple batched inference primitives [1,
+Liana Patel, Siddharth Jha, Melissa Pan, Harshit Gupta, Parth Asawa,                          8, 9, 14, 46, 47, 49, 50, 53, 67]. These systems do not support richer
+Carlos Guestrin, and Matei Zaharia. Semantic Operators and Their                              LLM-based operations, such as ranking, grouping or joining records,
+Optimization: Enabling LLM-Based Data Processing with Accuracy                                which require more complex AI algorithms that compose multiple
+Guarantees in LOTUS. PVLDB, 18(11): 4171 - 4184, 2025.                                        model invocations to orchestrate the model over the data. Alter-
+doi:10.14778/3749646.3749685                                                                  natively, more recent LLM-based analytics systems, such as Do-
+                                                                                              cETL [61] and UQE [25], study more complex AI operations, but
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                   empirically optimize these operations with no accuracy guarantees.
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of
+this license. For any use beyond those covered by this license, obtain permission by
+                                                                                              These systems lack a formalism to dene correct behavior, which
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights          hinders their robustness and usability, as we show in Section 5.
+licensed to the VLDB Endowment.                                                               These obstacles highlight a core challenge of integrating semantic-
+Proceedings of the VLDB Endowment, Vol. 18, No. 11 ISSN 2150-8097.
+doi:10.14778/3749646.3749685                                                                  based processing within reliable query systems due to the inherent
+                                                                                              ambiguity of natural language instructions and LLM outputs.
+
+
+
+
+                                                                                       4171
+   We propose semantic operators, which extend the relational               1 def paper_digest ( research_interest : str , baseline : str ):
+model with AI-based operations. Semantic operators provide the              2   return papers_df \
+                                                                            3     . sem_search (  abstracts  , research_interest , K =100) \
+rst formalism with statistical accuracy guarantees for general-            4     . sem_filter ( f the paper {{ abstracts }} claim to
+purpose AI-based operations with natural language parameters,                           outperform { baseline } ) \
+including semantic lters, joins, top-k rankings, aggregations, and         5          . sem_agg ( f  Write a digest summarizing {{ abstracts }}
+                                                                                        and their relevance to { research_interest }  )
+projections. Each operator takes a concise natural language signa-
+ture, given by the programmer, and its behavior is fully specied               Figure 1: Example LOTUS program using semantic operators to return a
+by a tractable, high-quality reference algorithm. Our optimization              summary of relevant papers from the dataset papers_df. The user function,
+approach then exploits the rich design space of semantic operator               takes two strings, describing a research interest and a research baseline. The
+                                                                                program searches over papers in the dataset, then lters based on whether each
+execution plans to reduce cost, while providing statistical accuracy            paper claims to outperform the baseline, and nally constructs a summary.
+guarantees for individual operators with respect to the reference al-
+gorithm (i.e., ensuring that the output of the optimized operator will                • We dene optimizations with statistical accuracy guaran-
+be similar to that of the reference algorithm). We propose several                      tees for several useful operators, including semantic lters,
+novel optimizations for the semantic lter, join, top-k and group-by                    joins, top-k and group-by, yielding up to 1, 000⇥ speedups.
+operators. Our methods include approximation algorithms, building                     • Across diverse real-world ML tasks, we evaluate the ex-
+on statistical techniques used in prior works [37, 39] with novel and                   pressiveness of semantic operators and the benet of our
+ecient proxy scores using small LLMs or semantic embeddings.                           optimizations, including comparisons to prior work.
+We implement semantic operators in LOTUS (LLMs Over Tables
+of Unstructured and Structured data), an open source system that
+                                                                                2     THE SEMANTIC OPERATOR MODEL
+exposes these operators in a simple DataFrame-based API.
+   We systematically evaluate LOTUS on four real bulk-semantic                  Semantic operators provide a declarative interface for semantic-
+processing applications: fact-checking, biomedical multi-label clas-            based manipulation and access to data. These new AI-based opera-
+sication, search, and topic analysis. These applications include               tors extend the data independence model of relational systems [24]
+ones expressible and studied by recent LLM-based analytics sys-                 and introduce model-data independence: the separation of applica-
+tems (e.g., DocETL [61] and UQE [25]), where we compare against                 tion logic from the underlying AI-based algorithm that species
+those systems, as well as others, where we compare against hand-                how data records are processed via individual model invocations.
+designed pipelines from the AI literature. We demonstrate that the              Unlike relational operators, semantic operators are parametrized
+semantic operator model is eective, capturing state-of-the-art AI              by natural language expressions and rely on AI-based computation,
+pipelines in a few operator calls that reliably match or exceed the             making their behavior inherently ambiguous and imprecise. We
+quality of recent LLM-based analytics systems by up to 100%, while              address this key challenge by presenting a formalism for dening
+oering accuracy guarantees and running up to 3.6⇥ faster than                  semantic operators, their behavior, and correct optimizations, in
+the best quality baselines. Furthermore, our reference algorithms               this section. In Section 3, we build on this formalism to provide
+provide high-quality results, and our optimizations speed up query              optimized execution plans with accuracy guarantees, similar to
+execution by up to 1, 000⇥ with respect to them.                                relational query optimizers.
+   Specically, our LOTUS program re-implements FacTool’s re-
+cent state-of-the-art fact-checking pipeline [23], and achieves 12.5%           2.1     Example Semantic Operator Program
+higher accuracy with 28⇥ lower execution time on the FEVER                      To begin to understand the capabilities of semantic operators, we
+dataset [64], outperforming alternative LLM-powered analytics sys-              examine a simple program written with the LOTUS API, shown in
+tems. In the extreme multi-label classication task on the BioDEX               Figure 1. The function paper_digest takes two string parameters, a
+dataset [29], LOTUS reproduces state-of-the-art result quality [28]             user’s research interest and a research baseline, and returns a digest
+and the LLM-powered analytics baselines, while providing accu-                  of relevant research papers that claim to outperform the baseline.
+racy guarantees and 1, 000⇥ speedups compared to our reference                  To do this, the function uses 3 semantic operators to process the
+algorithm. In the search application, LOTUS allows a simple com-                dataset of research papers, papers_df, which contains an abstract
+position of operators to achieve 1.03  2⇥ higher nDCG@10 than                  attribute. The program rst performs top-k semantic search over the
+the next best performing baselines, while also providing query                  abstract attribute to nd relevant papers, then semantically lters
+eciency, with 1.67  10⇥ lower execution time than alternative                 to nd papers with abstracts claiming to outperform the baseline,
+high-quality algorithms. In the topic analysis task, LOTUS e-                  and lastly creates a summary with a semantic aggregation.
+ciently processes hundreds of ArXiv papers to discover a taxonomy                  Semantic operators perform familiar transformations, such as
+of key topics in dozens of seconds, while once again providing                  lters and aggregations, reminiscent of relational operators. The
+congurable speedups with statistical accuracy guarantees.                      crucial dierence lies in the ability of semantic operators to per-
+   Overall, our main contributions are:                                         form transformations with reasoning-based, natural-language speci-
+      • We propose semantic operators, the rst formalism with sta-             cations. For instance, the sem_filter operator takes the natural
+         tistical accuracy guarantees for general-purpose AI-based              language parameter "the paper {abstracts} claim to outperform the
+         operations with natural language parameters. Specically,              baseline". The expected output of this operator is all records from
+         our optimization framework species each operator’s ex-                the dataset with abstracts that pass this natural language predicate.
+         pected behavior and provides accuracy guarantees with                     The reasoning capabilities of semantic operators signicantly
+         respect to a high-quality reference algorithms.                        distend traditional relational operators and indices. Still, traditional
+
+
+
+
+                                                                         4172
+Table 1: Summary of Key Semantic Operators. ) denotes a relation, - and . denote arbitrary tuple types. ; denotes a parameterized natural
+language expression (“langex“ for short). Each operator may permit additional optional parameters, including accuracy targets.
+
+ Operator                                      Description                                          Denition                                       Reference Algorithm
+
+ sem_lter (; : - ! Bool)                      Returns the tuples that pass the langex predicate.   {C8 |C8 2 ) ^ ;" (C8 ) = 1}                     Compute " (C8 , ; ), C8 2 )
+ sem_join(C : ) , ; : (- , . ) ! Bool)         Joins a table against a second table C by keeping    { (C8 , C 9 ) |;" (C8 , C 9 ) = 1, C8 2         Compute " ( {C8 , C 9 }, ; ), C8 2 )1 , C 9 2 )2
+                                               all tuple pairs that pass the langex predicate.      )1 , C 9 2 )2 }
+ sem_agg (; : ) [- ] ! X )                     Aggregates input tuples according to the langex      ;" (C 1 , ..., C= ) 8C 1 , .., C= 2 )           Perform a hierarchical reduce, recursively
+                                               reducer function.                                                                                    computing 0228,A
+                                                                                                                                                    " ( {022=8 ,A 1 , ..., 022=8 +=,A 1 }, ; )
+ sem_topk (; : ) [- ] ! (4@ [- ] , : : 8=C )   Returns an ordered list of the : best tuples         hC 1 , ..., C: i st 8 (C8 , C 9 ), 8 < 9 =)        Perform quick-select top-k using pairwise
+                                               according to the langex ranking criteria.            ;" (C8 , C 9 ) = hC8 , C 9 i                       comparisons, " ( {C8 , C 9 }, ; )
+                                                                                                                            Õ
+ sem_group_by (; : - ! . , ⇠ : 8=C )           Groups the tuples into ⇠ categories based on the           arg max                   max ;" (C8 , ` 9 ) Obtain centers ` 1 , ...`⇠ with a clustering
+                                               langex grouping criteria.                            {`1 ,...`⇠ },`8 2+ N C8 2)
+                                                                                                                                   9 21...⇠
+                                                                                                                                                       algorithm, and perform pointwise
+                                                                                                                                                       assignments " (C8 , (;, ` 1 , ..., `⇠ ) ),t8 2 ) ,
+ sem_map (; : - ! . )                          Performs the projection specied by the langex.      {;" (C8 ) |C8 2 ) }                             Compute " (C8 , ; ), C8 2 )
+
+
+non-AI primitives may be used to transparently optimize the exe-                                AI algorithm that produces results considered to be high quality.
+cution of semantic operators. For instance, a naive execution of the                            Each reference algorithm species a model access pattern over the
+semantic lter might process each record in a separate LLM invo-                                relation ) via an algorithm composed of model invocations " (G, ;),
+cation that prompts the model to evaluate the predicate. However,                               describing the subset of the data G ✓ ) , each model call is invoked
+an optimized execution might leverage a light-weight model or                                   over and the task-specic language expressions, given by ;.
+vector index to speed up some predicate evaluations while reserv-
+ing LLM-based predicate evaluations only when needed. Crucially,                                2.3      Dening Correct Optimizations for
+an ecient analytics system should provide such optimizations                                            Semantic Operators
+transparently and adaptively to reduce cost when possible, while
+                                                                                                Semantic operators create a rich design space of diverse execution
+also providing accuracy guarantees.
+                                                                                                plans. While reference algorithms provide high-quality implemen-
+                                                                                                tations, they are often expensive, with the complexity of LLM calls
+2.2     Dening Semantic Operators                                                              scaling linearly or quadratically in the dataset cardinality. As such,
+Denition. A semantic operator is a declarative transformation over                             we dene correct optimizations for individual semantic operators
+one or more datasets, parameterized by a natural language expression.                           below by considering alternate AI-based algorithms that can reduce
+Each semantic operator can be implemented by potentially many AI-                               cost while oering close results. In general, optimized semantic oper-
+based algorithms, and its correct behavior is dened with respect to a                          ator plans allow for both lossless optimizations and approximations
+given reference algorithm.                                                                      of a reference algorithm. This formulation builds on approximate
+   Table 1 lists a core set of semantic operators, which cover com-                             query processing and assumes some error is often tolerable, which
+mon semantic transformations in real-world applications and mir-                                we nd (Section 5) is reasonable for achieving high-quality results
+ror key transformations in relational operators. Specic systems                                for semantic processing, which is inherently non-exact.
+may, of course, provide additional semantic operators beyond the                                Denition. A correct optimization for a given semantic operator, and
+ones we discuss here. Each semantic operator takes a parameterized                              a reference algorithm for that operator, reduces cost while providing
+natural language expressions (langex for short), which are natural                              statistical accuracy guarantees with respect to the reference algorithm.
+language expressions that specify a function over one or more at-                               Specically, the optimization should ensure an accuracy target, W, is
+tributes. As Figure 1 demonstrates, the langex signature varies for                             met with probability 1  X.
+dierent semantic transformations. While the sem_filter langex
+signature provides a natural language predicate, the sem_agg langex                             2.4      Core Semantic Operators
+is a commutative, associative aggregator expression, which here
+                                                                                                We now overview several core semantic operators, providing the
+indicates a summarization task over abstracts.
+                                                                                                operator’s denition and a reference algorithm for each. We discuss
+   We provide a high-level denition of each semantic transfor-
+                                                                                                design decisions for our reference algorithms based on state-of-
+mation with respect to the user langex and a world model1 , ",
+                                                                                                the-art algorithms studied in the AI literature, well-known failure
+which captures a probability distribution over the vocabulary + .
+                                                                                                cases, such as long-context challenges [48], or our experimental
+For example, semantic lter returns {C8 |C8 2 ) ^ ;" (C8 ) = 1}, where
+                                                                                                observations. Our empirical evaluation (Section 5) conrms that
+) is the input relation and ;" (C8 ) represents a natural language
+                                                                                                the reference algorithms we present support state-of-the-art result
+predicate evaluated on tuple C8 with model M. Notably, the deni-
+                                                                                                quality in real ML applications; however, nding optimal reference
+tion of each semantic operator can be implemented by multiple
+                                                                                                algorithms for each operator remains an open research question.
+AI-based algorithms, and dierent decisions as to how to invoke
+                                                                                                Semantic Filter is a unary operator over the relation ) and returns
+the model over the relation have consequences on the algorithm’s
+                                                                                                the relation {C8 |C8 2 ) ^ ;" (C8 ) = 1}, where the langex provides a
+result quality. Thus, the correct behavior of each semantic operator
+                                                                                                natural language predicate over one or more attributes.
+is specied by a reference algorithm, a computable and tractable
+                                                                                                Reference Algorithm. Our reference algorithm runs batched LLM
+1 In practice, the world model, " may be the strongest LLM a practioner has available.          calls over all tuples in relation ) . Each model invocation, " (C8 , ;),
+
+
+
+
+                                                                                         4173
+

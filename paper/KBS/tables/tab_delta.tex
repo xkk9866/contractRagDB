@@ -1,0 +1,32 @@
+\begin{table}[t]
+\centering
+\caption{Sweeping the certifier's error budget over two orders of magnitude, under the two orderings that break exchangeability. \emph{breach} is the fraction of streams whose worst prefix rate exceeded $\alpha$; \emph{risk}/$\alpha$ is realised risk in units of the contract, so $1.00$ means the allowance was spent exactly and above $1.00$ means it was overspent. Shrinking $\delta$ by $200\times$ changes the certificate's breach rate in one of twelve cells: its failures are not an insufficient correction for sampling noise but a calibration sample that misrepresents the stream, and no choice of $\delta$ addresses that. The ledger has no $\delta$ to set, never breaches, and lands on the contract rather than under it, which is why its zeros are not slack. \emph{brch}: breach rate; \emph{r}/$\alpha$: realised risk over the contract. Means over 20 streams at each of five $\alpha$ levels per row.}
+\label{tab:delta}
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+ & & \multicolumn{2}{c}{cert. $\delta=0.2$} & \multicolumn{2}{c}{cert. $\delta=10^{-3}$} & \multicolumn{2}{c}{ledger} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Task & Order & brch & r/$\alpha$ & brch & r/$\alpha$ & brch & r/$\alpha$ \\
+\midrule
+HybridQA & easy & 1.00 & 2.40 & 1.00 & 2.40 & 0.00 & 1.00 \\
+ & drift & 1.00 & 2.26 & 1.00 & 2.22 & 0.00 & 1.00 \\
+\addlinespace[2pt]
+CRAG & easy & 0.80 & 1.37 & 0.80 & 1.37 & 0.00 & 1.00 \\
+ & drift & 0.60 & 1.17 & 0.60 & 1.17 & 0.00 & 1.00 \\
+\addlinespace[2pt]
+ASQA & easy & 1.00 & 1.79 & 1.00 & 1.78 & 0.00 & 1.00 \\
+ & drift & 0.73 & 1.16 & 0.43 & 0.99 & 0.00 & 0.99 \\
+\addlinespace[2pt]
+QAMPARI & easy & 0.20 & 0.83 & 0.20 & 0.81 & 0.00 & 1.00 \\
+ & drift & 0.20 & 0.83 & 0.20 & 0.81 & 0.00 & 1.00 \\
+\addlinespace[2pt]
+HQ grid & easy & 1.00 & 2.15 & 1.00 & 2.11 & 0.00 & 1.00 \\
+ & drift & 1.00 & 2.00 & 1.00 & 1.97 & 0.00 & 1.00 \\
+\addlinespace[2pt]
+CRAG grid & easy & 0.40 & 1.05 & 0.40 & 1.05 & 0.00 & 0.99 \\
+ & drift & 0.40 & 1.01 & 0.40 & 1.00 & 0.00 & 0.99 \\
+\bottomrule
+\end{tabular}
+\end{table}

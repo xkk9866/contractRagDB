@@ -1,0 +1,82 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,top=19mm,bottom=19mm,left=24mm,right=24mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\begin{document}
+\raggedright
+\hyphenpenalty=10000
+
+25 July 2026
+
+Editorial Office\\
+\textit{Expert Systems with Applications}
+
+\textbf{Re: Research article submission, ``ContractRAG: A
+risk-certified expert system for deploying retrieval-augmented
+generation services''}
+
+Dear Editor,
+
+On behalf of all authors, we submit this manuscript for consideration
+as a Research Article in \textit{Expert Systems with Applications}.
+
+Organizations deploying retrieval-augmented generation (RAG) must
+choose among many retrieval, reranking, and generation configurations.
+Current systems usually recommend a configuration from average
+development-set performance. They do not tell an operator how often the
+deployed service may return a wrong, unsupported, stale, or late
+answer. Our manuscript presents ContractRAG, a risk-aware expert system
+that converts such operational requirements into an auditable
+deployment decision.
+
+A domain expert first defines an evidence contract containing measurable
+losses, admissible violation rates, and a confidence budget. ContractRAG
+then compiles heterogeneous knowledge-access plans, learns progressive
+policies that acquire stronger evidence only when needed, and uses a
+distribution-free test to recommend the least-cost policy in a
+certified prefix. When no candidate can meet the contract, the system
+reports infeasibility instead of silently weakening the requirement.
+After deployment, an anytime-valid monitor detects drift and triggers a
+fresh decision cycle. The result is a complete design--test--deploy--monitor
+workflow rather than a stand-alone routing component.
+
+We evaluate this workflow on HybridQA, CRAG, ASQA, and QAMPARI using
+four large language model families and two serving backends. Across
+1,000 calibration draws, recommended policies exceed their contracts
+in at most 0.8\% of draws under a 10\% error budget, compared with up to
+64\% for empirical and Bayesian tuning. They reduce model cost by up to
+20$\times$, or 10--18$\times$ after audit cost. The evaluation also
+covers strict and joint contracts, human deferral, infeasible
+requirements, audit sampling, and post-deployment drift.
+
+The work fits the journal's focus on the design, development, testing,
+and management of expert and intelligent systems. It supplies an
+operator-facing decision process for information retrieval and risk
+assessment, an implemented architecture, formal guarantees, and
+practical evidence across several public tasks.
+
+This manuscript is original, has not been published previously, and is
+not under consideration elsewhere. All authors have approved the
+manuscript and its submission. The authors declare no competing
+financial interests or personal relationships that could have
+influenced the work.
+
+Thank you for considering our submission.
+
+Sincerely,
+
+\textbf{Weiwei Fu and Jinjiang Cui}\\
+Co-corresponding authors, on behalf of all authors\\
+Suzhou Institute of Biomedical Engineering and Technology\\
+Chinese Academy of Sciences\\
+No.\ 88 Keling Road, Suzhou New District, Suzhou 215163, China\\
+\href{mailto:fuww@sibet.ac.cn}{fuww@sibet.ac.cn};
+\href{mailto:cuijj@sibet.ac.cn}{cuijj@sibet.ac.cn}
+
+\end{document}

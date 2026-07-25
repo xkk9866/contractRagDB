@@ -1,0 +1,180 @@
+                   D!"ETL: Agentic !ery Rewriting and Evaluation
+                         for Complex Document Processing
+          Shreya Shankar1 , Tristan Chambers2 , Tarak Shah2 , Aditya G. Parameswaran1 , Eugene Wu3
+                               1 UC Berkeley EECS, 2 BIDS Police Records Access Project, 3 Columbia University
+
+                     {shreyashankar,tristan.chambers,tarak_shah,adityagp} @berkeley.edu, ewu@cs.columbia.edu
+
+ABSTRACT                                                                                      per row are small and easy to process. They therefore focus on re-
+Analyzing unstructured data has been a persistent challenge in data                           ducing cost, while keeping accuracy almost the same. However,
+processing. Recent proposals o!er declarative frameworks for LLM-                             for many real-world tasks, that we refer to as complex document
+powered processing of unstructured data, but they typically execute                           processing tasks, accuracy can be a signi"cant bottleneck, limiting
+user-speci"ed operations as-is in a single LLM call—focusing on                               practical utility. Here, complexity can stem from the documents or
+cost rather than accuracy. This is problematic for complex tasks,                             the nature of the processing task, or both. Consider this scenario
+where even well-prompted LLMs can miss relevant information.                                  from our collaborators on the Police Records Access Project1 :
+For instance, reliably extracting all instances of a speci"c clause                              Example 1.1 (Police Misconduct Identi!cation). Journalists at Berke-
+from legal documents often requires decomposing the task, the                                 ley’s Investigative Reporting Program want to analyze a large cor-
+data, or both.                                                                                pus of heterogeneous police records, obtained through records
+   We present D!"ETL, a system that optimizes complex document                                requests, to uncover patterns of misconduct and procedural vio-
+processing pipelines, while accounting for LLM shortcomings. D!#                              lations. Records include police reports, court transcripts, internal
+"ETL o!ers a declarative interface for users to de"ne such pipelines                          a!airs and medical examiner reports, and other case "les, often
+and uses an agent-based approach to automatically optimize them,                              spanning hundreds of pages each. Analysis involves extracting
+leveraging novel agent-based rewrites (that we call rewrite direc-                            key information from long documents, aggregating information
+tives), as well as an optimization and evaluation framework. We                               across documents to identify behavioral patterns for each o#cer,
+introduce (i) logical rewriting of pipelines, tailored for LLM-based                          and generating summaries highlighting concerning trends.
+tasks, (ii) an agent-guided plan evaluation mechanism, and (iii)
+an optimization algorithm that e#ciently "nds promising plans,                                Example 1.1 is representative of complex document processing
+considering the latencies of LLM execution. Across four real-world                            tasks across domains including law, medicine, and social science.
+document processing tasks, D!"ETL improves accuracy by 21–80%                                 Consider a simpler version of this task, where we just want a sum-
+over strong baselines. D!"ETL is open-source at docetl.org and,                               mary of the role of each o#cer mentioned in each complex police
+as of March 2025, has over 1.7k GitHub stars across diverse domains.                          record document, each with hundreds of pages. This task can be
+                                                                                              expressed as a single-step map operation applied to the OCR out-
+PVLDB Reference Format:                                                                       put per document, in one LLM call, with a user-provided prompt
+Shreya Shankar, Tristan Chambers, Tarak Shah, Aditya G. Parameswaran,                         de"ning terms like “misconduct.” All existing systems [1, 29, 30, 38]
+Eugene Wu. DocETL: Agentic Query Rewriting and Evaluation for                                 would simply execute the map operation, as is, with one LLM call
+Complex Document Processing. PVLDB, 18(9): 3035 - 3048, 2025.                                 per document. That is, they assume user-de!ned operations will
+doi:10.14778/3746405.3746426                                                                  yield su"ciently accurate results when executed by the LLM,
+PVLDB Artifact Availability:                                                                  and focus primarily on reducing cost. However, this map operation
+The source code, data, and/or other artifacts have been made available at                     may provide poor accuracy for multiple reasons. First, the docu-
+https://github.com/ucbepic/docetl.                                                            ment in question may exceed the LLM’s context limit. Even if it "ts,
+                                                                                              outputs may omit certain instances of misconduct, or include spu-
+1    INTRODUCTION                                                                             rious information. Recent work has shown that LLM performance
+Large Language Models (LLMs) have taken the world of data man-                                degrades considerably as length increases [27], because they can be
+agement by storm, with applications ranging from data integration,                            distracted [47] or selectively pay attention to certain portions [31],
+to tuning, to query optimization, to data cleaning [12]. There has                            failing to gain a holistic understanding [4, 22, 49, 56]. Simultaneous
+also been an interest, all in the last few months, in declarative ap-                         theoretical work has shown that this degradation is due to limits
+proaches to process unstructured data using LLMs [1, 29, 30, 38].                             in the transformer architecture [23, 39, 48]. While one could apply
+These systems, instrumented as extensions to the relational model                             prompt compilation [26, 54] to identify a better prompt, this relies
+for processing textual columns, typically assume the text snippets                            on examples, which are either not present or are too long to include
+                                                                                              (e.g., an example document with hundreds of pages)—but irrespec-
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                   tive do not "x the underlying challenges with LLMs performing a
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of           complex task on complex documents.
+this license. For any use beyond those covered by this license, obtain permission by
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights
+                                                                                                 Our key insight is that the quality of LLM outputs is often not
+licensed to the VLDB Endowment.                                                               adequate for complex data processing—we cannot simply treat the
+Proceedings of the VLDB Endowment, Vol. 18, No. 9 ISSN 2150-8097.
+doi:10.14778/3746405.3746426
+                                                                                              1 https://bids.berkeley.edu/california-police-records-access-project
+
+
+
+
+                                                                                       3035
+Figure 1: Optimization for a pipeline designed to accomplish the task in Example 1.1. The diagram illustrates the system mid-optimization of
+the initial map operation. D!"ETL employs LLMs to synthesize new plans using novel rewrite directives. The process begins with an LLM
+veri!er determining if an operation is su"ciently optimized. If not, rewriting continues. Notably, when a new operation is synthesized as part
+of a rewrite, it undergoes immediate opportunistic optimization, as shown by the nested “Apply Rewrites (Agent)” rectangles.
+existing user-provided operators as "xed. Instead, we need to con-             summaries [52]. Overall, even an LLM expert would need exten-
+sider novel rewrites that decompose complex but error-prone                    sive experimentation to design an accurate pipeline, given the
+operation(s) into a sequence of simpler and more accurate op-                  dependency on the data, task, and LLM capabilities. This com-
+erations. For our map example, a di!erent sequence of operations               plexity underscores the need for a system that can automatically
+may increase accuracy. One such example is map → map, where                    explore and evaluate di!erent task decomposition strategies to "nd
+the "rst map is tasked with removing all portions of each input                the most e!ective pipeline for a given task and dataset.
+document that do not pertain to misconduct (e.g., medical reports),               We present D!"ETL, our "rst attempt at developing a declara-
+while the second map is the single-step map above. Or we could                 tive system optimized for accurate complex document process-
+replace the "rst map with one that summarizes each sequence of                 ing. D!"ETL provides a declarative YAML-based interface for users
+𝐿 paragraphs into one, keeping the second map as is. Yet another               to author pipelines with LLM-speci"c operators, including two new
+option is to replace the single-step map with what we call split →             ones: resolve for entity resolution, and gather to maintain context
+gather → map → reduce—a pattern that "rst splits the document                  when processing document chunks. Users can specify their pipeline
+into contiguous chunks; then, for each chunk, gathers 𝐿 neighbor-              at a high level with D!"ETL decomposing, rewriting, and optimiz-
+ing chunks before/after as context or background to be included                ing the pipeline. D!"ETL introduces an agent-based framework to
+into a prompt, generates per-o#cer summaries using its 2𝐿 neigh-               rewrite user-speci"ed pipelines into alternative ones, as shown in
+bors as background context (map); and "nally, performs a global                Figure 1. Rather than simply relying on agents as-is, which can
+summarization across all chunks (reduce).                                      be error-prone, we guide them to rewrite query plans using novel
+   However, we cannot expect a user to rewrite their pipeline                  rewrite directives that we identify. We call these directives instead
+into multiple alternatives and determine the one with the best                 of rules because they are abstract guidelines interpreted by LLMs
+performance. The previous paragraph introduced three out of                    based on task and data characteristics, with in"nitely many concrete
+a multitude of potential rewrites, each of which could be recur-               instantiations. We further leverage an agentic framework to evalu-
+sively applied to operators in a pipeline, presenting a seemingly              ate the resulting pipelines. Since evaluation can be expensive, we
+in"nite set of options. For example, for the map → map pipeline,               develop an optimization approach inspired by Cascades [16], where
+there are many alternatives for what the "rst map could do, and                we use a top-down rule-based strategy to generate and evaluate a
+many di!erent associated prompts. Even if we decide to use the                 space of equivalent plans, opting to opportunistically decompose
+"rst map to summarize 𝐿 chunks at a time, determining the right                (or rewrite) complex or error-prone operations into simpler ones.
+value for 𝐿 is challenging. Likewise for split → gather → map →                   D!"ETL is open-source and available on GitHub2 . As of March
+reduce. Moreover, we’re just focusing on the "rst step of the overall          2025, it has already amassed 1.7k+ GitHub stars, and has been
+goal in Example 1.1, which is to summarize misconduct across all               used for pipelines ranging from domain-speci"c analysis (e.g., le-
+documents. So, we may need to apply a reduce operation across                  gal, climate science) to enterprise and personal productivity (e.g.,
+documents to group and summarize misconduct extractions by o#-                 analyzing customer support tickets, emails); over 400 users have
+cer. However, the same o#cer may be extracted as “O#cer Smith”                 joined the corresponding Discord server.
+in one document and “J. Smith” in another, resulting in separate, in-             Overall, "nding optimal complex data processing pipelines is
+complete summaries for what should be a single o#cer [37]. It’s not            impossible given the in"nite search space, non-determinism of
+entirely clear how one would implement this form of entity resolu-             LLMs, fuzziness of text, and ambiguity in task-speci"c success
+tion, and no current systems support it. In fact, additional context           criteria. However, even in these di#cult settings, D!"ETL is able to
+from the original document(s) may be necessary to determine if the             produce pipelines that are su#ciently accurate for practical needs,
+two o#cers with the same name are identical. Finally, LLMs might               as is evidenced by our adoption across domains. D!"ETL is able to
+struggle to recognize that multiple documents are from the same                do so by leveraging the power of LLM agents in constrained ways, in
+case, leading to overrepresentation of incidents in the misconduct
+                                                                               2 https://github.com/ucbepic/docetl
+
+
+
+
+                                                                        3036
+conjunction with a powerful, but compact set of rewrite directives,             various data types and degrees of structure and easily reference
+decomposition into processing units that can be validated, as well              data within operation prompts. Documents can be nested, e.g., a
+as an opportunistic top-down exploration of the search space.                   police record may contain an array of related_documents that each
+    We make the following contributions in this paper:                          contain witness statements or evidence logs that are further nested.
+(1) Novel Rewrite Directives and Agent-Driven Rewriting:                        D!"ETL DSL. D!"ETL employs YAML as its domain-speci"c lan-
+We identify 13 new rewrite directives designed for LLM-based                    guage (DSL) to de"ne data processing pipelines, for several rea-
+operators, addressing challenges unique to complex document pro-                sons. First, YAML is $exible in accommodating complex multi-
+cessing. Unlike traditional rewrite rules, LLM agents are used to               line prompts and examples, as well as output schemas and valida-
+implement these directives. When a rule applies to a portion of a               tion mechanisms, while intermixing formatting with arguments in
+pipeline, agents synthesize appropriate prompts and parameters                  Jinja [35]. Second, YAML is human-readable and doesn’t require
+for new operations. For example, when decomposing a “summarize                  extensive coding expertise. Third, it is commonly used in industry
+instances of misconduct” operation into multiple ones, an agent                 for describing data pipelines (Apache Air$ow, dbt, Prefect) and
+might create two steps: "rst, “list instances of misconduct given               services (Kubernetes, Docker, Circle/Gitlab CI/CD). Finally, YAML
+speci"c types (e.g., excessive force),” followed by “summarize each             serves as a simple intermediate format for representing the D!#
+listed instance,” crafting suitable prompts for each new operation.             "ETL-optimized pipelines for human inspection, as well as for our
+(2) Agent-Driven Plan Assessment: We also use LLM agents                        no-code interface. That said, our optimization techniques are not
+to synthesize task-speci"c validation prompts for each operation,               dependent on YAML and are also applicable to other frameworks.
+which are used to assess output quality. For instance, to verify a              D!"ETL Pipelines. A D!"ETL pipeline, expressed in YAML, de-
+misconduct summary, an agent might create a prompt, “Does this                  scribes a sequence of operations. Each operation speci"es its opera-
+summary include all instances of misconduct from the document?”                 tor type, input source, prompt template, and output schema. The
+Or, “Do all mentioned instances actually exist in the document?”                input source can be either the original dataset or the output of a
+The agents then execute plans on sample data and evaluate outputs               previous operator. We refer to this input using pre-de"ned variables
+using these custom prompts. This entire process happens without                 input or inputs depending on whether the input cardinality is one
+the user having to provide or manually validate examples.                       or many. The pipeline begins with dataset de"nitions, which serves
+(3) Opportunistic Sub-plan Optimization: Unlike traditional                     as the initial input. As operators process data, they generate output
+query optimizers that generate and evaluate a broad range of possi-             obeying their schemas, which subsequent operators can then use.
+ble plans [6], we leverage an opportunistic top-down search strategy            This structure allows for $exible and modular pipeline composition.
+as shown in Figure 1: when we use a rewrite directive to decom-                 D!"ETL supports a default model for the entire pipeline, with the
+pose operators into new ones, we immediately optimize each new                  option for per-operation model speci"cations.
+operator. We "rst check if each such operator is su#ciently accu-               Fault Tolerance. When executing an LLM-powered operator for
+rate, based on the validation as described previously. If su#ciently            many input documents in a pipeline, some operations may occasion-
+accurate, we no longer optimize that operator, focusing instead                 ally fail to adhere to the given prompt. While prior work assumes
+on rewriting others. Thus, we opportunistically decompose (or                   reliability in LLM outputs [1, 30, 38], D!"ETL explicitly addresses
+apply rewrite directives to) operators that are not su#ciently ac-              this variability: for each operator, users can specify validations as
+curate, Such an approach is necessary because enumerating and                   Python statements that evaluate to true or false, referencing doc-
+evaluating all theoretically-possible plans would be prohibitively              ument and output attributes. If any validation fails, the operation
+time-consuming due to the inherent latencies in LLM operations.                 retries, using context from the failure to improve the likelihood of
+    We describe D!"ETL’s programming model and operators in                     success in subsequent attempts.
+Section 2; our new LLM-centric rewrite directives in Section 3,
+the agentic optimizer that applies them, and evaluates the result-              2.2     LLM-Powered Operators
+ing plans, as well as the overall framework for optimization in                 Here, we describe the LLM-powered operators in D!"ETL. Table 1
+Section 4. We present our initial evaluation in Section 5, where                summarizes our operators; detailed syntax can be found in our
+we demonstrate that across four unstructured document analysis                  documentation3 , and more thorough descriptions can be found in
+tasks, D!"ETL "nds plans that are 21 to 80% more accurate than                  our tech report [43]. Most operators are LLM-versions of classic
+baselines. We discuss related work in Section 6.                                data processing operators, however, we introduce a new resolve
+                                                                                operator, used to canonicalize variations in speci"c attribute values.
+2     DOCETL DSL AND OPERATORS
+                                                                                In the following, for succinctness of description, we often con$ate a
+This section presents D!"ETL’s programming model and operators.                 document—a JSON object comprising key-value pairs and the basic
+2.1    Programming Model                                                        unit of processing in a dataset with its textual content, typically a
+                                                                                value for a speci"c key within the JSON object.
+D!"ETL processes collections of documents. A document comprises
+a set (or dictionary) of key (or equivalently, attribute)-value pairs,          2.2.1 Map The map operator applies an LLM-powered projection,
+represented as a JSON object. For example, a police record could                also known as a semantic projection, to each document in the dataset.
+be a set of key-value pairs, where one key corresponds to the OCR               Let’s consider an example of a map operation:
+output of the PDF, while other keys could capture metadata such                 1 - name: extract_officer_misconduct
+                                                                                2
+as agency, "le name, or creation date. A collection of documents
+                                                                                    type: map
+
+or dataset, is a JSON array. This data representation lets us handle            3 https://www.docetl.org/
+
+
+
+
+                                                                         3037
+

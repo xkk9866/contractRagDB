@@ -1,0 +1,208 @@
+{
+ "track": "qampari",
+ "contract": "citation",
+ "tau": 50.0,
+ "delta": 0.1,
+ "draws": 200,
+ "n_pop": 850,
+ "n_cal": 425,
+ "n_train": 150,
+ "n_candidates": 69,
+ "results": {
+  "0.6": {
+   "alpha": 0.6,
+   "methods": {
+    "fs_naive": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.589429411764706,
+     "mean_cost": 0.007614266929117647,
+     "speedup_vs_incumbent": 1.0,
+     "cert_rate": 0.015,
+     "mean_support": 1.0
+    },
+    "fs_robust": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5894117647058824,
+     "mean_cost": 0.007620186764705882,
+     "speedup_vs_incumbent": 0.99922313772995,
+     "cert_rate": 0.0,
+     "mean_support": 1.0
+    },
+    "bonf_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5894117647058824,
+     "mean_cost": 0.007620186764705882,
+     "speedup_vs_incumbent": 0.99922313772995,
+     "cert_rate": 0.0,
+     "mean_support": 1.0
+    },
+    "clp": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.586264705882353,
+     "mean_cost": 0.006534083041176471,
+     "speedup_vs_incumbent": 1.165315298433472,
+     "cert_rate": 0.0,
+     "mean_support": 1.0
+    },
+    "chain_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.589429411764706,
+     "mean_cost": 0.007614266929117647,
+     "speedup_vs_incumbent": 1.0,
+     "cert_rate": 0.015,
+     "mean_support": 1.0
+    },
+    "chain_mix": {
+     "viol_prob": 0.005,
+     "mean_risk": 0.5895110294117648,
+     "mean_cost": 0.0076094223452573525,
+     "speedup_vs_incumbent": 1.000636655930041,
+     "cert_rate": 0.015,
+     "mean_support": 1.005
+    },
+    "chain_mix_eb": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5894566176470589,
+     "mean_cost": 0.007612652067830882,
+     "speedup_vs_incumbent": 1.0002121286080563,
+     "cert_rate": 0.015,
+     "mean_support": 1.005
+    }
+   },
+   "pop_best_det": 0.006388195764705882,
+   "pop_lp_opt": 0.00640939251764706,
+   "n_screen": 52,
+   "n_pareto": 10
+  },
+  "0.66": {
+   "alpha": 0.66,
+   "methods": {
+    "fs_naive": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5959705882352943,
+     "mean_cost": 0.006927579156764704,
+     "speedup_vs_incumbent": 1.0,
+     "cert_rate": 0.95,
+     "mean_support": 1.0
+    },
+    "fs_robust": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5913705882352942,
+     "mean_cost": 0.007496529988529411,
+     "speedup_vs_incumbent": 0.9241047747911006,
+     "cert_rate": 0.035,
+     "mean_support": 1.0
+    },
+    "bonf_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5890882352941178,
+     "mean_cost": 0.007005290438235294,
+     "speedup_vs_incumbent": 0.9889067723664337,
+     "cert_rate": 0.47,
+     "mean_support": 1.0
+    },
+    "clp": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5917192858519283,
+     "mean_cost": 0.006013150366792533,
+     "speedup_vs_incumbent": 1.1520714989969452,
+     "cert_rate": 0.54,
+     "mean_support": 1.54
+    },
+    "chain_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.5959705882352943,
+     "mean_cost": 0.006927579156764704,
+     "speedup_vs_incumbent": 1.0,
+     "cert_rate": 0.95,
+     "mean_support": 1.0
+    },
+    "chain_mix": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6132198529411764,
+     "mean_cost": 0.0059084783716176455,
+     "speedup_vs_incumbent": 1.1724810892162147,
+     "cert_rate": 0.95,
+     "mean_support": 1.845
+    },
+    "chain_mix_eb": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6073955882352942,
+     "mean_cost": 0.006248858208933822,
+     "speedup_vs_incumbent": 1.1086151941902815,
+     "cert_rate": 0.95,
+     "mean_support": 1.74
+    }
+   },
+   "pop_best_det": 0.003457921470588235,
+   "pop_lp_opt": 0.0012065093176470603,
+   "n_screen": 60,
+   "n_pareto": 10
+  },
+  "0.71": {
+   "alpha": 0.71,
+   "methods": {
+    "fs_naive": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6605235294117648,
+     "mean_cost": 0.0022320481894117644,
+     "speedup_vs_incumbent": 1.0,
+     "cert_rate": 1.0,
+     "mean_support": 1.0
+    },
+    "fs_robust": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6570058823529411,
+     "mean_cost": 0.003605630788823529,
+     "speedup_vs_incumbent": 0.6190451324995627,
+     "cert_rate": 0.945,
+     "mean_support": 1.0
+    },
+    "bonf_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6330235294117648,
+     "mean_cost": 0.0043029378252941175,
+     "speedup_vs_incumbent": 0.5187265724108384,
+     "cert_rate": 1.0,
+     "mean_support": 1.0
+    },
+    "clp": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6415785604979667,
+     "mean_cost": 0.0027368816079249,
+     "speedup_vs_incumbent": 0.8155442979150641,
+     "cert_rate": 1.0,
+     "mean_support": 2.0
+    },
+    "chain_det": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6607352941176471,
+     "mean_cost": 0.002230415413529411,
+     "speedup_vs_incumbent": 1.0007320501250345,
+     "cert_rate": 1.0,
+     "mean_support": 1.0
+    },
+    "chain_mix": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6664102941176471,
+     "mean_cost": 0.0018754148096691175,
+     "speedup_vs_incumbent": 1.1901623992217318,
+     "cert_rate": 1.0,
+     "mean_support": 1.74
+    },
+    "chain_mix_eb": {
+     "viol_prob": 0.0,
+     "mean_risk": 0.6595455882352941,
+     "mean_cost": 0.0025150195001470586,
+     "speedup_vs_incumbent": 0.8874874287381278,
+     "cert_rate": 1.0,
+     "mean_support": 1.735
+    }
+   },
+   "pop_best_det": 0.00043112782352941177,
+   "pop_lp_opt": 0.0003652332319189972,
+   "n_screen": 65,
+   "n_pareto": 10
+  }
+ }
+}

@@ -1,0 +1,141 @@
+%% Expert Systems with Applications anonymized submission
+%% Built on the Elsevier CAS double-column template (cas-dc), unmodified.
+\documentclass[a4paper,fleqn,doubleblind]{cas-dc}
+
+% If the frontmatter runs over more than one page
+% use the longmktitle option.
+%\documentclass[a4paper,fleqn,longmktitle]{cas-dc}
+
+\usepackage[numbers,sort&compress]{natbib}
+%\usepackage[authoryear,longnamesfirst]{natbib}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%%%Author macros
+\def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
+%%%
+
+% Theorem-like environments (interface provided by the template)
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newdefinition{rmk}{Remark}
+
+\newcommand{\system}{\textsc{ContractRAG}\xspace}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+% Short title
+\shorttitle{A risk-certified expert system for RAG deployment}
+
+% Short author
+\shortauthors{}
+
+% Main title of the paper
+\title[mode = title]{\system: A risk-certified expert system for
+deploying retrieval-augmented generation services}
+
+\begin{abstract}
+Operators of retrieval-augmented generation (RAG) services must choose
+among many retrieval, reranking, and generation configurations. Average
+development-set scores do not show whether the chosen service will
+respect operational limits on wrong, unsupported, stale, or late
+answers. We present \system, a risk-aware expert system that turns such
+limits into auditable deployment decisions. A domain expert specifies
+an evidence contract containing bounded losses, admissible violation
+rates, and a confidence budget. The system compiles heterogeneous
+knowledge-access plans, learns progressive policies that acquire
+stronger evidence only when needed, and orders them with composable
+risk vouchers. A distribution-free fixed-sequence test then returns
+the least-cost policy in the certified prefix or reports that the
+contract is infeasible. After deployment, an anytime-valid monitor
+detects drift, identifies a fresh recalibration window, and restarts the
+decision process under a lifetime error budget. We test the complete
+workflow on HybridQA, CRAG, ASQA, and QAMPARI with four large language
+model families and two serving backends. Across 1000 calibration draws,
+the deployed policies violate their contracts in at most 0.8\% of
+draws under a 10\% error budget; empirical and Bayesian tuning reach
+64\%. The system reduces model cost by up to 20$\times$, or
+10--18$\times$ after audit cost, and explicitly rejects impossible
+contracts. \system therefore provides a reusable decision-support
+architecture for reliable and economical RAG operations.
+\end{abstract}
+
+% Research highlights
+\begin{highlights}
+\item Evidence contracts turn service requirements into deployment decisions
+\item The system deploys a certified policy or reports infeasibility
+\item Progressive acquisition spends on stronger evidence only when needed
+\item Monitoring closes the loop through drift and repeated recalibration
+\item Four benchmarks show up to 20$\times$ lower model cost
+\end{highlights}
+
+% Keywords
+\begin{keywords}
+Expert systems \sep Retrieval-augmented generation \sep
+Decision support \sep Risk assessment \sep Information retrieval \sep
+Runtime monitoring
+\end{keywords}
+
+\maketitle
+
+\input{sec_intro}
+\input{sec_related}
+\input{sec_prelim}
+\input{sec_method}
+\input{sec_setup}
+\input{sec_results}
+\input{sec_discussion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+This work presents a complete expert-system loop for RAG operations.
+A domain expert specifies measurable service limits; \system generates
+alternative acquisition plans, selects and certifies an adaptive
+policy, and either recommends deployment or reports infeasibility.
+After deployment, sampled audits feed an anytime-valid monitor and a
+fresh certification cycle. The workflow separates heuristic prediction
+from accountable decision-making: learned scores and vouchers make the
+search efficient, while the statistical test determines whether the
+operator may rely on the result.
+
+Experiments on four public benchmarks and four model families verify
+the decision rule against exact population risk. Contract
+violations occurred in at most 0.8\% of 1000 calibration draws under a
+10\% budget, compared with up to 64\% for uncertified tuning. The
+recommended policies reduced model cost by up to 20$\times$, or
+10--18$\times$ after audit cost, and the system declined deployment
+when no candidate could meet a strict contract. These results provide
+both an implemented architecture and practical guidance for operating
+RAG services under explicit risk limits.
+
+\section*{Data availability}
+Code, execution matrices, calibration artifacts, and the token-exact
+LLM-call cache will be made publicly available upon acceptance. An
+anonymized reproducibility archive can be provided during review.
+
+%% Loading bibliography style file
+\bibliographystyle{elsarticle-num-names}
+
+% Loading bibliography database
+\bibliography{refs}
+
+% Flush all deferred floats before the class's AtEndDocument hook
+% records \lastpage, so the "Page X of Y" footer counts float pages.
+% After \clearpage the page counter already points at the (empty) next
+% page, so step it back to make \lastpage equal the last shipped page.
+\clearpage
+\addtocounter{page}{-1}
+
+\end{document}

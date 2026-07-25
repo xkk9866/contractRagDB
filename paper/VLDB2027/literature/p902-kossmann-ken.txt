@@ -1,0 +1,184 @@
+    KEN: An Execution Engine for Unstructured Database Systems
+                 Ferdi Kossmann                                                 Ziniu Wu                                           Alex Turk
+                     MIT CSAIL                                                MIT CSAIL                                             Intel Labs
+                ferdik@csail.mit.edu                                     ziniuw@csail.mit.edu                                 alex.turk@intel.com
+
+                  Nesime Tatbul                                                  Lei Cao                                      Samuel Madden
+              MIT CSAIL, Intel Labs                                     University of Arizona                                   MIT CSAIL
+              tatbul@csail.mit.edu                                       lcao@csail.mit.edu                                 madden@csail.mit.edu
+ABSTRACT                                                                                     is unstructured, such as documents, images, videos, and more. To
+Unstructured database management systems (UDBMSes) leverage                                  query such data, recent work introduces unstructured database man-
+machine learning to apply the relational model to modalities beyond                          agement systems (UDBMSes) that employ machine learning (ML)
+tables, such as documents, images and videos. Queries in a UDBMS                             models to handle a wide range of data modalities [9, 11, 12, 14, 23, 38,
+consist of logical operators for which the UDBMS chooses physical                            39, 51, 54, 59, 62, 64, 68, 69, 89]. As in relational databases, queries
+implementations (e.g., different models) with the goal to optimize                           to UDBMSes are composed of logical operators, each of which can
+both query latency and accuracy. However, many operators only                                be implemented in multiple ways (for example, using different ML
+expose a coarse-grained set of implementations, forcing the UDBMS                            models). UDBMS query optimizers choose an implementation for
+to excessively sacrifice either accuracy or latency without middle-                          each operator but, unlike in traditional systems, their choices don’t
+ground options. For example, an entity matching operator can                                 only affect the runtime of a query but also the accuracy of the query
+either be implemented through small, specialized models or large,                            output. As a result, UDBMSes must navigate a trade-off between
+general-purpose models (e.g., Large Language Models) — while the                             latency and accuracy, with the optimal balance depending on the
+former struggles on challenging inputs, the latter is more accurate                          application’s requirements.
+but incurs orders of magnitude more computation. In this work, we                               For example, imagine a UDBMS application that lets users up-
+aim to address this issue with model cascades, which seek to process                         load PDF invoices, which are then parsed to populate a structured
+“easy” inputs with small models and only resort to large models                              database. The query may involve two operators: (1) parsing the
+when necessary. However, cascades incur higher memory usage                                  document to extract relevant fields, and (2) matching extracted
+and additional data transfer between GPU memory and arithmetic                               entities (e.g., vendor names) against a reference database. For ei-
+units, which often slows queries compared to single models. To                               ther of the operators, the UDBMS may choose between different
+address this issue, we introduce Ken, a dedicated UDBMS execution                            general-purpose Large Language Models (LLMs). Alternatively, the
+engine that dynamically adapts its use of cascades to the query load,                        UDBMS might employ specialized models, such as GOT-OCR [83]
+and optimizes the GPU placement and invocation scheduling of the                             for parsing and AnyMatch [98] for entity matching.
+cascade models. Compared to baselines, Ken achieves 1.7 × −3.3×                                 In this example, state-of-the-art LLMs achieve higher accuracy
+latency reductions when combining similar models for a single                                than the specialized models but are three orders of magnitude larger.
+operator, and 122× latency reductions when combining models                                  This results in an enormous gap in the size of chosable models. Such
+with orders of magnitude size differences in a multi-operator query.                         gaps don’t only exist between models that are designed for different
+                                                                                             use cases—like general-purpose models versus task-specific ones—
+PVLDB Reference Format:                                                                      but are generally common due to the high cost of training, which
+Ferdi Kossmann, Ziniu Wu, Alex Turk, Nesime Tatbul, Lei Cao, and Samuel                      discourages developers from producing models that only slightly
+Madden. KEN: An Execution Engine for Unstructured Database Systems.                          vary from existing ones. Unfortunately, such disparities limit the
+PVLDB, 19(5): 902 - 916, 2026.                                                               UDBMS’s ability to strike effective trade-offs: if a small model fails
+doi:10.14778/3796195.3796204                                                                 on challenging inputs, the next viable option may be significantly
+                                                                                             larger, forcing the system to incur substantial runtime overheads
+PVLDB Artifact Availability:
+                                                                                             to handle the challenging inputs with higher accuracy.
+The source code, data, and/or other artifacts have been made available at
+                                                                                                To bridge such mismatches between operator needs and imple-
+https://github.com/ferdiko/ken_submission.
+                                                                                             mentation offerings, we introduce Ken, a UDBMS query execution
+1    INTRODUCTION                                                                            engine that exposes a fine-grained latency–accuracy trade-off curve
+                                                                                             to the query optimizer. Ken leverages model cascades [80], which
+Relational database systems have matured into indispensable tools                            directly address the above problem by aiming to use small models
+for managing structured data. However, most of the world’s data                              for easy inputs and only resorting to large models when necessary.
+This work is licensed under the Creative Commons BY-NC-ND 4.0 International                  Specifically, cascades first process inputs with a small model which
+License. Visit https://creativecommons.org/licenses/by-nc-nd/4.0/ to view a copy of          produces both a prediction and a confidence score. If the confi-
+this license. For any use beyond those covered by this license, obtain permission by
+emailing info@vldb.org. Copyright is held by the owner/author(s). Publication rights
+                                                                                             dence exceeds a predefined threshold, the prediction is accepted as
+licensed to the VLDB Endowment.                                                              final output; otherwise, the input is escalated to a more powerful
+Proceedings of the VLDB Endowment, Vol. 19, No. 5 ISSN 2150-8097.                            model for reprocessing. Through their tunable certainty thresh-
+doi:10.14778/3796195.3796204
+                                                                                             olds, cascades expose a high-resolution trade-off between accuracy
+
+
+
+
+                                                                                       902
+and computational cost, effectively creating many models at main
+points in the trade-off space. Furthermore, cascades can signifi-
+cantly save computation over using a single model at little accuracy
+degradation. The left side of Figure 1 compares different cascades of
+BERT classifiers to single BERT model instances. Each sample point
+represents the average number of FLOPs per sample and accuracy
+over a test set of 20,000 Sentiment-140 samples. Figure 1 shows that
+cascades can match the accuracy of the largest BERT model, while
+spending 2.5× fewer FLOPs. However, translating these savings in
+computation into lower latencies is not trivial.
+   While prior work has shown that cascades can improve the
+performance of UDBMSes, such as Lotus [59] for classification                 Figure 1: Left: Average FLOPs per sample versus accuracy of
+and NoScope [40] for video processing, they either only support               BERT classifiers on Sentiment-140 [30]. Right: Runtimes of
+models behind pay-per-request APIs (e.g., OpenAI), or only sup-               Llama-70B and a cascade incurring 84% of its FLOPs.
+port small models and homogeneous workloads (scanning a video).
+Prior works do not leverage cascades in a more general setting,               (e.g., users upload PDF invoices during work hours). Different cas-
+where workloads may be dynamic (e.g., have fluctuations in request            cades suit different arrival rates and Ken dynamically adapts which
+arrival rates), and the UDBMS may query any model, including                  cascade to use. High arrival rates allow for large batch sizes, and
+large ones or ones that are not hosted behind pay-per-request APIs.           Ken therefore favors FLOP-efficient cascades. For low arrival rates,
+Such scenarios introduce several challenges which can even cause              Ken prioritizes cascades with high accuracy (e.g., just using the
+cascades to slow queries compared to always using a large model:              most expensive model, a one-model cascade).
+
+Cascades incur additional data transfer. Computing a model’s                  Joint model placement. Loading models onto GPUs takes seconds
+output requires the GPU to transfer the model weights and inputs              to minutes, so Ken preloads all models instead of loading them at
+from memory to its arithmetic units. The execution engine can                 runtime. Cascade selection determines which models to preload
+batch inputs together and compute their predictions inside the                and how intensively each model is used for a given query arrival
+same forward pass, only requiring the model weights to be moved               rate. Given the load on the models, Ken optimizes how models are
+once for all predictions. For small batch sizes, the data movement            replicated and parallelized across the GPU cluster.
+takes longer than the arithmetic. As batch sizes grow, a forward              Multi-model scheduling. Different models might be placed onto
+pass involves more arithmetic but only incurs slightly more data              the same GPU, which requires Ken to multiplex GPU time between
+transfer, eventually making the arithmetic the bottleneck.                    them and optimize queueing, batching, and load balancing.
+   When predicting a batch with a cascade, the weights of mul-
+tiple models need to be transferred to the arithmetic units. As a              While each mechanism is an optimization problem on its own, their
+consequence, cascades degrade performance for small batch sizes               interdependence requires them to be co-optimized. For example, the
+where memory transfers dominate the runtime. For large batch                  chosen cascades must allow for a GPU placement that meets their
+sizes, cascades can improve performance as they save arithmetic               throughput requirements. Similarly, the model placements must
+                                                                              allow for good load balancing. However, load balancing is defined
+operations (e.g, FLOPs), as shown on the right of Figure 1, where
+                                                                              with respect to a placement, and a placement is defined with respect
+obtaining predictions with an example cascade takes longer than
+directly using Llama-70B, even though the cascade saves FLOPs.                to the cascade choices. To formalize the optimization and capture
+However, forming large batches may require the system to queue                its results, Ken parametrizes each mechanism and packages the
+samples — cascades therefore only improve performance when                    parameter configurations of all mechanisms into a gear plan.
+their computational savings make up for the queuing delay.                       Gear plans represent latency-accuracy trade-off points for an
+                                                                              operator, and the UDBMS’s query optimizer hence chooses a gear
+Cascades incur a higher memory footprint. Model cascades                      plan for each operator. While computing the Pareto frontier of gear
+require multiple models to reside in GPU memory. Often, their com-            plans is NP hard, Ken introduces a search algorithm that we find to
+bined weights cannot fit onto a single GPU. As a result, individual           be effective in practice. Once the gear plan search is complete and
+models cannot be replicated as extensively as if they were served             the UDBMS has selected a query plan, computing model predictions
+alone, reducing their achievable throughput. For generative LLMs,             and operating a gear plan online incurs negligible overheads.
+throughput further depends on the amount of free GPU memory,                     We find that Ken achieves 1.7 × −3.3× latency reductions over
+which is reduced if memory needs to be reserved for additional                state-of-the-art baselines when combining models from the same
+model weights (§2).                                                           family for a single logical operator. Furthermore, Ken enables the
+ In conclusion, cascades only reduce latencies in certain scenarios.          query optimizer to effectively utilize models that differ by orders
+Ken introduces three mechanisms optimize the use of cascades and              of magnitude in size, achieving 122× lower latencies than existing
+account for the above limitations:                                            baselines at comparable accuracy.
+                                                                                 In summary, our contributions are as follows:
+Adaptive cascade selection. User-facing systems, such as UDBM-                • We propose Ken, a UDBMS execution engine that uses model
+Ses, typically face fluctuations in query arrival rates [46, 56, 90]          cascades to enable fine-grained latency–accuracy trade-offs. This al-
+                                                                              lows UDMBSes to avoid excessive latency or accuracy degradations
+
+
+
+
+                                                                        903
+Figure 2: Excerpt of a workload trace [67] that is representative Figure 3: Runtimes of a for- Figure 4: Request throughput
+for model serving.                                                ward pass with different batch of Llama-3.1 70B [26] as a func-
+                                                                  sizes for BERT classifiers.    tion of available memory.
+
+that arise when only faced with coarse-grained trade-off points                      not showing benefits by having a more fine-grained model short-
+where none meet the precise application needs.                                       circuiting mechanism. Prior work has shown that cascades can
+• Achieving low latency response times with cascades comes with                      reduce the average FLOP count on a variety of ML tasks [16, 24,
+caveats, which Ken addresses by optimizing query-aware cascade                       33, 40, 60, 80, 87, 92, 97]. While some cascades in Figure 1 even
+selection, GPU placement, and invocation scheduling.                                 outperform BERT-Base in accuracy, this is not typical (although
+• We evaluate Ken and find that it exposes trade-offs to the UDBMS                   similar gains have been reported in prior work [79]). Conversely,
+query optimizer that outperform strong baselines by 1.7 × −3.3×                      for workloads where queries have largely uniform difficulty, multi-
+when combing similar models. When combining models with large                        model cascades do not achieve meaningful FLOP reductions and
+size gaps, Ken achieves up to 122× latency improvements over                         can be unnecessarily complicated.
+baselines for multi-operator UDBMS queries.                                              Second, model cascades offer a high-resolution trade-off between
+                                                                                     FLOPs and accuracy. Instead of choosing between individual mod-
+2    MODEL CASCADES: PROMISES AND                                                    els, cascades allow to choose points on the FLOP-accuracy trade-off
+                                                                                     curve at a finer granularity. This makes them well-suited for work-
+     PITFALLS                                                                        load adaptation. In this work, we model the query load to a UDBMS
+In this section, we overview model cascades, describing their poten-                 after production request traces to Azure serverless functions [67],
+tial to enhance UDBMSes but also the challenges to build a query                     which are commonly used to model the query loads issued to user-
+execution engine around them.                                                        facing applications such as UDBMSes [49, 63, 95]. Figure 2 shows
+Background on model cascades. A model cascade [80] consists                          an excerpt of this production workload trace. The workload shows
+of a sequence of models {𝑚 1, . . . , 𝑚𝑘 }, each of which consumes                   large short-term variations in query load which are typical for user-
+the same inputs and produces similar outputs. Generally, 𝑚𝑖 is                       facing applications [46, 56, 90]. Cascades are well-suited to adapt to
+smaller (in terms of parameters and inference time) than 𝑚𝑖+1 .                      such changes because they (i) offer a trade-off point that precisely
+Given this sequence of models, a set of thresholds {𝜏1, . . . , 𝜏𝑘 −1 }              fits the momentary query load and (ii) transitioning between cas-
+dictate how samples are conditionally forwarded for inference.                       cades can be as simple as varying the certainty threshold 𝜏 without
+Specifically, for a given sample 𝑥, 𝑚 1 first produces a prediction                  changing the models.
+𝑓1 (𝑥) and a prediction certainty 𝛿 1 (𝑥). If 𝛿 1 (𝑥) exceeds 𝜏1 , 𝑓1 (𝑥) is             In summary, model cascades offer great potential to reduce the
+used as the final output. Otherwise, sample 𝑥 is cascaded to 𝑚 2 ,                   computational cost of ML inference and adapt to dynamic and vari-
+where the inference process is repeated recursively. Many existing                   able workloads. However, in real-world applications, users are more
+approaches (e.g., the entropy of the output logits) can quantify                     concerned with latency and throughput than pure computational
+prediction certainty without significant inference overhead [40].                    cost (i.e., FLOPs). Thus, to leverage the promising properties of
+                                                                                     cascades, the query execution engine must translate savings in
+Promising properties of model cascades. Model cascades have                          computation cost to lower latencies and higher throughput. In the
+two properties that are promising for query execution engines.                       following, we discuss the challenges of optimizing these metrics.
+   First, cascades can significantly reduce the incurred FLOPs while
+largely maintaining accuracy over a prediction task. For example,                    Batching effects. Model inference systems typically propagate
+Figure 1 (left) shows the tradeoff between FLOPs and accuracy for                    several samples through a neural network as one batch. The run-
+different model cascades in comparison to the stand-alone models                     time for processing a batch does not increase proportionally with
+that are used to build the cascades. The models are fine-tuned BERT                  the batch size, especially for small batch sizes. For example, Figure 3
+classifiers and are running on a test set of 20,000 samples from                     shows the time taken to propagate one batch with two BERT classi-
+the Sentiment-140 classification benchmark [30]. In this example, a                  fiers on a V100 GPU. The runtime for BERT-Tiny essentially stays
+model cascade can match the accuracy of BERT-Base while only                         constant for all batch sizes up to 512. The reason in this particular
+using 45% of its FLOPs per prediction. We have found that the                        case is that BERT Tiny’s per-batch computational load is so low
+Pareto-optimal cascades in terms of FLOP savings typically use                       on Sentiment-140,that system-level overheads (e.g., tokenization,
+1-3 cascades — more models merely add FLOPs in the worst case                        moving tokenized samples from CPU to GPU, kernel launches and
+(when a sample needs to be cascaded until the largest model), while                  synchronization) hide GPU scaling effects. Propagating 16 samples
+
+
+
+
+                                                                               904
+

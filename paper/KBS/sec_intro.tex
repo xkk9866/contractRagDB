@@ -1,162 +1,147 @@
 \section{Introduction}
 \label{sec:intro}
 
-Large language models (LLMs) are increasingly deployed as
-knowledge-intensive components of production software systems, powering
-question answering over enterprise documents, regulatory and financial
-assistants, and clinical decision support
-\citep{lewis2020rag,gao2023alce,yang2024cragbench,aarab2025bank,
-yang2025integrating}. Because parametric
-knowledge is incomplete, stale, and prone to hallucination,
-retrieval-augmented generation (RAG) has become the default mechanism
-for grounding LLM outputs in external knowledge sources --- relational
-tables, text corpora under sparse and dense indexes, vector stores, and
-structured knowledge APIs \citep{lewis2020rag,chen2020hybridqa}. A
-modern RAG service is therefore a \emph{knowledge acquisition pipeline}:
-between retrieval and generation sit fusion, reranking, verification,
-and a menu of LLMs whose per-token prices span two orders of magnitude.
-The same information need admits many pipeline configurations, and
-their cost differences are large; their quality differences are real
-but stochastic. For knowledge services that face compliance, safety, or
-service-level obligations, a property more fundamental than average
-accuracy is at stake: \emph{can the operator state, before violations
-reach users, what fraction of answers will fail the application's
-quality, citation, freshness, or latency requirements?}
+A knowledge service built on retrieval-augmented generation (RAG) is
+usually asked for something its designers cannot promise. A compliance
+office does not ask that a particular answer be correct; it asks that
+no more than, say, one answer in ten be wrong, and that the bill be as
+small as possible subject to that. The obligation is a \emph{rate} over
+a stream of queries, it is checked on the service log, and it is the
+kind of thing that goes into a service-level agreement.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.88\textwidth]{figures/fig_paradigm.png}
-\caption{Three deployment paradigms for RAG knowledge services.
-(a)~Point-estimate tuning deploys the cheapest configuration whose
-\emph{measured} risk clears the target --- an uncorrected
-multiple-testing procedure with no feasibility guarantee.
-(b)~Distribution-free risk control bounds the risk of a \emph{fixed}
-pipeline but neither searches a configuration space nor reduces cost,
-and is silent under drift. (c)~\system\ unifies search, certification,
-and monitoring: an evidence contract is certified by a fixed-sequence
-test over a policy space ordered by risk vouchers, and an anytime-valid
-e-process monitor closes the loop after deployment.}
-\label{fig:paradigm}
-\end{figure*}
+The literature discharges this obligation by inference. Take a
+calibration sample, estimate the risk of each candidate pipeline,
+correct for having examined many candidates, and deploy one whose
+estimate clears $\alpha$ minus a confidence width. Distribution-free
+risk control \citep{angelopoulos2021ltt,bates2021rcps} makes this
+rigorous, and conformal methods for RAG
+\citep{li2024traq,kang2024crag} apply it to retrieval pipelines. The
+resulting statement is: the deployed policy's risk is at most $\alpha$
+with probability $1-\delta$, provided deployment traffic is
+exchangeable with the calibration sample.
 
-However, the dominant deployment practice cannot answer this question.
-Practitioners sample a development set, estimate each configuration's
-quality, and deploy the cheapest configuration whose \emph{estimate}
-clears the target --- a paradigm we call point-estimate tuning
-(Figure~\ref{fig:paradigm}a), shared
-by workload-level pipeline optimizers \citep{russo2025abacus,
-liu2025palimpzest,patel2024lotus} and by adaptive RAG routers and LLM
-cascades \citep{jeong2024adaptiverag,chen2023frugalgpt,ong2024routellm}.
-This paradigm suffers from a fundamental statistical flaw: selecting
-the cheapest configuration whose measured risk clears a threshold is a
-multiple-testing procedure without a correction, so the winner is
-systematically the configuration whose noise broke in its favor. The
-failure is structural rather than a matter of tuning budget --- more
-candidates make it worse, not better. As we quantify in
-Section~\ref{sec:results}, state-of-practice optimizers deploy policies
-whose true violation rate exceeds the declared target in up to 64\% of
-calibration draws: for a compliance requirement, a coin flip. Moreover,
-even a correctly tuned pipeline offers no protection after deployment,
-when workload mix shifts, indexes fall behind the world, and knowledge
-APIs degrade --- the knowledge drift problem that static evaluation
-cannot see.
+Three costs come with that statement, and this paper is about the fact
+that all three are structural rather than incidental.
 
-Distribution-free risk control offers a principled remedy
-(Figure~\ref{fig:paradigm}b): conformal
-and Learn-then-Test methods \citep{angelopoulos2021ltt,
-angelopoulos2024crc} can bound the violation rate of a \emph{fixed}
-pipeline with finite-sample confidence, and recent work has applied
-them to RAG abstention and answer sets \citep{li2024traq,kang2024crag}.
-Yet these methods treat the pipeline as given: they neither search a
-configuration space nor reduce cost, and they are silent about what
-happens when the calibrated distribution drifts. Conversely, the
-systems that do search --- routers, cascades, Bayesian optimization ---
-provide no feasibility statement at all. What is missing is a framework
-in which \emph{search, certification, and post-deployment monitoring}
-are designed together, so that cost optimization never erodes the
-statistical guarantee.
+\emph{The confidence width is paid forever.} A calibration-time
+decision cannot be revised, so it must be right the first time, so it
+must be conservative by the full estimation error. That slack is
+$\Theta(\sqrt{\log(K/\delta)/n_{\mathrm{cal}}})$, it is fixed the
+moment calibration ends, and it is charged on every query for the life
+of the deployment. On our data it is $0.085$ at $\alpha$ levels of
+$0.15$--$0.34$, which is not a correction but a redefinition of the
+contract.
 
-To close this gap, we propose \system, a certified deployment framework
-for RAG knowledge services (Figure~\ref{fig:paradigm}c). The key idea
-is to make the reliability
-promise a first-class, declarative object: an \emph{evidence contract}
-states admissible violation rates for answer quality, citation
-completeness, evidence freshness, and latency, together with a
-confidence budget $\delta$ for the certification itself. \system\ then
-treats contract feasibility the way a database treats integrity
-constraints: no pipeline configuration --- however attractive its point
-estimate --- is deployable unless a statistical test on calibration
-executions certifies it. Three mechanisms make this practical. First,
-cost-decreasing pipeline rewrites (retrieval truncation, reranker
-elision, pre-filter pushdown, generator downgrade) are annotated with
-empirical \emph{risk vouchers} --- confidence upper bounds on their
-probability of harming an answer --- which compose assumption-free
-along rewrite chains by a telescoping argument and guide the search the
-way a cost model guides a query optimizer: they order candidates but
-never justify the deployment. Second, the rewrite lattice is lifted
-into \emph{progressive knowledge-acquisition policies} --- escalation
-ladders that execute cheap plans first and escalate while runtime
-sufficiency evidence is inadequate, cost-utility routers,
-group-conditional variants, and, under strict contracts, policies that
-defer residual queries to human review with a certified deferral
-budget --- and a fixed-sequence Hoeffding--Bentkus test certifies a
-feasible low-cost policy (the cheapest of its certified prefix) with
-no multiplicity penalty, so enriching the policy space never erodes
-the guarantee. Third, an anytime-valid restart-mixture e-detector
-watches deployed violations --- at full or subsampled audit rates ---
-with a change-time-independent detection-delay bound, localizes the
-changepoint at $O(1)$ cost per query, and drives a closed-loop
-certified recalibration procedure whose geometric error-budget
-schedule remains valid over arbitrarily many alarms. This design elevates RAG
-deployment from point-estimate tuning to certified knowledge-service
-management: learned components decide how much money the certified
-policy saves, while statistics alone decides whether the contract
-holds.
+\emph{Enlarging the plan space helps or hurts, and nobody can say which
+in advance.} The width grows with the number of candidates, while the
+plans themselves get cheaper. We built plan grids by unbundling
+retrieval configuration from generator choice -- $36$ plans on one
+benchmark, $24$ on another, spanning three model developers and three
+locally served open-weight models -- and certified each with the same
+procedure used on the conventional $4$-rung ladder it contains. In the
+offline problem the larger space wins every time. Under certification
+the sign flips with the task: on one benchmark the certified policy came
+out $19\%$ \emph{more} expensive than on the ladder, on the other $31\%$
+cheaper, and each space has a contract level at which it certifies
+nothing while the other certifies a policy. A query optimizer whose
+search space cannot be enlarged with a predictable effect is not a query
+optimizer.
 
-To the best of our knowledge, this is among the first frameworks to
-provide end-to-end, finite-sample reliability guarantees for
-cost-optimized RAG over heterogeneous knowledge sources. The main
-contributions of this paper are summarized as follows:
+\emph{Strict contracts are infeasible by construction.} The attainable
+risk of a system that must answer every query is bounded below by the
+risk of its best pipeline. That floor is $0.59$ on two of our four
+benchmarks and $0.27$ on a third, so a $10\%$ contract -- the one the
+compliance office actually wrote -- is not merely hard to certify, it is
+unexpressible. No amount of statistical sharpening moves a floor.
+
+The third point is the one that reveals what is wrong. Infeasibility is
+not a statistical failure; it says the action space is too small. Real
+services are not obliged to answer every query. They may decline --
+return "insufficient evidence", route to a human, degrade to a document
+list. Declining yields no wrong answer, so its contract loss is exactly
+zero, and it is available at every arrival.
+
+Admitting that one action changes the character of the problem. Track
+the ledger $B_t = \alpha t - V_t$, the contract allowance earned but
+unspent after $t$ queries and $V_t$ violations, and gate on it: run a
+plan only when the ledger can absorb a violation, $B_{t-1} \ge
+1-\alpha$; otherwise decline. Then $B_t \ge 0$ for every $t$ by
+induction, that is,
+\[
+V_t \le \alpha t \qquad \text{for every } t,
+\]
+with no probability, no distributional assumption, no dependence on how
+many plans were considered, and no horizon. The contract is not
+something the system is confident about; it is something the system
+cannot violate, in the way that an account with a hard overdraft limit
+cannot go negative.
+
+That leaves cost as the only open problem, and it is a real one: the
+optimizer must choose, at each arrival, among plans whose risks it does
+not know, and declining is expensive. But an error in a risk estimate
+now costs money and nothing else -- it drains the ledger faster, the
+gate closes more often, the bill goes up, and the contract still holds
+exactly. This is the division of labour a database query optimizer has
+always had. Cardinality estimates choose plans and are wrong by orders
+of magnitude \citep{leis2015good}; correctness is the executor's
+responsibility, not the estimator's. Certified RAG has been putting the
+guarantee on the estimate, and paying for its error forever. Moving it
+to the executor is the whole of our proposal, and the rest -- strict
+contracts becoming feasible, plan spaces becoming free to enlarge,
+drift needing no detector -- follows rather than being added.
+
+We instantiate this as \system, a contract-enforcing executor for
+hybrid RAG, and evaluate it on fully metered executions of four
+benchmarks (HybridQA, CRAG, ASQA, QAMPARI) over a plan space spanning
+three commercial vendors and two locally served open-weight models,
+with every LLM call priced and every label charged.
+
+\paragraph{Contributions.}
 \begin{itemize}
-\item We propose \emph{evidence contracts}, a declarative and
-statistically meaningful interface between knowledge-intensive
-applications and the RAG execution layer, subsuming quality, citation,
-freshness, and latency requirements
-(Section~\ref{sec:prelim}).
-\item We design a certified plan optimizer that combines
-rewrite-generated plan lattices, assumption-free telescoping voucher
-composition, selectivity-conditioned vouchers, and
-cardinality-driven knowledge-source selection, with fixed-sequence
-testing as the sole source of soundness; we prove contract validity for
-any candidate count and any score quality, and a cost-consistency
-guarantee (Section~\ref{sec:method}).
-\item We develop an anytime-valid drift monitor based on a
-restart-mixture e-detector, with a proven change-time-independent
-detection delay bound, $O(1)$ changepoint localization, validity under
-subsampled auditing, a certified post-alarm recalibration loop, and a
-lifetime guarantee across repeated alarms via geometric error spending
-(Section~\ref{sec:monitor}).
-\item We conduct a systematic empirical study on four heterogeneous
-benchmarks with fully metered execution across four LLM families from
-four model developers on two serving backends (token- and
-GPU-second-metered). Verified directly on exact finite-population
-risk, \system\ is the only method meeting its contract budget
-everywhere (violation probability at most 0.8\% over 1000 draws
-against $\delta=10\%$); it cuts cost by up to 20$\times$ against the
-strongest fixed pipeline (10--18$\times$ after charging monitoring
-audits), certifies strict contracts down to $\alpha = 0.1$ with
-deferral and four-constraint joint contracts where Bonferroni
-certifies nothing, detects injected drift in a median of 78 queries
-with no false alarms, and reports infeasibility honestly when no
-configuration can meet the contract
-(Sections~\ref{sec:setup}--\ref{sec:results}).
+\item \textbf{A deterministic contract guarantee.} The ledger gate
+      yields $V_t \le \alpha t$ pathwise, for every $t$, under any query
+      order including adversarial ones, independent of the size of the
+      plan space (Theorem~\ref{thm:gate}). We show empirically that this
+      is not a technicality: under a mid-stream distribution shift, a
+      calibration certificate is breached on $100\%$ of streams while
+      the ledger's worst prefix rate never reaches $\alpha$.
+\item \textbf{Declining as a first-class action, and what it buys.}
+      Adding $\bot$ to the action space makes every $\alpha > 0$
+      attainable and forces the minimum decline rate
+      $1 - \alpha/\min_p r_p$ when the contract is below the best plan's
+      risk (Proposition~\ref{prop:feasible}). Crucially, declining alone
+      is \emph{not} the source of the gain: handed the same action, the
+      static certifier's cost changes by under $2\%$ and on two tasks
+      gets slightly worse, because its confidence width still forces it
+      to over-decline. Ledger plus randomisation is
+      $1.58$--$3.75\times$ cheaper than the same certifier with the same
+      action space.
+\item \textbf{Cost as a pure learning problem.} With validity removed
+      from the optimisation, the executor may steer aggressively; we
+      give an action-LP formulation over plans plus declining, prove an
+      $O(\sqrt{P\log T / T})$ regret against the offline optimum
+      (Theorem~\ref{thm:regret}), and measure it on streams of up to
+      $32\,000$ queries, where it falls to $1.5$--$7.7\%$ of that
+      optimum.
+\item \textbf{Honest accounting for labels.} A deterministic guarantee
+      needs the loss of every served query. We give the exact price of
+      not having it: worst-case accounting preserves
+      $V_t \le \alpha t$ and pays in declines, inverse-probability
+      accounting preserves the cost and breaches on $6$--$59\%$ of
+      streams at a $25\%$ label rate
+      (Proposition~\ref{prop:labels}). Audit cost is included in every
+      number we report.
+\item \textbf{A metered, released artifact.} Every execution behind
+      every number -- four benchmarks on a four-rung ladder, plus the
+      $32$-plan grid -- was run end to end, with token-exact pricing for
+      hosted models and GPU-second pricing for local ones; the execution
+      matrices, the call cache and the code regenerate every table
+      without further LLM calls.
 \end{itemize}
 
-The remainder of this paper is organized as follows.
-Section~\ref{sec:related} reviews related work.
-Section~\ref{sec:prelim} formalizes evidence contracts and the
-certified deployment problem. Section~\ref{sec:method} presents the
-\system\ framework. Sections~\ref{sec:setup} and~\ref{sec:results}
-report the experimental setup and results. Section~\ref{sec:discussion}
-discusses implications, limitations, and threats to validity, and
-Section~\ref{sec:conclusion} concludes.
+Across the four benchmarks the executor operates at $1.22$--$1.59\times$
+the cost of an offline optimum that knows every plan's risk, against
+$2.51$--$5.16\times$ for one-shot certification given the same action
+space. Over $4\,500$ streams spanning every task, contract level, decline
+price and query order we ran, the largest excess of the worst prefix rate
+over $\alpha$ was zero.

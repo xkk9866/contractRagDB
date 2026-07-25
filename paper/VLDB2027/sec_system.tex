@@ -1,0 +1,32 @@
+\section{System Implementation}
+\label{sec:system}
+
+\system is a 4K-line Python prototype. DuckDB and lexical row selection
+serve structured data. BM25 and BGE embeddings with FAISS provide sparse
+and dense access paths; reciprocal-rank fusion and
+bge-reranker-v2-m3 implement fusion and reranking. A DeBERTa NLI model
+produces support features, and citation repair re-prompts with unsupported
+sentences and their evidence.
+
+The generator layer exposes interchangeable model tiers. The main
+experiments use token-metered Qwen tiers. A portability study substitutes
+DeepSeek and GLM tiers on a hosted API and locally served Gemma~3 tiers,
+whose cost is measured in GPU seconds. Every call is stored in a
+thread-safe SQLite cache keyed by the model, messages, and decoding
+parameters. Execution records include token counts, latency, evidence age,
+retrieval and verification features, and per-stage local compute.
+
+The optimizer consumes only materialized execution matrices. Building the
+default 69-policy space takes 10--20\,ms and certification takes 5--8\,ms
+for calibration sets of up to 3000 records. A 1504-policy space certifies
+in under 0.2\,s; the largest experiment evaluates 97,365 policies in at
+most 8.5\,s. Online overhead is one score lookup per visited rung and one
+constant-size monitor update per audited query.
+
+We meter local retrieval, reranking, and verification at an RTX-4090 rental
+rate in addition to model calls. These stages add 0.001--0.23 mCNY per rung
+(at most 0.28 mCNY cumulatively) versus 0.17--9.0 mCNY for generation.
+Including local compute changes policy cost by less than 0.3 mCNY and does
+not change any ranking or safety result. The artifact contains source,
+execution matrices, token-exact call cache, and scripts for all reported
+tables and figures.

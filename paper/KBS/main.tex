@@ -6,8 +6,8 @@
 % use the longmktitle option.
 %\documentclass[a4paper,fleqn,longmktitle]{cas-dc}
 
-%\usepackage[numbers]{natbib}
-\usepackage[authoryear,longnamesfirst]{natbib}
+\usepackage[numbers,sort&compress]{natbib}
+%\usepackage[authoryear,longnamesfirst]{natbib}
 
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -15,6 +15,15 @@
 \usepackage{graphicx}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+
+% The class records \lastpage before deferred floats are flushed, so the
+% "Page X of Y" footer under-reports Y whenever a float lands on its own
+% page. Set the total here; scripts/check_pagination.py fails the build if
+% it stops matching the PDF. The template files themselves are untouched.
+\makeatletter
+\AtBeginDocument{\def\lastpage{16}}
+\makeatother
+
 
 %%%Author macros
 \def\tsc#1{\csdef{#1}{\textsc{\lowercase{#1}}\xspace}}
@@ -26,6 +35,7 @@
 \newtheorem{definition}{Definition}
 \newdefinition{rmk}{Remark}
 \newproof{pf}{Proof}
+\newproof{pfsketch}{Proof sketch}
 
 \newcommand{\system}{\textsc{ContractRAG}\xspace}
 \newcommand{\eps}{\varepsilon}
@@ -38,125 +48,118 @@
 \def\textpagefraction{.001}
 
 % Short title
-\shorttitle{Certified evidence contracts for reliable and cost-efficient RAG}
+\shorttitle{Enforcing evidence contracts by accounting}
 
 % Short author
 \shortauthors{Yao et~al.}
 
 % Main title of the paper
-\title[mode = title]{Certified evidence contracts for reliable and
-cost-efficient retrieval-augmented generation over heterogeneous
-knowledge sources}
+\title[mode = title]{Evidence contracts that cannot be violated:
+enforcing quality obligations by accounting rather than inference in
+retrieval-augmented knowledge services}
 
-\author[1,2]{Kang Yao}
+\author[1,2]{Kang Yao}[orcid=0009-0007-4747-4018]
+\fnmark[1]
 \ead{yaokang@mail.ustc.edu.cn}
 \credit{Conceptualization, Methodology, Software, Formal analysis,
-Writing -- original draft}
+Data curation, Visualization, Writing -- original draft}
 
-\author[3]{Congcong Tian}
-\ead{24b903119@stu.hit.edu.cn}
-\credit{Software, Validation, Investigation, Data curation}
-
-\author[1,2]{Quanbo Cheng}
-\ead{qbcheng@ustc.edu}
-\credit{Investigation, Visualization, Writing -- review \& editing}
-
-\author[1,2]{Shengjiang Zhang}
+\author[1,2]{Shengjiang Zhang}[orcid=0009-0003-6744-743X]
+\fnmark[1]
 \ead{zhangshengjiang@mail.ustc.edu.cn}
-\credit{Validation, Data curation, Writing -- review \& editing}
+\credit{Methodology, Software, Validation, Investigation, Data curation,
+Writing -- original draft, Writing -- review \& editing}
 
-\author[1,2]{Hao Yin}
-\ead{hao_yin@mail.ustc.edu.cn}
-\credit{Investigation, Resources, Writing -- review \& editing}
-
-\author[2]{Jinjiang Cui}
-\cormark[1]
-\ead{cuijj@sibet.ac.cn}
-\credit{Conceptualization, Supervision, Project administration,
+\author[3]{Ronghao Pei}
+\ead{peironghao@hikvision.com}
+\credit{Software, Resources, Investigation, Validation,
 Writing -- review \& editing}
 
-\author[2]{Weiwei Fu}
-\cormark[2]
+\author[2]{Weiwei Fu}[orcid=0000-0001-7192-3118]
+\cormark[1]
 \ead{fuww@sibet.ac.cn}
-\credit{Supervision, Funding acquisition, Writing -- review \& editing}
+\credit{Supervision, Funding acquisition, Resources,
+Project administration, Writing -- review \& editing}
+
+\author[2]{Jinjiang Cui}[orcid=0009-0002-5159-9570]
+\cormark[1]
+\ead{cuijj@sibet.ac.cn}
+\credit{Conceptualization, Supervision, Funding acquisition,
+Project administration, Writing -- review \& editing}
 
 \affiliation[1]{organization={School of Biomedical Engineering
 (Suzhou), Division of Life Sciences and Medicine, University of Science
 and Technology of China},
+            addressline={166 Ren'ai Road, Suzhou Industrial Park},
             city={Suzhou},
+            postcode={215123},
             country={China}}
 
 \affiliation[2]{organization={Suzhou Institute of Biomedical Engineering
 and Technology, Chinese Academy of Sciences},
+            addressline={No. 88 Keling Road, Suzhou New District},
             city={Suzhou},
+            postcode={215163},
             country={China}}
 
-\affiliation[3]{organization={Faculty of Computing, Harbin Institute of
-Technology},
-            city={Harbin},
+\affiliation[3]{organization={Hikvision Research Institute},
+            city={Hangzhou},
             country={China}}
 
-\cortext[1]{Corresponding author}
-\cortext[2]{Corresponding author}
+\fntext[1]{Kang Yao and Shengjiang Zhang contributed equally to this work.}
+\cortext[1]{Weiwei Fu and Jinjiang Cui are co-corresponding authors.}
 
 \begin{abstract}
-Retrieval-augmented generation (RAG) grounds large language models
-(LLMs) in external knowledge sources, yet the reliability of the
-resulting knowledge service remains uncalibrated: practitioners tune
-pipelines on development sets and hope the observed quality persists in
-deployment. Existing adaptive RAG systems reduce cost with routing or
-cascading heuristics, but none can state, with quantified confidence,
-what fraction of deployed answers will violate an application's quality,
-citation, freshness, or latency requirements. We propose \emph{evidence
-contracts}, a declarative specification of admissible violation rates
-for a RAG knowledge service, and \system, a framework that certifies
-contract feasibility by statistical testing rather than point-estimate
-comparison. \system\ organizes cost-decreasing pipeline rewrites into a
-plan lattice annotated with assumption-free \emph{risk vouchers},
-materializes progressive knowledge-acquisition policies --- including
-policies that defer to human review under strict contracts --- over
-the lattice, and deploys the cheapest policy in the prefix certified
-by a distribution-free fixed-sequence test on calibration data,
-yielding a finite-sample guarantee that all contract constraints hold
-with probability at least $1-\delta$. After deployment, an
-anytime-valid e-process monitor --- valid also under subsampled
-auditing --- detects knowledge drift with a change-time-independent
-delay bound, localizes the changepoint, and drives a recalibration
-loop whose geometric error-budget schedule preserves validity over
-arbitrarily many alarms. Experiments on four heterogeneous benchmarks
-(HybridQA, CRAG, ASQA, QAMPARI) with fully metered execution verify
-the guarantee directly on exact finite-population risk: across 1000
-repeated calibration draws, \system's deployed policies exceed their
-contract in at most 0.8\% of draws against a 10\% budget, versus up to
-64\% for Bayesian optimization and empirical tuning, while cutting LLM
-cost by up to 20$\times$ against the strongest fixed pipeline
-(10--18$\times$ after charging monitoring audits). The guarantee
-transfers unchanged across four LLM families from four model
-developers and two serving backends, including a locally served
-open-weight family metered in GPU-seconds. These results suggest that
-knowledge-intensive LLM systems should move beyond point-estimate
-tuning toward certified, contract-driven deployment.
+A deployed retrieval-augmented generation (RAG) service is held to a
+\emph{rate}: no more than a stated fraction of its answers may be
+unsupported, and the bill should be as small as possible subject to
+that. The literature discharges such obligations by inference --
+estimate each candidate pipeline's risk on a calibration sample,
+correct for multiplicity, deploy one whose estimate clears the level
+minus a confidence width. We identify three structural costs of that
+choice: the width is paid on every query forever, it grows with the
+number of candidates, so that enlarging the plan space changes the
+certified cost by an amount whose sign is task-dependent and cannot be
+known before the space is built, and any level below the best
+pipeline's risk is infeasible by construction -- which, on our
+benchmarks, excludes every contract an operator would write. We show
+the obligation can instead be discharged by accounting. Admitting a
+decline action, whose contract loss is zero, and gating execution on
+the ledger $B_t = \alpha t - V_t$ of unspent allowance yields
+$V_t \le \alpha t$ at every $t$, on every path, under any query order,
+independently of how many plans were considered -- no probability, no
+exchangeability, no horizon. Statistics then serves cost alone: we give
+a linear program over plans plus declining, prove
+$O(\sqrt{P\log T/T})$ cost regret, and price partial auditing exactly.
+On fully metered executions of HybridQA, CRAG, ASQA and QAMPARI over a
+plan space spanning three model developers and three open-weight
+models, the executor runs at 1.22--1.61$\times$ an offline optimum that
+knows every plan's risk, against 2.46--5.16$\times$ for one-shot
+certification given the same action space, and never exceeds its
+contract in 4\,500 streams while spending 89--99\% of the allowance, so
+the guarantee binds without slack. Under a mid-stream distribution shift
+the certificate is breached on up to 100\% of streams while the ledger is
+breached on none, and tightening the certifier's error budget by
+200$\times$ moves its breach rate in one of twelve cells -- its failure
+is a calibration sample that misrepresents the stream, which no
+confidence correction repairs. Declining alone explains almost none of
+this: handed the same action, the certifier improves by under 2\%.
 \end{abstract}
 
 % Research highlights
 \begin{highlights}
-\item Evidence contracts declare auditable reliability targets for RAG
-knowledge services
-\item Fixed-sequence tests certify cost-efficient policies with
-finite-sample guarantees
-\item Assumption-free risk vouchers order a lattice of cost-decreasing
-plan rewrites
-\item Anytime-valid drift monitor stays valid over repeated alarms and
-subsampled audits
-\item Population-risk guarantees hold across four LLM families at up
-to 20$\times$ lower cost
+\item A quality contract can be enforced exactly, without any statistical assumption
+\item Declining is an optimizer action, making contracts below the risk floor feasible
+\item Removing validity from the estimate lets the optimizer steer far more aggressively
+\item A larger plan space helps or hurts a certificate unpredictably; the ledger is immune
+\item Cost, declines and audit labels are metered end to end on four benchmarks
 \end{highlights}
 
 % Keywords
 \begin{keywords}
-Retrieval-augmented generation \sep Evidence contracts \sep
-Distribution-free risk control \sep Large language models \sep
-Knowledge drift \sep Certified deployment
+Retrieval-augmented generation \sep Knowledge service reliability \sep
+Selective prediction \sep Online resource allocation \sep
+Distribution-free inference \sep Query optimization
 \end{keywords}
 
 \maketitle
@@ -171,29 +174,46 @@ Knowledge drift \sep Certified deployment
 
 \section{Conclusion}
 \label{sec:conclusion}
-This paper reframed the deployment of retrieval-augmented generation as
-a certified knowledge-service problem. Evidence contracts give
-applications a declarative vocabulary for reliability --- admissible
-violation rates for answer quality, citation completeness, evidence
-freshness, and latency --- and \system\ makes the vocabulary
-enforceable: plan rewrites are priced by assumption-free risk vouchers,
-progressive knowledge-acquisition policies are searched over a plan
-lattice, feasibility is established by a distribution-free
-fixed-sequence test whose guarantee survives unlimited search, and an
-anytime-valid e-process monitor defends the certificate against
-knowledge drift with certified recalibration, geometric error spending
-across repeated alarms, and explicitly metered audit costs. Across
-four heterogeneous benchmarks and four LLM families from four model
-developers, certification was the only mechanism that kept the
-declared promise --- verified on exact finite-population risk, at most
-0.8\% violation probability against a 10\% budget, where uncertified
-tuning violated in up to 64\% of draws --- while remaining up to
-20$\times$ cheaper than the strongest fixed pipeline before audit
-costs and 10--18$\times$ after. We believe contract-driven
-certification offers a principled and practical path for
-knowledge-based systems that must be simultaneously economical and
-accountable, and we release all execution matrices and code to support
-replication and extension.
+A quality contract on a RAG service is an obligation about a realised
+rate, and this paper's claim is that such an obligation should be
+enforced rather than estimated. Admitting a decline action and gating
+execution on the unspent allowance $B_t = \alpha t - V_t$ makes
+$V_t \le \alpha t$ an identity of the trajectory rather than an event
+of probability $1-\delta$: it holds under adversarial query orders,
+under mid-stream drift, and independently of how large the plan space
+is. What remains is a cost problem in which estimation errors are paid
+for in money, and we solve it with an optimistic linear program over
+plans plus declining, with $O(\sqrt{P\log T/T})$ regret.
+
+The empirical consequences are consistent across four metered benchmarks
+and two plan grids built by unbundling retrieval from generation. The
+executor operates at 1.22--1.61$\times$ an offline optimum that knows
+every plan's risk, where one-shot certification with the same action
+space costs 2.46--5.16$\times$; it never exceeded its contract in
+4\,500 streams while spending 89--99\% of the allowance, so the
+constraint binds without ever being crossed, and the certificate was
+breached on up to 100\% of streams once the traffic stopped being
+exchangeable with its calibration prefix. Enlarging the plan space
+sharpened the contrast in an unexpected way: the certified cost got
+worse on one grid and better on the other, so an operator cannot know
+in advance whether building a larger space will be rewarded, whereas the
+ledger's distance to the offline optimum was unchanged in both. The
+ablation is the part we would ask a sceptical reader to check first:
+giving the certifier the same decline action changes its cost by less
+than 2\%, and removing randomisation from the executor makes it worse
+than the certifier. None of the three ingredients works alone.
+
+The design has a price and we have tried to state it plainly. A
+deterministic guarantee consumes the loss of every served query, so it
+presumes an auditor; auditing a quarter of traffic preserves the
+guarantee only if unlabelled queries are charged as failures, which
+costs declines, and the unbiased alternative breaches on 6--59\% of
+streams. Where auditing already happens, this seems the right trade.
+Beyond RAG, the construction applies to any service with a rate
+obligation, a menu of differently priced execution strategies, and the
+right to decline -- which is a fair description of most decision-support
+systems. We release the execution matrices, the token-exact cache and
+the code, so every number regenerates without further LLM calls.
 
 %% Declarations
 \section*{Declaration of competing interest}
@@ -211,19 +231,12 @@ paper regenerates from the artifact without further LLM calls.
 \printcredits
 
 %% Loading bibliography style file
-\bibliographystyle{cas-model2-names}
+\bibliographystyle{elsarticle-num-names}
 
 % Loading bibliography database
 \bibliography{refs}
 
-\appendix
-\input{sec_appendix}
-
-% Flush all deferred floats before the class's AtEndDocument hook
-% records \lastpage, so the "Page X of Y" footer counts float pages.
-% After \clearpage the page counter already points at the (empty) next
-% page, so step it back to make \lastpage equal the last shipped page.
+% Flush deferred floats so no float page follows the last numbered page.
 \clearpage
-\addtocounter{page}{-1}
 
 \end{document}

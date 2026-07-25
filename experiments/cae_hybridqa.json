@@ -1,0 +1,149 @@
+{
+ "track": "hybridqa",
+ "n_plans": 15,
+ "N": 6466,
+ "n_hist": 5000,
+ "n_cal": 500,
+ "audit_unit": 0.00017598555,
+ "draws": 15,
+ "results": {
+  "0.3": {
+   "alpha": 0.3,
+   "pop_best": 0.0062979657284256115,
+   "rows": {
+    "0.1|static": {
+     "delta": 0.1,
+     "method": "static",
+     "mean_cost": 0.0070799205088153405,
+     "risk": 0.2704054541705331,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 0.0,
+     "vs_static": 1.0
+    },
+    "0.1|lp a=1 s=0.05": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.05",
+     "mean_cost": 0.007310645003551911,
+     "risk": 0.2695638725641819,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 7.302814723167336,
+     "vs_static": 0.96843992635062
+    },
+    "0.1|lp a=1 s=0.3": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.3",
+     "mean_cost": 0.0070597147432157935,
+     "risk": 0.2719868027631715,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 28.986493452933292,
+     "vs_static": 1.002862122101883
+    },
+    "0.1|lp a=1 s=0.6": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.6",
+     "mean_cost": 0.006993701024791214,
+     "risk": 0.2721826992473451,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 55.31394989174143,
+     "vs_static": 1.0123281626878953
+    }
+   }
+  },
+  "0.34": {
+   "alpha": 0.34,
+   "pop_best": 0.0010264899087534798,
+   "rows": {
+    "0.1|static": {
+     "delta": 0.1,
+     "method": "static",
+     "mean_cost": 0.0041602548706696565,
+     "risk": 0.29785158263738526,
+     "anytime_viol": 0.0,
+     "final_viol": 0.06666666666666667,
+     "explore_pct": 0.0,
+     "vs_static": 1.0
+    },
+    "0.1|lp a=1 s=0.05": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.05",
+     "mean_cost": 0.004557427419264872,
+     "risk": 0.2988040004124137,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 6.509949479327764,
+     "vs_static": 0.9128515910277994
+    },
+    "0.1|lp a=1 s=0.3": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.3",
+     "mean_cost": 0.002500779915398492,
+     "risk": 0.3273430250541293,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 9.623672543561193,
+     "vs_static": 1.6635829666789097
+    },
+    "0.1|lp a=1 s=0.6": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.6",
+     "mean_cost": 0.002187145621656869,
+     "risk": 0.3299515413960202,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 13.328178162697187,
+     "vs_static": 1.9021389474369164
+    }
+   }
+  },
+  "0.4": {
+   "alpha": 0.4,
+   "pop_best": 0.0003710460021651717,
+   "rows": {
+    "0.1|static": {
+     "delta": 0.1,
+     "method": "static",
+     "mean_cost": 0.0010852897697571915,
+     "risk": 0.35179013300340245,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 0.0,
+     "vs_static": 1.0
+    },
+    "0.1|lp a=1 s=0.05": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.05",
+     "mean_cost": 0.0014266729899422602,
+     "risk": 0.37205897515207753,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 4.544798432828127,
+     "vs_static": 0.7607137566970514
+    },
+    "0.1|lp a=1 s=0.3": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.3",
+     "mean_cost": 0.000756506901170223,
+     "risk": 0.3935044849984534,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 6.128466852252811,
+     "vs_static": 1.4346065687945238
+    },
+    "0.1|lp a=1 s=0.6": {
+     "delta": 0.1,
+     "method": "lp a=1 s=0.6",
+     "mean_cost": 0.0007569070625270641,
+     "risk": 0.39330858851427986,
+     "anytime_viol": 0.0,
+     "final_viol": 0.0,
+     "explore_pct": 5.542839467986391,
+     "vs_static": 1.4338481215035377
+    }
+   }
+  }
+ }
+}
