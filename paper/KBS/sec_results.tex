@@ -63,25 +63,34 @@ Table~\ref{tab:orders} is the experiment that separates the two
 guarantees rather than merely comparing their prices. A calibration
 certificate is valid under exchangeability between the calibration
 prefix and what follows; we construct four orderings that break it.
-Under \emph{easy-first} -- the population sorted so that queries most
-plans answer correctly arrive first -- the certifier calibrates on an
-unrepresentative prefix, certifies a cheap plan, and is then overwhelmed:
-it breaches on $100\%$ of HybridQA and ASQA streams, $80\%$ of CRAG and
-$20\%$ of QAMPARI. Under \emph{mid-stream drift} it breaches on
-$20$--$100\%$. The ledger's breach rate is $0.00$ in every cell of the
-table, and its worst prefix rate is $\le \alpha$ in every cell, because
-Theorem~\ref{thm:gate} does not refer to the ordering.
+Reporting adherence and price side by side is what makes the result
+legible, because the certificate fails in both directions and the two
+failures look nothing alike. Under \emph{easy-first} -- the population
+sorted so that queries most plans answer correctly arrive first -- the
+certifier calibrates on an unrepresentative prefix and certifies a cheap
+plan. It then pays as little as $0.30$ of the offline optimum and
+overruns its contract on three tasks in four, by $1.25$ to
+$2.18\times$; \emph{mid-stream drift} does the same thing more mildly.
+Under \emph{hard-first} and \emph{adversarial} the prefix is pessimistic
+instead, so the certifier retreats to its safest plan, declines
+$33$--$92\%$ of the traffic, and lands at $2.9$ to $7.3\times$ the
+optimum. Those rows carry a worst rate of
+exactly zero, which is worth naming rather than glossing: a stream that
+is mostly refused and otherwise answered by the strongest plan accrues
+no violations at all. It is the arithmetic of a system that has stopped
+doing its job, not evidence that the certificate works.
 
-Two further readings of the table are worth making. First, the
-\emph{hard-first} and \emph{adversarial} orderings do \emph{not} break
-the certifier -- they make it pessimistic, so it certifies nothing, falls
-back to its safest plan and declines $41$--$92\%$ of traffic. A
-certificate fails unsafely in one direction and expensively in the
-other; it has no setting in which it is merely correct. Second, the
-ledger's cost varies by $1.4\times$ across orderings ($2.85$ to $4.62$
-mCNY on HybridQA at $\alpha=0.20$) while its validity does not vary at
-all. That is the separation Theorem~\ref{thm:regret} predicts:
-non-exchangeability is a cost problem here, not a safety problem.
+A certificate therefore fails unsafely in one direction and expensively
+in the other, and has no setting in which it is merely correct -- which
+is uncomfortable precisely because nothing tells the operator which
+direction they are in. The ledger has one behaviour instead of two: its
+worst rate stays between $0.85$ and $1.00$ of the contract on every row,
+and it pays $1.00$ to $2.77\times$ the optimum. Reordering does move
+that price -- on HybridQA the same contract costs $1.06\times$ the
+optimum under easy-first and $1.34\times$ under hard-first -- but it
+does not move the guarantee at all, which is the separation
+Theorem~\ref{thm:regret} predicts: non-exchangeability is a cost problem
+here, not a safety problem.
 
 \input{tables/tab_orders}
 
@@ -89,22 +98,26 @@ non-exchangeability is a cost problem here, not a safety problem.
 The natural defence of the certificate is that $\delta$ was set too high,
 and that a stricter budget would restore validity. Table~\ref{tab:delta}
 tests it by sweeping $\delta$ from $0.2$ to $0.001$, a factor of $200$
-that widens the confidence correction by a third. It changes the breach
-rate in one of twelve cells. On HybridQA and its plan grid the certifier
-breaches every stream at both ends of the sweep, with realised risk
-$2.1$--$2.4$ times the contract; on CRAG, QAMPARI and the CRAG grid the
-rate is identical to three decimals at $\delta=0.2$ and
-$\delta=0.001$. Only ASQA under drift responds, falling from $0.73$ to
-$0.43$ -- still four streams in ten, at a budget no practitioner would
-choose. The reason is structural: $\delta$ prices the sampling noise in a
+that widens the confidence correction by a third. Across $2\,400$
+certified streams it changes the breach count in one of twelve cells. On
+HybridQA and its plan grid all $100$ streams per cell breach at both
+ends of the sweep, with realised risk $2.1$--$2.4$ times the contract;
+on CRAG, QAMPARI and the CRAG grid the counts are identical at
+$\delta=0.2$ and $\delta=0.001$, at $80$, $60$, $20$ and $40$ streams
+per hundred. Only ASQA under drift responds, falling from $73$ to $43$
+-- still four streams in ten, at a budget no practitioner would choose.
+The reason is structural: $\delta$ prices the sampling noise in a
 calibration estimate, whereas the failure here is that the calibration
 sample describes a different population from the one served. Widening a
-correction for the wrong quantity does not help. This is also the answer
-to the reader who suspects the ledger's zeros of being slack: in the
-same cells its realised risk is $0.99$--$1.00$ of $\alpha$, so it is
-spending the entire allowance and still not crossing the line, while the
-certificate crosses it while spending less than half in the exchangeable
-case and twice too much in the non-exchangeable one.
+correction for the wrong quantity does not help.
+
+The same table answers the reader who suspects the ledger's clean record
+of being slack rather than control. In these twelve cells its realised
+risk is $0.991$ to $1.000$ of $\alpha$: it spends between $99.1\%$ and
+$100.0\%$ of the allowance and still does not cross the line, which is
+what a binding constraint looks like. The certificate crosses the line
+while spending less than half its allowance in the exchangeable case and
+more than twice too much in the non-exchangeable one.
 
 \input{tables/tab_delta}
 
@@ -272,42 +285,70 @@ $\alpha = 0.62$ the cheapest feasible mixture falls from $0.650$ to
 $0.275$ mCNY, and on HybridQA at $\alpha = 0.40$ from $0.944$ to
 $0.641$.
 
-Table~\ref{tab:grid} shows that certification does not inherit that
-monotonicity, and -- the point we can now make with two benchmarks
-rather than one -- does not violate it in a predictable direction
-either. Holding the candidate construction fixed, so that only the plan
-space differs, the certified cost on HybridQA moves \emph{away} from its
-own offline optimum as the space grows, from $1.14\times$ to
-$1.46\times$ at $\alpha = 0.34$ and from $1.37\times$ to $2.29\times$
-at $\alpha = 0.40$; on CRAG it moves \emph{towards} it, from
-$2.02\times$ to $1.41\times$. Feasibility flips both ways too. At
-$\alpha = 0.62$ on CRAG the ladder certifies nothing even though it
-contains a mixture costing $0.650$, while the grid certifies at $0.405$;
-at $\alpha = 0.30$ on HybridQA neither space certifies anything even
-though both contain feasible mixtures.
+Certification does not inherit that monotonicity, and -- the point two
+benchmarks let us make that one could not -- does not violate it in a
+predictable direction either. The cleanest way to see this is to ask not
+what a mechanism costs at a level fixed in advance, but how strict a
+contract it can honour at all. Table~\ref{tab:grid} scans $\alpha$ on a
+$0.01$ grid and reports the strictest level each mechanism returns
+anything at. Certification never reaches the risk floor: on the HybridQA
+ladder the best single plan attains $0.280$ but nothing certifies until
+$\alpha = 0.31$, and on the CRAG ladder the floor is $0.579$ against
+$\alpha_{\mathrm{cert}} = 0.63$. Those gaps of $0.030$ and $0.051$ are
+contracts the plan space can meet and the certificate cannot express.
+Counting the levels served makes the same point at scale: of the $71$
+levels scanned, the certifier serves $50$ on the HybridQA ladder and
+only $18$ on the CRAG ladder, while the ledger serves all $71$ in both,
+including every level beneath the floor, because declining carries no
+contract loss.
 
-The mechanism is not mysterious. A fixed-sequence procedure spends the
-same $\delta$ on a longer list of hypotheses, and the cheap plans a
-larger space adds are exactly the ones whose risks sit closest to the
-threshold and are hardest to certify; against that, a larger space
-sometimes lowers the attainable risk enough to make a level feasible
-that was not. On CRAG the second effect dominates because the extra
-generators pull the risk floor from $0.579$ down to $0.536$; on HybridQA
-the first dominates because the floor does not move at all -- the plan
-that attains it already lies on the diagonal. Both effects are
-real, and their net sign is a property of the task that an operator
-learns only after paying to build the space. That is the practical
-indictment: not that a certificate always gets worse when the optimizer
-is given more to work with, but that nobody can say beforehand whether
-it will.
+That last claim is the one worth sampling rather than asserting, so we
+ran the ledger at $15$ levels spanning $\alpha \in [0.10, 0.80]$ in all
+four spaces. None of the $60$ cells breached, and the worst prefix rate
+ranged from $0.71$ to $0.996$ of the contract -- close to the boundary
+where the contract binds, comfortably inside it where it does not. What
+the strict levels cost is visible and gradual rather than catastrophic:
+on the CRAG ladder, whose floor is $0.579$, honouring $\alpha = 0.10$
+means declining $86.5\%$ of the stream, $\alpha = 0.30$ means $57.2\%$
+and $\alpha = 0.55$ means $18.9\%$, the decline rate falling smoothly as
+the contract loosens and the served cost tracking the offline optimum
+more and more tightly ($1.05\times$, $1.17\times$, $1.52\times$) as more
+of the stream is actually answered. An operator who writes a contract
+the models cannot meet does not get a broken system or a silent
+violation; they get a bill for the fraction of traffic that has to go to
+a human, quoted before deployment.
+
+Enlarging the space moves these quantities in opposite directions on the
+two tasks. On HybridQA it costs a level ($50 \to 49$) and widens the gap
+above the floor ($0.030 \to 0.040$), because the floor does not move --
+the plan that attains it already lies on the diagonal -- so the space
+contributes multiplicity and no new headroom. On CRAG it buys four
+levels ($18 \to 22$) and lets a contract $0.04$ stricter be honoured,
+because the extra generators pull the floor from $0.579$ to $0.536$. The
+same reversal appears in cost at each space's own $\alpha_{\mathrm{cert}}$:
+the certified policy is $4.93$ mCNY on the HybridQA ladder against
+$2.70$ on its grid, and $1.60$ against $1.45$ on CRAG.
+
+Neither direction is mysterious once both effects are named. A
+fixed-sequence procedure spends the same $\delta$ on a longer list of
+hypotheses, and the cheap plans a larger space adds are exactly the ones
+whose risks sit nearest the threshold and are hardest to certify; against
+that, a larger space may lower the attainable risk enough to open levels
+that were closed. Whether the multiplicity or the headroom dominates
+depends on whether the new plans move the floor, which is a fact about
+the models and the task. An operator learns it only after paying to
+build the space. That is the practical indictment: not that a
+certificate always gets worse when the optimizer is given more to work
+with, but that nobody can say beforehand whether it will.
 
 The ledger is indifferent by construction, since its guarantee never
 mentions $|\mathcal{P}|$. Priced identically in the two spaces -- a
 decline costs what it costs the incumbent deployment, so the comparison
 is not confounded by a cheaper fallback -- it averages $1.22\times$ the
 offline optimum on the HybridQA ladder against $1.23\times$ on the
-HybridQA grid, and $1.59\times$ against $1.61\times$ on CRAG, with a
-breach rate of zero at every level of both spaces. The worst level is
+HybridQA grid, and $1.59\times$ against $1.61\times$ on CRAG, its worst
+prefix rate staying within $0.99$ of the contract at every level of
+either space and never above it. The worst level is
 in fact better on the larger space ($1.53\times$ to $1.45\times$ on
 HybridQA, $2.11\times$ to $2.07\times$ on CRAG), because the extra plans
 give the action LP more interior points to mix. The gap to the offline

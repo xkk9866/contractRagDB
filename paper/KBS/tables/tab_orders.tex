@@ -1,38 +1,38 @@
 \begin{table}[t]
 \centering
-\caption{Contract adherence under query orderings that violate exchangeability. A calibration certificate is valid only if the deployment stream is exchangeable with the calibration prefix; the ledger bound holds pathwise and assumes nothing about the order. Entries are means over 20 streams at the median $\alpha$ of each task, given in parentheses after the task name; \emph{breach} is the fraction of streams whose worst prefix rate exceeded $\alpha$. Breach takes only the values $0$ and $1$ here because these orderings are constructed, not sampled: whether the calibration prefix misrepresents the deployment stream is a property of the ordering, so every stream of a given kind fails or survives together. The informative column is the worst rate beside it, which says by how much.}
+\caption{Contract adherence under query orderings that violate exchangeability. A calibration certificate is valid only if the deployment stream is exchangeable with the calibration prefix; the ledger bound holds pathwise and assumes nothing about the order. Entries are means over 20 streams at the median $\alpha$ of each task, given in parentheses after the task name. Adherence is the worst prefix rate in units of the contract, so $1$ is the boundary and the amount above it is the size of the overrun; cost is in units of the offline optimum for the same $\alpha$, so the two halves of the table read as what was promised against what was paid. The certificate fails in both directions and never in between. When the calibration prefix is easier than the stream it under-provisions: it pays as little as $0.30$ of the optimum and overruns its contract on three tasks in four, by up to $2.18\times$. When the prefix is harder it over-provisions: it declines $33$--$92\%$ of the traffic and lands at $2.9$--$7.3\times$ the optimum, which is why those rows read $0.00$ -- a stream that is mostly refused and otherwise served by the strongest plan accrues no violations at all. Neither is a contract honoured at a defensible price. The ledger stays between $0.85$ and $1.00$ of its contract on every row at $1.00$--$2.77$ of the optimum; the repeated $1.00$ is exact rather than rounded, since the gate closes as the allowance runs out, so $V_t/t$ approaches $\alpha$ and stops. The orderings that break the certificate are not exotic: sorting a day's traffic by difficulty is what a queue does.}
 \label{tab:orders}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{llrrrr}
 \toprule
- & & \multicolumn{2}{c}{worst rate} & \multicolumn{2}{c}{breach} \\
+ & & \multicolumn{2}{c}{worst rate $/\,\alpha$} & \multicolumn{2}{c}{cost $/$ optimum} \\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 Task & Order & LTT & Ledger & LTT & Ledger \\
 \midrule
-HybridQA (0.25) & i.i.d.\ shuffle & 0.161 & 0.248 & 0.00 & 0.00 \\
- & hard first & 0.000 & 0.250 & 0.00 & 0.00 \\
- & easy first & 0.546 & 0.250 & 1.00 & 0.00 \\
- & drift & 0.530 & 0.250 & 1.00 & 0.00 \\
- & adversarial & 0.000 & 0.250 & 0.00 & 0.00 \\
+HybridQA (0.25) & i.i.d.\ shuffle & 0.65 & 0.99 & 2.90 & 1.15 \\
+ & hard first & 0.00 & 1.00 & 2.96 & 1.34 \\
+ & easy first & 2.18 & 1.00 & 0.30 & 1.06 \\
+ & drift & 2.12 & 1.00 & 0.30 & 1.05 \\
+ & adversarial & 0.00 & 1.00 & 2.96 & 1.06 \\
 \addlinespace[2pt]
-CRAG (0.55) & i.i.d.\ shuffle & 0.195 & 0.543 & 0.00 & 0.00 \\
- & hard first & 0.280 & 0.550 & 0.00 & 0.00 \\
- & easy first & 0.688 & 0.550 & 1.00 & 0.00 \\
- & drift & 0.596 & 0.550 & 1.00 & 0.00 \\
- & adversarial & 0.289 & 0.550 & 0.00 & 0.00 \\
+CRAG (0.55) & i.i.d.\ shuffle & 0.35 & 0.99 & 2.82 & 1.53 \\
+ & hard first & 0.51 & 1.00 & 2.92 & 1.76 \\
+ & easy first & 1.25 & 1.00 & 1.33 & 1.38 \\
+ & drift & 1.08 & 1.00 & 1.23 & 1.38 \\
+ & adversarial & 0.53 & 1.00 & 2.91 & 1.72 \\
 \addlinespace[2pt]
-ASQA (0.2) & i.i.d.\ shuffle & 0.063 & 0.181 & 0.00 & 0.00 \\
- & hard first & 0.000 & 0.198 & 0.00 & 0.00 \\
- & easy first & 0.309 & 0.200 & 1.00 & 0.00 \\
- & drift & 0.229 & 0.200 & 1.00 & 0.00 \\
- & adversarial & 0.000 & 0.170 & 0.00 & 0.00 \\
+ASQA (0.2) & i.i.d.\ shuffle & 0.32 & 0.91 & 6.86 & 2.15 \\
+ & hard first & 0.00 & 0.99 & 7.34 & 2.77 \\
+ & easy first & 1.55 & 1.00 & 4.85 & 2.38 \\
+ & drift & 1.15 & 1.00 & 4.93 & 2.37 \\
+ & adversarial & 0.00 & 0.85 & 7.33 & 2.36 \\
 \addlinespace[2pt]
-QAMPARI (0.55) & i.i.d.\ shuffle & 0.089 & 0.535 & 0.00 & 0.00 \\
- & hard first & 0.000 & 0.548 & 0.00 & 0.00 \\
- & easy first & 0.412 & 0.550 & 0.00 & 0.00 \\
- & drift & 0.412 & 0.550 & 0.00 & 0.00 \\
- & adversarial & 0.000 & 0.545 & 0.00 & 0.00 \\
+QAMPARI (0.55) & i.i.d.\ shuffle & 0.16 & 0.97 & 4.19 & 1.25 \\
+ & hard first & 0.00 & 1.00 & 4.18 & 1.89 \\
+ & easy first & 0.75 & 1.00 & 2.58 & 1.10 \\
+ & drift & 0.75 & 1.00 & 2.58 & 1.00 \\
+ & adversarial & 0.00 & 0.99 & 4.18 & 1.69 \\
 \addlinespace[2pt]
 \bottomrule
 \end{tabular}

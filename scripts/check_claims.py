@@ -299,3 +299,78 @@ for t in TRACKS:
     print(f"   {t:<10} K={K} n_cal={ncal}: w_stat={w:.4f}   "
           f"ledger margin at kappa=1 after N={d['N']}: {m1:.4f}  "
           f"({w/m1:.1f}x tighter)")
+
+print("=" * 72)
+print("11. Table 7 (plan grid): alpha floors, levels served, cost at a_cert")
+af = load("grid_alpha_floor.json")
+if af:
+    for bench, grid in (("hybridqa", "hqgrid"), ("crag", "cggrid")):
+        for sel, tag in (("diag", bench), ("grid", grid)):
+            r = af["tracks"][bench][sel]
+            ac = r["alpha_cert"]
+            cert = next((v for k, v in r["cert_at"].items()
+                         if abs(float(k) - ac) < 1e-6), None)
+            d = load(f"ledger_{tag}_atcert.json")
+            lp = None
+            if d:
+                k = min(d["results"], key=lambda x: abs(float(x) - ac))
+                lp = next((v for v in d["results"][k]["rows"].values()
+                           if v["method"] == "ledger/lp"), None)
+            print(f"   {bench:<9} {sel:<5} P={r['n_plans']:2d} "
+                  f"floor={r['floor']:.3f} a_cert={ac:.2f} "
+                  f"gap={ac - r['floor']:.3f} "
+                  f"levels={len(r['cert_at'])}/{len(r['lp_at'])} "
+                  f"cert={cert * 1000:.2f} "
+                  f"ledger={lp['mean_cost'] * 1000:.2f}")
+
+print("=" * 72)
+print("12. does the ledger really serve every contract level? (alpha sweep)")
+cells = brs = 0
+lo, hi = 9.0, 0.0
+for tag in ("hybridqa", "hqgrid", "crag", "cggrid"):
+    d = load(f"ledger_{tag}_sweep.json")
+    if not d:
+        continue
+    ref = max(d.get("abstain_costs") or [0])
+    rows = []
+    for a in sorted(float(x) for x in d["results"]):
+        v = next((v for v in d["results"][str(a)]["rows"].values()
+                  if v["method"] == "ledger/lp"
+                  and abs(v["abstain_cost"] - ref) < 1e-9), None)
+        if v is None:
+            continue
+        w = v["worst_rate"] / a
+        lo, hi = min(lo, w), max(hi, w)
+        cells += 1
+        brs += int(v["breach"])
+        rows.append((a, w, v["abstain_rate"], v["vs_oracle"]))
+    q = {a: (w, ab, vo) for a, w, ab, vo in rows}
+    dec = " ".join(f"a={a:.2f}:{q[a][1]:.1f}%/{q[a][2]:.2f}x"
+                   for a in (0.10, 0.30, 0.55) if a in q)
+    print(f"   {tag:<9} levels={len(rows)} {dec}")
+print(f"   TOTAL cells={cells} breaches={brs} "
+      f"worst/alpha in [{lo:.3f}, {hi:.3f}]")
+
+print("=" * 72)
+print("13. Table 2 (orderings): adherence and price, both directions")
+for t in TRACKS:
+    d = load(f"ledger_stress_{t}.json")
+    if not d or "orders" not in d:
+        continue
+    rows = d["orders"]
+    al = sorted({v["alpha"] for v in rows.values()})
+    a = al[len(al) // 2]
+    sw, sc, lw, lc = [], [], [], []
+    for kind in ("iid", "hard-first", "easy-first", "drift", "adversarial"):
+        s, l = rows.get(f"{a}|{kind}|static"), rows.get(f"{a}|{kind}|ledger")
+        if s is None or l is None:
+            continue
+        o = max(s["oracle"], 1e-12)
+        sw.append(s["worst_rate"] / a)
+        sc.append(s["cost"] / o)
+        lw.append(l["worst_rate"] / a)
+        lc.append(l["cost"] / o)
+    print(f"   {t:<9} a={a:g}  LTT w/a {min(sw):.2f}-{max(sw):.2f} "
+          f"cost {min(sc):.2f}-{max(sc):.2f}x | "
+          f"ledger w/a {min(lw):.2f}-{max(lw):.2f} "
+          f"cost {min(lc):.2f}-{max(lc):.2f}x")

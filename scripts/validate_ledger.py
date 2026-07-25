@@ -207,7 +207,8 @@ def run_track(track, args, out_dir):
            "pop_risk": pop_r.tolist(), "pop_cost": pop_c.tolist(),
            "n_hist": int(L_tr.shape[1]), "n_cal": args.n_cal,
            "delta": args.delta, "draws": args.draws, "results": out}
-    path = os.path.join(out_dir, f"ledger_{track}.json")
+    # a run over a few extra contract levels must not clobber the main sweep
+    path = os.path.join(out_dir, f"ledger_{track}{args.tag}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(res, f, indent=1, default=float)
     print(f"\n  wrote {path}")
@@ -222,6 +223,8 @@ def main():
     ap.add_argument("--abstain_mult", type=float, nargs="*", default=[1.0])
     ap.add_argument("--abstain_abs", type=float, default=-1.0,
                     help="decline price in mCNY; default is the dearest plan")
+    ap.add_argument("--tag", default="",
+                    help="suffix for the output file, e.g. _atcert")
     ap.add_argument("--delta", type=float, default=0.1)
     ap.add_argument("--audit_rates", type=float, nargs="*", default=[1.0])
     ap.add_argument("--audit_mode", default="worst-case",

@@ -1,26 +1,19 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{What enlarging the plan space does to a certificate. The space grows from the hand-drawn ladder (the diagonal of the grid, $|\mathcal{P}|=4$) to the full access-path $\times$ generator grid (36 plans on HybridQA, 24 on CRAG). Costs are mCNY per query; both spaces use the same randomised construction, the same calibration split and the same $\delta=0.1$. \emph{offline} is the cheapest mixture that meets the level on the whole population and can only fall as plans are added, which it does everywhere. The certified cost does not inherit that monotonicity: relative to its own offline optimum the certificate gets \emph{worse} on the HybridQA grid (1.14$\times$ to 1.46$\times$) and \emph{better} on the CRAG grid (2.02$\times$ to 1.41$\times$). Nor does feasibility move in one direction: at $\alpha=0.62$ on CRAG the grid certifies a policy and the ladder certifies nothing, although a mixture costing 0.650 exists in the ladder; at $\alpha=0.30$ on HybridQA neither space certifies anything although both admit a feasible mixture. Which way the multiplicity cost and the cheaper plans net out is a property of the task, not something an operator can predict before paying to build the space. \emph{n.f.}: no mixture meets the level; \emph{n.c.}: nothing certifies.}
+\caption{What enlarging the plan space does to a certificate, measured by the contracts it can actually honour rather than by its cost at levels chosen in advance. $\alpha$ is scanned on a $0.01$ grid from $0.10$ to $0.80$ ($71$ levels) and each space is certified with the same randomised construction, calibration split and $\delta=0.1$. \emph{floor} is the risk of the best single plan, what the models and retrieval physically permit; $\alpha_{\mathrm{cert}}$ is the strictest contract the certifier returns anything at, and the gap between them is the range of contracts that the space can meet but certification cannot reach. \emph{levels} counts how many of the $71$ the certifier serves. The ledger serves all $71$ in every space, including every level below the floor, because declining carries no contract loss, so the column would read $71$ four times and is omitted. Sampling that claim at $15$ levels per space (Sec.~\ref{sec:res:grid}) gives $60$ cells with no breach and a worst prefix rate between $0.71$ and $0.996$ of $\alpha$. Enlarging the space moves these quantities in opposite directions on the two tasks -- on HybridQA it costs one level and widens the gap, on CRAG it buys four levels and lets a contract $0.04$ stricter be honoured -- which is the point: the sign is a property of the task. Costs are mCNY per query at $\alpha_{\mathrm{cert}}$, where both mechanisms return something and the comparison is defined.}
 \label{tab:grid}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrrrr}
+\begin{tabular}{llrrrrrrr}
 \toprule
- & & \multicolumn{3}{c}{ladder ($|\mathcal{P}|=4$)} & \multicolumn{3}{c}{grid} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-8}
-Task & $\alpha$ & offline & cert. & ratio & offline & cert. & ratio \\
+ & & & & \multicolumn{3}{c}{what the certifier can honour} & \multicolumn{2}{c}{cost at $\alpha_{\mathrm{cert}}$} \\
+\cmidrule(lr){5-7}\cmidrule(lr){8-9}
+Task & Space & $|\mathcal{P}|$ & floor & $\alpha_{\mathrm{cert}}$ & gap & levels & cert. & ledger \\
 \midrule
-HybridQA & 0.20 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
- & 0.25 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
- & 0.30 & 4.165 & \emph{n.c.} & -- & 1.922 & \emph{n.c.} & -- \\
- & 0.34 & 1.526 & 1.735 & 1.14 & 1.409 & 2.057 & 1.46 \\
- & 0.40 & 0.944 & 1.297 & 1.37 & 0.641 & 1.464 & 2.29 \\
-\midrule
-CRAG & 0.35 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
- & 0.45 & \emph{n.f.} & \emph{n.c.} & -- & \emph{n.f.} & \emph{n.c.} & -- \\
- & 0.55 & \emph{n.f.} & \emph{n.c.} & -- & 0.803 & \emph{n.c.} & -- \\
- & 0.62 & 0.650 & \emph{n.c.} & -- & 0.275 & 0.405 & 1.47 \\
- & 0.70 & 0.170 & 0.344 & 2.02 & 0.170 & 0.239 & 1.41 \\
+HybridQA & ladder & 4 & 0.280 & 0.31 & 0.030 & 50 & 4.93 & 1.69 \\
+ & grid & 36 & 0.280 & 0.32 & 0.040 & 49 & 2.70 & 2.44 \\
+\addlinespace[2pt]
+CRAG & ladder & 4 & 0.579 & 0.63 & 0.051 & 18 & 1.60 & 0.40 \\
+ & grid & 24 & 0.536 & 0.59 & 0.054 & 22 & 1.45 & 0.42 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}

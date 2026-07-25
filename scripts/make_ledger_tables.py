@@ -19,6 +19,10 @@ TRACKS = ["hybridqa", "crag", "asqa", "qampari"]
 PRETTY = {"hybridqa": "HybridQA", "crag": "CRAG", "asqa": "ASQA",
           "qampari": "QAMPARI", "hqgrid": "HQ grid", "cggrid": "CRAG grid"}
 
+# streams per (alpha, setting) in the stress runs; breach fractions are
+# turned back into counts so the sample size is visible in the table
+DRAWS = 20
+
 
 def load(name):
     p = os.path.join(EXP, name)
@@ -39,35 +43,42 @@ def main_table(tracks, ab_mult=1.0, out="tab_main.tex"):
     the comparison is made horizontally: each metric is a group of three
     columns, which is also the direction one actually reads it in.
     """
-    METH = [("static/no-decline", "LTT"), ("static", r"+$\bot$"),
-            ("ledger/lp", "Ldg")]
+    METH = [("static/no-decline", "LTT"), ("static", "LTT+dec"),
+            ("ledger/lp", "Ledger")]
     # decline% is identically zero for the no-decline certifier by
     # definition, so that column is dropped rather than printed as a
-    # column of zeros.
+    # column of zeros. Adherence is reported as the worst prefix rate in
+    # units of the contract: a ratio above one is a breach, and unlike a
+    # breach frequency over 30 streams it says by how much, which is the
+    # quantity that differs between the methods.
     groups = [("cost", "mean_cost", METH), ("risk", "risk", METH),
               ("decline\\%", "abstain_rate", METH[1:]),
-              ("worst rate", "worst_rate", METH),
-              ("breach", "breach", METH)]
+              (r"worst rate $/\,\alpha$", "worst_over_alpha", METH)]
     lines = [
         r"\begin{table*}[t]",
         r"\centering",
         r"\caption{Cost of ownership and contract adherence over a served "
-        r"stream. \textsc{LTT} is one-shot certification, $+\bot$ the same "
-        r"certifier handed the decline action, \textsc{Ldg} the ledger. All "
-        r"three see the same plan space, the same decline price and the same "
-        r"stream, and all are charged for calibration, service, declines and "
-        r"labels. \emph{worst rate} is $\max_{t\ge 200} V_t/t$, the quantity "
-        r"an anytime contract controls; \emph{breach} is the fraction of the "
-        r"30 streams in which it exceeded $\alpha$. Levels marked $\dagger$ "
-        r"lie below the risk of every plan in the space, where certification "
-        r"without declines is infeasible by construction and \textsc{LTT} "
-        r"falls back to the historically safest plan, which is why its "
-        r"numbers repeat down such a block. The \textsc{Ldg} breach column "
-        r"is identically zero because Theorem~\ref{thm:gate} makes it so, "
-        r"not because 30 streams happened to be kind; \textsc{LTT} breaches "
-        r"on all of them below the floor for the same structural reason. "
-        r"\textsc{LTT} never declines by definition, so that column is "
-        r"omitted. Costs in mCNY per query.}",
+        r"stream. \emph{LTT} is one-shot certification, \emph{LTT+dec} the "
+        r"same certifier handed the decline action, \emph{Ledger} this "
+        r"paper's executor. All three see the same plan space, the same "
+        r"decline price and the same stream, and all are charged for "
+        r"calibration, service, declines and labels. The adherence column is "
+        r"the worst prefix rate $\max_{t \ge 200} V_t/t$, averaged over "
+        r"draws, divided by the "
+        r"contract, so it reads directly as compliance: at most $1$ is a "
+        r"contract kept, above $1$ is a contract broken and says by how "
+        r"much. For the ledger this ratio cannot exceed $1$ -- "
+        r"Theorem~\ref{thm:gate} makes it an identity, not an outcome that 30 "
+        r"streams happened to produce -- and the fact that it sits at "
+        r"$0.96$--$1.00$ rather than well below is what shows the allowance "
+        r"is spent rather than hoarded. Levels marked $\dagger$ lie below the "
+        r"risk of every plan in the space, so a certifier that must answer "
+        r"every query has nothing feasible to return, falls back to its "
+        r"safest plan and overshoots by a factor of $1.5$--$3.9$; its numbers "
+        r"repeat down such a block for that reason. Over all $4\,500$ streams "
+        r"in this paper \emph{LTT} exceeds its contract on $62.6\%$ and the "
+        r"ledger on none. \emph{LTT} never declines by definition, so that "
+        r"column is omitted. Costs in mCNY per query.}",
         r"\label{tab:main}",
         r"\footnotesize",
         r"\setlength{\tabcolsep}{3.4pt}",
@@ -87,15 +98,17 @@ def main_table(tracks, ab_mult=1.0, out="tab_main.tex"):
               r" & & " + " & ".join(sub) + r" \\",
               r"\midrule"]
 
-    def cell(r, field):
+    def cell(r, field, alpha):
         if r is None:
             return "--"
+        if field == "worst_over_alpha":
+            return f"{r['worst_rate'] / alpha:.2f}"
         v = r[field]
         if field == "mean_cost":
             return f"{v*1000:.2f}"
         if field == "abstain_rate":
-            return f"{v:.0f}"
-        return f"{v:.3f}" if field != "breach" else f"{v:.2f}"
+            return f"{v:.1f}"
+        return f"{v:.3f}"
 
     for ti, tr in enumerate(tracks):
         d = load(f"ledger_{tr}.json")
@@ -113,7 +126,7 @@ def main_table(tracks, ab_mult=1.0, out="tab_main.tex"):
             mark = r"$^\dagger$" if pop_r.min() > a else ""
             got = {m: next((blk[k] for k in keys if blk[k]["method"] == m),
                            None) for m, _ in METH}
-            cells = [cell(got[m], f) for _, f, meths in groups
+            cells = [cell(got[m], f, a) for _, f, meths in groups
                      for m, _ in meths]
             lines.append(f"{PRETTY[tr] if first else ''} & {a:.2f}{mark} & "
                          + " & ".join(cells) + r" \\")
@@ -134,20 +147,35 @@ def order_table(tracks, out="tab_orders.tex"):
         r"deployment stream is exchangeable with the calibration prefix; the "
         r"ledger bound holds pathwise and assumes nothing about the order. "
         r"Entries are means over 20 streams at the median $\alpha$ of each "
-        r"task, given in parentheses after the task name; \emph{breach} is "
-        r"the fraction of streams whose worst prefix rate exceeded $\alpha$. "
-        r"Breach takes only the values $0$ and $1$ here because these "
-        r"orderings are constructed, not sampled: whether the calibration "
-        r"prefix misrepresents the deployment stream is a property of the "
-        r"ordering, so every stream of a given kind fails or survives "
-        r"together. The informative column is the worst rate beside it, "
-        r"which says by how much.}",
+        r"task, given in parentheses after the task name. Adherence is the "
+        r"worst prefix rate in units of the contract, so $1$ is the boundary "
+        r"and the amount above it is the size of the overrun; cost is in "
+        r"units of the offline optimum for the same $\alpha$, so the two "
+        r"halves of the table read as what was promised against what was "
+        r"paid. The certificate fails in both directions and never in "
+        r"between. When the calibration prefix is easier than the stream it "
+        r"under-provisions: it pays as little as $0.30$ of the optimum and "
+        r"overruns its contract on three tasks in four, by up to "
+        r"$2.18\times$. When the prefix is harder it over-provisions: it "
+        r"declines $33$--$92\%$ of the traffic and lands at "
+        r"$2.9$--$7.3\times$ the optimum, which is why those rows read "
+        r"$0.00$ -- a stream that is mostly refused and otherwise served "
+        r"by the strongest plan accrues no violations at all. Neither is a "
+        r"contract honoured at a defensible price. The ledger stays between "
+        r"$0.85$ and $1.00$ of its contract on every row at $1.00$--$2.77$ "
+        r"of the optimum; the repeated $1.00$ is exact rather than rounded, "
+        r"since the gate closes as the allowance runs out, so $V_t/t$ "
+        r"approaches $\alpha$ and stops. The orderings that "
+        r"break the certificate are "
+        r"not exotic: sorting a day's traffic by difficulty is what a queue "
+        r"does.}",
         r"\label{tab:orders}",
         r"\footnotesize",
         r"\setlength{\tabcolsep}{4pt}",
         r"\begin{tabular}{llrrrr}",
         r"\toprule",
-        r" & & \multicolumn{2}{c}{worst rate} & \multicolumn{2}{c}{breach} \\",
+        r" & & \multicolumn{2}{c}{worst rate $/\,\alpha$}"
+        r" & \multicolumn{2}{c}{cost $/$ optimum} \\",
         r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
         r"Task & Order & LTT & Ledger & LTT & Ledger \\",
         r"\midrule",
@@ -168,11 +196,12 @@ def order_table(tracks, out="tab_orders.tex"):
             l = rows.get(f"{a}|{kind}|ledger")
             if s is None or l is None:
                 continue
+            orc = max(s["oracle"], 1e-12)
             lines.append(
                 f"{PRETTY[tr] + f' ({a:g})' if first else ''} & "
-                f"{names[kind]} & {fmt(s['worst_rate'])} & "
-                f"{fmt(l['worst_rate'])} & "
-                f"{s['breach']:.2f} & {l['breach']:.2f} \\\\")
+                f"{names[kind]} & {s['worst_rate'] / a:.2f} & "
+                f"{l['worst_rate'] / a:.2f} & "
+                f"{s['cost'] / orc:.2f} & {l['cost'] / orc:.2f} \\\\")
             first = False
         lines.append(r"\addlinespace[2pt]")
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
@@ -234,8 +263,18 @@ def audit_table(tracks, out="tab_audit.tex"):
         r"labelled ones, which is unbiased but bounds the ledger only in "
         r"probability. The columns price a guarantee that holds against one "
         r"that usually holds. Per task: serving cost including declines, "
-        r"audit cost (both mCNY per query) and the fraction of streams whose "
-        r"worst prefix rate exceeded $\alpha$, at the $\alpha$ in the header.}",
+        r"audit cost (both mCNY per query) and the worst prefix rate, "
+        r"averaged over streams, as a fraction of "
+        r"$\alpha$, at the $\alpha$ in the header. The last "
+        r"column is the quantity the contract constrains, so a value at or "
+        r"below $1$ is adherence and anything above it is a breach whose "
+        r"size can be read off. \textsc{worst-case} stays below $1$ by "
+        r"construction and, at low label rates, well below it, because "
+        r"charging unlabelled arrivals as violations spends the allowance on "
+        r"declines instead of answers; \textsc{ipw} sits nearer the boundary "
+        r"and crosses it as labels thin out. Counted as a frequency over "
+        r"streams rather than a magnitude, the same \textsc{ipw} runs breach "
+        r"on $6\%$ (ASQA) to $59\%$ (HybridQA) at a $25\%$ label rate.}",
         r"\label{tab:audit}",
         r"\small",
         r"\setlength{\tabcolsep}{4pt}",
@@ -248,7 +287,7 @@ def audit_table(tracks, out="tab_audit.tex"):
         a = sorted({v["alpha"] for v in d["audit"].values()})
         a = a[len(a) // 2]
         hdr.append(r"\multicolumn{3}{c}{%s ($\alpha$=%g)}" % (PRETTY[tr], a))
-        sub.append("cost & audit & breach")
+        sub.append(r"cost & audit & w$/\alpha$")
         c0 = 3 + 3 * i
         cm.append(r"\cmidrule(lr){%d-%d}" % (c0, c0 + 2))
     lines += [" & & " + " & ".join(hdr) + r" \\",
@@ -266,7 +305,7 @@ def audit_table(tracks, out="tab_audit.tex"):
                 cells.append("-- & -- & --" if v is None else
                              f"{v['cost']*1000:.3f} & "
                              f"{v['audit_cost']*1000:.3f} & "
-                             f"{v['breach']:.2f}")
+                             f"{v['worst_rate']/v['alpha']:.2f}")
             mcell = (r"\textsc{%s}" % mode) if j == 0 else ""
             lines.append(f"{mcell} & {rate:.2f} & " + " & ".join(cells)
                          + r" \\")
@@ -357,29 +396,30 @@ def delta_table(tracks, out="tab_delta.tex"):
         r"\centering",
         r"\caption{Sweeping the certifier's error budget over two orders of "
         r"magnitude, under the two orderings that break exchangeability. "
-        r"\emph{breach} is the fraction of streams whose worst prefix rate "
-        r"exceeded $\alpha$; \emph{risk}/$\alpha$ is realised risk in units "
-        r"of the contract, so $1.00$ means the allowance was spent exactly "
-        r"and above $1.00$ means it was overspent. Shrinking $\delta$ by "
-        r"$200\times$ changes the certificate's breach rate in one of twelve "
-        r"cells: its failures are not an insufficient correction for sampling "
-        r"noise but a calibration sample that misrepresents the stream, and "
-        r"no choice of $\delta$ addresses that. The ledger has no $\delta$ to "
-        r"set, never breaches, and lands on the contract rather than under "
-        r"it, which is why its zeros are not slack. \emph{brch}: breach rate; "
-        r"\emph{r}/$\alpha$: realised risk over the contract. Means over 20 "
-        r"streams at each of five $\alpha$ levels per row.}",
+        r"\emph{brch} counts the breaching streams out of the $100$ run per "
+        r"row (five $\alpha$ levels $\times$ $20$ streams); "
+        r"\emph{r}/$\alpha$ is realised risk in units of the contract, so "
+        r"$1.00$ means the allowance was spent exactly and above $1.00$ "
+        r"means it was overspent. Shrinking $\delta$ by $200\times$ widens "
+        r"the confidence correction, which is the certificate's only lever, "
+        r"and it moves the count in one of the twelve cells: the failure is "
+        r"a calibration sample that misrepresents the stream, not a "
+        r"correction too small for sampling noise, and no choice of $\delta$ "
+        r"addresses that. The ledger breaches none of the $1\,200$ streams "
+        r"here, so that column would be twelve zeros and is omitted; what is "
+        r"worth reading is its realised risk, which lands on the contract "
+        r"rather than under it and so is not slack.}",
         r"\label{tab:delta}",
         r"\footnotesize",
-        r"\setlength{\tabcolsep}{2.6pt}",
-        r"\begin{tabular}{ll" + "rr" * 3 + "}",
+        r"\setlength{\tabcolsep}{3.2pt}",
+        r"\begin{tabular}{ll" + "rr" * 2 + "r}",
         r"\toprule",
         r" & & \multicolumn{2}{c}{cert. $\delta=0.2$}"
         r" & \multicolumn{2}{c}{cert. $\delta=10^{-3}$}"
-        r" & \multicolumn{2}{c}{ledger} \\",
-        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}",
+        r" & ledger \\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-7}",
         r"Task & Order & brch & r/$\alpha$ & brch & r/$\alpha$"
-        r" & brch & r/$\alpha$ \\",
+        r" & r/$\alpha$ \\",
         r"\midrule",
     ]
     SHORT = {"easy-first": "easy", "drift": "drift"}
@@ -394,11 +434,24 @@ def delta_table(tracks, out="tab_delta.tex"):
                              ("ledger", None)):
                 sel = [v for v in rows if v["method"] == meth
                        and v["delta"] == dl]
+                risk = (f"{np.mean([v['risk'] / v['alpha'] for v in sel]):.2f}"
+                        if sel else "--")
+                if meth == "ledger":
+                    # its breach count is zero in every cell; the column is
+                    # dropped rather than printed as twelve zeros. The risk
+                    # is quoted to three places because at two it rounds to
+                    # 1.00 almost everywhere, which reads as a placeholder
+                    # rather than as the allowance being spent to the last
+                    # percent
+                    cells.append(
+                        f"{np.mean([v['risk'] / v['alpha'] for v in sel]):.3f}"
+                        if sel else "--")
+                    continue
                 if not sel:
                     cells += ["--", "--"]
                     continue
-                cells += [f"{np.mean([v['breach'] for v in sel]):.2f}",
-                          f"{np.mean([v['risk'] / v['alpha'] for v in sel]):.2f}"]
+                n = sum(v["breach"] * DRAWS for v in sel)
+                cells += [f"{n:.0f}", risk]
             lines.append(
                 (PRETTY[tr] if oi == 0 else "") + f" & {SHORT[order]} & "
                 + " & ".join(cells) + r" \\")
@@ -414,12 +467,87 @@ GRID_PAIRS = [("hybridqa", "hqgrid", "HybridQA"), ("crag", "cggrid", "CRAG")]
 def grid_table(out="tab_grid.tex"):
     """What enlarging the search space does to each kind of guarantee.
 
-    The offline optimum can only improve when plans are added, and does.  A
-    calibration certificate has no such monotonicity: the extra multiplicity
-    it must pay for can outweigh the cheaper plans it can now see, and which
-    of the two wins is task-dependent.  The ledger inherits the offline
-    improvement because its guarantee never referenced the plan count.
+    Quoting certified cost at a few hand-picked contract levels left most of
+    this table empty, because at strict levels the certifier returns nothing.
+    The dash was a real result but a poor summary. We instead scan alpha on a
+    0.01 grid and report the strictest contract each mechanism can honour,
+    how far that sits above what the plan space physically permits, and how
+    many of the 71 levels each can serve at all -- every entry a number, and
+    the quantity an operator actually shops for.
     """
+    af = load("grid_alpha_floor.json")
+    if af is None:
+        return
+    af = af["tracks"]
+    n_lv = None
+    lines = [
+        r"\begin{table*}[t]",
+        r"\centering",
+        r"\caption{What enlarging the plan space does to a certificate, "
+        r"measured by the contracts it can actually honour rather than by its "
+        r"cost at levels chosen in advance. $\alpha$ is scanned on a $0.01$ "
+        r"grid from $0.10$ to $0.80$ ($71$ levels) and each space is "
+        r"certified with the same randomised construction, calibration split "
+        r"and $\delta=0.1$. \emph{floor} is the risk of the best single plan, "
+        r"what the models and retrieval physically permit; "
+        r"$\alpha_{\mathrm{cert}}$ is the strictest contract the certifier "
+        r"returns anything at, and the gap between them is the range of "
+        r"contracts that the space can meet but certification cannot reach. "
+        r"\emph{levels} counts how many of the $71$ the certifier serves. "
+        r"The ledger serves all $71$ in every space, including every level "
+        r"below the floor, because declining carries no contract loss, so "
+        r"the column would read $71$ four times and is omitted. Sampling that "
+        r"claim at $15$ levels per space (Sec.~\ref{sec:res:grid}) gives "
+        r"$60$ cells with no breach and a worst prefix rate between "
+        r"$0.71$ and $0.996$ of $\alpha$. Enlarging "
+        r"the space moves these quantities in opposite directions on the two "
+        r"tasks -- on HybridQA it costs one level and widens the gap, on CRAG "
+        r"it buys four levels and lets a contract $0.04$ stricter be honoured "
+        r"-- which is the point: the sign is a property of the task. Costs "
+        r"are mCNY per query at $\alpha_{\mathrm{cert}}$, where both "
+        r"mechanisms return something and the comparison is defined.}",
+        r"\label{tab:grid}",
+        r"\footnotesize",
+        r"\begin{tabular}{llrrrrrrr}",
+        r"\toprule",
+        r" & & & & \multicolumn{3}{c}{what the certifier can honour}"
+        r" & \multicolumn{2}{c}{cost at $\alpha_{\mathrm{cert}}$} \\",
+        r"\cmidrule(lr){5-7}\cmidrule(lr){8-9}",
+        r"Task & Space & $|\mathcal{P}|$ & floor"
+        r" & $\alpha_{\mathrm{cert}}$ & gap & levels"
+        r" & cert. & ledger \\",
+        r"\midrule",
+    ]
+    for bench, grid, pretty in GRID_PAIRS:
+        if bench not in af:
+            continue
+        for si, (sel, tag, label) in enumerate(
+                (("diag", bench, r"ladder"), ("grid", grid, r"grid"))):
+            r = af[bench][sel]
+            ac = r["alpha_cert"]
+            n_lv = len(r["lp_at"])
+            cert = next((v for k, v in r["cert_at"].items()
+                         if abs(float(k) - ac) < 1e-6), None)
+            d = load(f"ledger_{tag}_atcert.json")
+            lp = None
+            if d:
+                k = min(d["results"], key=lambda x: abs(float(x) - ac))
+                lp = next((v for v in d["results"][k]["rows"].values()
+                           if v["method"] == "ledger/lp"), None)
+            row = [pretty if si == 0 else "", label, str(r["n_plans"]),
+                   f"{r['floor']:.3f}", f"{ac:.2f}",
+                   f"{ac - r['floor']:.3f}", f"{len(r['cert_at'])}",
+                   f"{cert*1000:.2f}" if cert else "--",
+                   f"{lp['mean_cost']*1000:.2f}" if lp else "--"]
+            lines.append(" & ".join(row) + r" \\")
+        if bench != GRID_PAIRS[-1][0]:
+            lines.append(r"\addlinespace[2pt]")
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
+    write(out, lines)
+
+
+def grid_table_old(out="tab_grid_old.tex"):
+    """Superseded layout, kept so the earlier numbers can be regenerated."""
     lines = [
         r"\begin{table}[t]",
         r"\centering",
